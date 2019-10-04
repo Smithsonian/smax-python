@@ -1,4 +1,4 @@
-DIR=/application/lib/python3
+DIR=/common/lib/python3
 FILES=$(DIR)/sendRedis.py
 
 install: $(DIR) $(FILES)
