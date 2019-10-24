@@ -17,9 +17,10 @@ class RedisPubSubGet:
 
   def respond(self, origin, message):
     self.redis.publish(self.channel+'->'+origin, message)
-
+#Server in Cambridge 192.168.0.1
+#Server in the SMA 128.171.116.189
 class RedisPubSubSend:
-  def __init__(self, channel, destination, server="192.168.0.1"):
+  def __init__(self, channel, destination, server="128.171.116.189"):
     self.redis = StrictRedis(host=server, port = 6379)
     self.channel = channel
     self.dest = destination
