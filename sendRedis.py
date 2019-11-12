@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import numpy as np
 from redis import StrictRedis
 from threading import Thread, Semaphore
 
@@ -10,6 +11,7 @@ class RedisInterface:
     try:
       self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta');
     except:
+      print("getting scripts failed", file = sys.stderr)
       self.setSHA = ''
     self.hostName = os.uname()[1]
     self.table = ""
@@ -20,7 +22,6 @@ class RedisInterface:
     self.Thread.start()
 
   def sendToRedis(self):
-#    print("sendToRedis started")
     wait = 0
     notifyWait = 0
     while True:
@@ -42,22 +43,30 @@ class RedisInterface:
         else:
           wait += 1
       else:
+        st = np.array2string(self.data, precision=1,\
+           max_line_width=5000)[1:-1]
+        size = len(self.data)
         try:
           self.db.evalsha(self.setSHA, '1', self.table, self.hostName, \
-              self.dataName,self.data, 'float32', '1')
-#              self.data, 'float32', '1', ts, self.hostName)
+              self.dataName, st, self.dataType, size)
           notifyWait = 0
-        except:
+        except Exception as inst:
+          print(type(inst))    # the exception instance
+          print(inst.args)     # arguments stored in .args
+          print(inst)          # __str__ allows args to be printed directly,
+                               # but may be overridden in exception subclasses
+#        except:
           if notifyWait >= 0:
-            sys.stderr.write("Unable to load redis macros\n")
+            sys.stderr.write("Sending data to Redis failed\n")
             sys.stderr.flush()
             notifyWait = -180
           else:
             notifyWait += 1
 
 
-  def send(self, table, dataName, data):
+  def send(self, table, dataName, data, dataType='float32'):
     self.table = table
     self.dataName = dataName
     self.data = data
+    self.dataType = dataType
     self.sem.release()
