@@ -27,7 +27,7 @@ class SendToRedis:
       dataType = typeNames[t]
     else:
       dataType = "UNK"
-    print("dataType = ", dataType, "t = ", t)
+#    print("dataType = ", dataType, "t = ", t)
     if t == list or t == tuple:
       d = np.array(data)
       t = np.ndarray
