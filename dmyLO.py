@@ -2,7 +2,7 @@ from time import sleep
 from redisPubSub import *
 
 # chan should be generated from the host name
-chan = "loa4"
+chan = "localhost"
 rps = RedisPubSubGet(channel = chan)
 
 # There will be a lot of setting up the LO here
