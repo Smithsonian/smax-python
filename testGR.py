@@ -2,5 +2,7 @@
 
 import numpy as np
 from getFromRedis import *
+key = "ScanningSpectrometers:t"
 
-gr = GetFromRedis()
+
+gr = GetFromRedis(server = '192.168.0.1')
