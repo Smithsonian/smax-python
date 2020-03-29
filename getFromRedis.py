@@ -64,3 +64,6 @@ class GetFromRedis:
       return(None,None,None,None,None,None)
     else:
       return(self.decode(dataPlusMeta))
+
+  def simpleGet(self, key, name):
+    return(self.db.hget(key, name).decode("utf-8"))
