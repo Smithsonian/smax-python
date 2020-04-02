@@ -88,3 +88,14 @@ class SendToRedis:
         self.notifyWait = -90
       else:
         self.notifyWait += 1
+
+# Set name under key to value where all are strings
+  def setHash(self, value, name, key):
+    self.db.hset(key, name, value)
+
+  def setHashesFromDict(self, dict, key):
+    for k in dict.keys():
+      print("Setting ",k ," to ", dict[k])
+#      self.setHash(dict[k], k, key)
+      self.db.hset(key, k, dict[k])
+    
