@@ -5,7 +5,7 @@ import os
 from redisPubSub import *
 
 # chan should be generated from the host name
-chan = "scanspec9:rxB:IF0"
+chan = "scanspec9:rxA:IF:0"
 rps = RedisPubSubSend(channel = chan, destination = chan)
 
 while True:
