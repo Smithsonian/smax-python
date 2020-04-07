@@ -95,7 +95,5 @@ class SendToRedis:
 
   def setHashesFromDict(self, dict, key):
     for k in dict.keys():
-      print("Setting ",k ," to ", dict[k])
-#      self.setHash(dict[k], k, key)
       self.db.hset(key, k, dict[k])
     
