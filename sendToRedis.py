@@ -44,7 +44,10 @@ class SendToRedis:
       st = np.array_str(d, precision=precision, suppress_small = suppress_small, \
           max_line_width=5000)[1:-1]
     elif dataType[0] != 'U':
-      st = str(d)
+      if type(precision) ==type(None):
+        st = str(d)
+      else:
+        st = str(round(d, precision))
       size = 1
     elif t == str:
       st = d
