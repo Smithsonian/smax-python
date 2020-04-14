@@ -1,7 +1,7 @@
 from redis import StrictRedis
 
 class RedisPubSubGet:
-  def __init__(self, channel = 'test1', server="192.168.0.1"):
+  def __init__(self, channel = 'test1', server="128.171.116.189"):
     self.redis = StrictRedis(host=server, port = 6379)
     self.channel = channel
     self.ps = self.redis.pubsub()
@@ -20,7 +20,7 @@ class RedisPubSubGet:
 #Server in Cambridge 192.168.0.1
 #Server in the SMA 128.171.116.189
 class RedisPubSubSend:
-  def __init__(self, channel, destination, server="192.168.0.1"):
+  def __init__(self, channel, destination, server="128.171.116.189"):
     self.redis = StrictRedis(host=server, port = 6379)
     self.channel = channel
     self.dest = destination
