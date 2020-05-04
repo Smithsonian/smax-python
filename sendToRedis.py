@@ -58,7 +58,7 @@ class SendToRedis:
       return("", "", 0)
     return(st, dataType, size)
 
-  def send(self, data, dataName = 'array', key = "_RWW_Test_", \
+  def send(self, key, dataName, data, \
         precision = None, suppress_small = None):
 
     if self.setSHA == None:
@@ -93,10 +93,10 @@ class SendToRedis:
         self.notifyWait += 1
 
 # Set name under key to value where all are strings
-  def setHash(self, value, name, key):
+  def setHash(self, key, name, value):
     self.db.hset(key, name, value)
 
-  def setHashesFromDict(self, dict, key):
+  def setHashesFromDict(self, key, dict):
     for k in dict.keys():
       self.db.hset(key, k, dict[k])
     
