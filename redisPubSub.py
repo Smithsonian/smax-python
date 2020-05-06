@@ -1,3 +1,4 @@
+import sys
 from redis import StrictRedis
 
 class RedisPubSubGet:
@@ -5,7 +6,11 @@ class RedisPubSubGet:
     self.redis = StrictRedis(host=server, port = 6379)
     self.channel = channel
     self.ps = self.redis.pubsub()
-    self.ps.subscribe(channel)
+    try:
+      self.ps.subscribe(channel, timeout = 5)
+    except:
+      print("Subscribe to ", channel, "failed", file = sys.stderr, flush = True)
+      return None
     
   def getMessage(self, timeout = 1000000.):
     while True:
