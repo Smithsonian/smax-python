@@ -7,10 +7,11 @@ class RedisPubSubGet:
     self.channel = channel
     self.ps = self.redis.pubsub()
     try:
-      self.ps.subscribe(channel, timeout = 5)
+      self.ps.subscribe(channel)
+      self.connected = True
     except:
       print("Subscribe to ", channel, "failed", file = sys.stderr, flush = True)
-      return None
+      self.connected = False
     
   def getMessage(self, timeout = 1000000.):
     while True:
