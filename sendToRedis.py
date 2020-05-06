@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import numpy as np
 from redis import StrictRedis
 
@@ -7,14 +8,15 @@ class SendToRedis:
   def __init__(self, server="128.171.116.189", progName = ""):
     self.db = StrictRedis(host=server, port=6379, db=0)
     try:
-      self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta');
+      self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta', timeout = 5);
     except:
-      print("getting scripts failed", file = sys.stderr)
+      print("Connecting to redis and getting scripts failed", \
+          file = sys.stderr, flush = True)
       self.setSHA = None
     self.hostName = os.uname()[1]
     if len(progName) > 0:
       self.hostName += ':'+progName
-    self.notifyWait = 0
+    self.notifyTime = 0
 
   def toString(self, data, precision = None, suppress_small = None):
 
@@ -62,15 +64,17 @@ class SendToRedis:
         precision = None, suppress_small = None):
 
     if self.setSHA == None:
-      if self.notifyWait >= 0:
+      if time.time() - self.notifyTime >= 600:
         try:
-          self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta')
+          self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta', \
+              timeout = 5)
         except:
-          self.notifyWait = -90
-          sys.stderr.write("Unable to load redis macros\n")
+          self.notifyTime = time.time()
+          sys.stderr.write("Unable to connect and load redis macros\n")
           sys.stderr.flush()
-        else:
-          self.notifyWait += 1
+          return(False)
+      else:
+          return(False)
 
     (st, dataType, size) = self.toString(data, precision = precision, \
           suppress_small = suppress_small)
@@ -79,24 +83,26 @@ class SendToRedis:
     try:
       self.db.evalsha(self.setSHA, '1', key, self.hostName, dataName, \
            st, dataType, size)
-      self.notifyWait = 0
+      self.notifyTime = 0
     except Exception as inst:
-      if self.notifyWait >= 0:
+      if time.time() - self.notifyTime >= 600:
         sys.stderr.write("Sending data to Redis failed\n")
         print(type(inst), file = sys.stderr)    # the exception instance
         print(inst.args, file = sys.stderr)     # arguments stored in .args
         print(inst, file = sys.stderr)          # __str__ allows args to be
           # printed directly, but may be overridden in exception subclasses
         sys.stderr.flush()
-        self.notifyWait = -90
-      else:
-        self.notifyWait += 1
+        self.notifyTime = time.time()
 
 # Set name under key to value where all are strings
   def setHash(self, key, name, value):
+    if self.setSHA == None:
+      return(False)
     self.db.hset(key, name, value)
 
   def setHashesFromDict(self, key, dict):
+    if self.setSHA == None:
+      return(False)
     for k in dict.keys():
       self.db.hset(key, k, dict[k])
     
