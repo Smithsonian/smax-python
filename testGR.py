@@ -9,5 +9,6 @@ if hostName == 'localhost':
 else:
   redisIP = "128.171.116.189"
 key = "ScanningSpectrometers:%c" % hostName[-1]
+key1 = "antenna:1:rxA:IF:0:scanspec"
 
 gr = GetFromRedis(server = redisIP)
