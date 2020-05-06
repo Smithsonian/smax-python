@@ -17,7 +17,7 @@ class SendToRedis:
     self.hostName = os.uname()[1]
     if len(progName) > 0:
       self.hostName += ':'+progName
-    self.notifyTime = 0
+    self.notifyTime = time.time()
 
   def toString(self, data, precision = None, suppress_small = None):
 
