@@ -83,8 +83,8 @@ class SendToRedis:
     try:
       self.db.evalsha(self.setSHA, '1', key, self.hostName, dataName, \
            st, dataType, size)
-      self.notifyTime = 0
     except Exception as inst:
+      self.sha = None
       if time.time() - self.notifyTime >= 600:
         sys.stderr.write("Sending data to Redis failed\n")
         print(type(inst), file = sys.stderr)    # the exception instance
@@ -98,11 +98,14 @@ class SendToRedis:
   def setHash(self, key, name, value):
     if self.setSHA == None:
       return(False)
-    self.db.hset(key, name, value)
+    try:
+      self.db.hset(key, name, value)
+    except:
+      self.setSHA = None
 
   def setHashesFromDict(self, key, dict):
-    if self.setSHA == None:
-      return(False)
     for k in dict.keys():
-      self.db.hset(key, k, dict[k])
+      if self.setSHA == None:
+        return(False)
+      self.setHash(key, k, dict[k])
     
