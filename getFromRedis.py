@@ -27,7 +27,7 @@ class GetFromRedis:
     else:
       print("I can't deal with data of type ", typeName, file = sys.stderr)
       return(None,None,None,None,None,None)
-    print("typeNmae = ", typeName, "dataType = ", dataType)
+#    print("typeNmae = ", typeName, "dataType = ", dataType)
     dataDim = tuple(int(s) for s in dataPlusMeta[2].decode("utf-8").split())
     if len(dataDim) == 1:
       dataDim = dataDim[0]
@@ -49,7 +49,7 @@ class GetFromRedis:
         d = d.reshape(dataDim)
     return((d, typeName, dataDim, dataDate, source, sequence))
   
-  def get(self, dataName = 'array', key = "_RWW_Test_"):
+  def get(self, key, dataName):
     try:
       dataPlusMeta = self.db.evalsha(self.getSHA, '1',key, dataName)
     except Exception as inst:
