@@ -41,6 +41,6 @@ class RedisPubSubSend:
       if type(m) == dict and m['type'] == 'message':
         return(m['data'].decode("utf-8"))
 
-  def sendCommand(self, cmd, args):
-    message = self.dest+'\n'+cmd+'\n'+args
+  def sendCommand(self, cmd):
+    message = self.dest+'\n'+cmd
     self.redis.publish(self.channel, message)
