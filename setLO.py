@@ -6,9 +6,9 @@ from redisPubSub import *
 
 # chan should be generated from the host name
 #chan = os.uname()[1].split(".")[0]
-chan = "loa1"
-hostname = os.uname()[1]
-rps = RedisPubSubSend(channel = chan, destination = chan)
+chan = "antenna:1:loA:pol0"
+#hostname = os.uname()[1]
+rps = RedisPubSubSend(channel = chan, destination = "setLO", server = "192.168.0.1")
 
 while True:
   inp = input("Enter command arg1,arg2.. >").split()
