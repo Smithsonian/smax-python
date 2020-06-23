@@ -8,8 +8,8 @@ class SendToRedis:
   def __init__(self, server="128.171.116.189", progName = ""):
     self.db = StrictRedis(host=server, port=6379, db=0)
     try:
-#      self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta', timeout = 50);
-      self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta');
+#      self.setSHA = self.db.hget('scripts', 'HSetWithMeta', timeout = 50);
+      self.setSHA = self.db.hget('scripts', 'HSetWithMeta');
     except:
       print("Connecting to redis and getting scripts failed", \
           file = sys.stderr, flush = True)
@@ -67,7 +67,7 @@ class SendToRedis:
     if self.setSHA == None:
       if time.time() - self.notifyTime >= 600:
         try:
-          self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta')
+          self.setSHA = self.db.hget('scripts', 'HSetWithMeta')
         except:
           self.notifyTime = time.time()
           sys.stderr.write("Unable to connect and load redis macros\n")

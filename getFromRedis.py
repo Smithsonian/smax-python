@@ -7,7 +7,7 @@ class GetFromRedis:
   def __init__(self, server="128.171.116.189"):
     self.db = StrictRedis(host=server, port=6379, db=0)
     try:
-      self.getSHA = self.db.hget('persistent:scripts', 'HGetWithMeta')
+      self.getSHA = self.db.hget('scripts', 'HGetWithMeta')
     except:
       print("getting scripts failed", file = sys.stderr)
       self.getSHA = None
