@@ -1,6 +1,6 @@
-from setuptools import setup
-setup(
+import setuptools
+setuptools.setup(
     name="smax",
     version="0.1",
-    packages=["smax"]
+    packages=setuptools.find_packages()
 )
