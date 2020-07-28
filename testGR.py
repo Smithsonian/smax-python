@@ -1,8 +1,6 @@
 #!/usr/bin/python3 -i
 
-import os
-import numpy as np
-from getFromRedis import *
+from smax.getFromRedis import *
 hostName = os.uname()[1]
 #if hostName == 'loa0':
 #  redisIP = "192.168.0.1"

@@ -1,8 +1,5 @@
 #! /usr/bin/python3
-from time import sleep
-import readline
-import os
-from redisPubSub import *
+from smax.redisPubSub import *
 
 # chan should be generated from the host name
 chan = "scanspec9:rxA:IF:0"

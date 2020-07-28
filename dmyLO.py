@@ -1,5 +1,5 @@
 from time import sleep
-from redisPubSub import *
+from smax.redisPubSub import *
 
 # chan should be generated from the host name
 chan = "localhost"
