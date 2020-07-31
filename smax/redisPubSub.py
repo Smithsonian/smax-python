@@ -1,3 +1,7 @@
+"""
+Python routines for sending or receiving commands or messages
+using redisPubSub
+"""
 import sys
 from redis import StrictRedis
 
