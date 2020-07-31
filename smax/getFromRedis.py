@@ -1,3 +1,7 @@
+"""
+Python routines for retreiving data from redis with or without smax
+metadata.
+"""
 import os
 import sys
 import numpy as np
@@ -50,6 +54,12 @@ class GetFromRedis:
     return((d, typeName, dataDim, dataDate, source, sequence))
   
   def get(self, key, dataName):
+    """
+    Get data which was stored with the smax macro HSetWithMeta along
+    with the associated metadata.
+    The return will be the data, typeName, dataDimension(s), dataDate,
+    source of the data, and a sequence number.
+    """
     try:
       dataPlusMeta = self.db.evalsha(self.getSHA, '1',key, dataName)
     except Exception as inst:
@@ -66,4 +76,8 @@ class GetFromRedis:
       return(self.decode(dataPlusMeta))
 
   def simpleGet(self, key, name):
+    """
+    This will get data without any metadata whether that datum was
+    stored with the smax macro or not.
+    """
     return(self.db.hget(key, name).decode("utf-8"))

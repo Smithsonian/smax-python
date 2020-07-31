@@ -1,3 +1,6 @@
+"""
+Python routines for sending  data to redis with or without smax metadata.
+"""
 import os
 import sys
 import time
@@ -63,6 +66,14 @@ class SendToRedis:
 
   def send(self, key, dataName, data, \
         precision = None, suppress_small = None):
+    """
+    Send data to redis using the smax macro HSetWithMeta to include
+    metadata.  The metadata is typeName, dataDimension(s), dataDate,
+    source of the data, and a sequence number.  The first two are
+    determined from the data and the source from this computer's name
+    plus the program name if given when this class is instantiated.
+    Date and sequence number are added by the redis macro.
+    """
 
     if self.setSHA == None:
       if time.time() - self.notifyTime >= 600:
@@ -96,6 +107,9 @@ class SendToRedis:
 
 # Set name under key to value where all are strings
   def setHash(self, key, name, value):
+    """
+    Simply send data to redis without any metadata.
+    """
     if self.setSHA == None:
       return(False)
     try:
@@ -104,6 +118,10 @@ class SendToRedis:
       self.setSHA = None
 
   def setHashesFromDict(self, key, dict):
+    """
+    Send a sequence of data to redis based on a dictionary containing
+    data names indexing data values.  All go under the same key.
+    """
     for k in dict.keys():
       if self.setSHA == None:
         return(False)
