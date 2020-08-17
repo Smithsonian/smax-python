@@ -7,14 +7,14 @@ install: $(DIR) $(FILES)
 $(DIR):
 	mkdir -p $(DIR)
 
-$(DIR)/sendRedis.py: smax/sendRedis.py
-	cp sendRedis.py $(DIR)
+#$(DIR)/sendRedis.py: sendRedis.py
+#	cp sendRedis.py $(DIR)
 
 $(DIR)/redisPubSub.py: smax/redisPubSub.py
-	cp redisPubSub.py $(DIR)
+	cp smax/redisPubSub.py $(DIR)
 
 $(DIR)/sendToRedis.py: smax/sendToRedis.py
-	cp sendToRedis.py $(DIR)
+	cp smax/sendToRedis.py $(DIR)
 
 $(DIR)/getFromRedis.py: smax/getFromRedis.py
-	cp getFromRedis.py $(DIR)
+	cp smax/getFromRedis.py $(DIR)
