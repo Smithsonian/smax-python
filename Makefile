@@ -1,6 +1,5 @@
 DIR=/common/lib/python3
-FILES=$(DIR)/sendRedis.py $(DIR)/redisPubSub.py $(DIR)/sendToRedis.py \
-    $(DIR)/getFromRedis.py
+FILES=$(DIR)/redisPubSub.py $(DIR)/sendToRedis.py $(DIR)/getFromRedis.py
 
 install: $(DIR) $(FILES)
 
