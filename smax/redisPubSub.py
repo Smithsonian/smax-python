@@ -16,6 +16,21 @@ class RedisPubSubGet:
     except:
       print("Subscribe to ", channel, "failed", file = sys.stderr, flush = True)
       self.connected = False
+
+  def __enter__(self):
+        print('__enter__ called')
+        return self
+    
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+        if self.connected == True:
+          self.ps.unsubscribe()
+          self.connected = False
+          print("Unsubscribed to %s" % (self.channel))
+        print('__exit__ called')
+        if exc_type:
+            print(f'exc_type: {exc_type}')
+            print(f'exc_value: {exc_value}')
+            print(f'exc_traceback: {exc_traceback}')
     
   def getMessage(self, timeout = 1000000.):
     while True:
@@ -36,6 +51,27 @@ class RedisPubSubSend:
     self.dest = destination
     self.ps = self.redis.pubsub()
     self.ps.subscribe(channel+'->'+self.dest)
+    try:
+      self.ps.subscribe(channel+'->'+self.dest)
+      self.connected = True
+    except:
+      print("Subscribe to ", channel, "failed", file = sys.stderr, flush = True)
+      self.connected = False
+
+  def __enter__(self):
+        print('__enter__ called')
+        return self
+    
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+        if self.connected == True:
+          self.ps.unsubscribe()
+          self.connected = False
+          print("Unsubscribed to %s" % (self.channel))
+        print('__exit__ called')
+        if exc_type:
+            print(f'exc_type: {exc_type}')
+            print(f'exc_value: {exc_value}')
+            print(f'exc_traceback: {exc_traceback}')
     
   def getResponse(self, timeout = 1000.):
     while True:
