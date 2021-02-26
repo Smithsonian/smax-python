@@ -1,6 +1,9 @@
 """
 Python routines for sending or receiving commands or messages
 using redisPubSub
+In order to assure that the channels are unspbscribed when the program quits,
+instantiate these classes with something like:
+      with RedisPubSubGet(channel = chan, server = lo.redisServer) as rpsg:
 """
 import sys
 from redis import StrictRedis
