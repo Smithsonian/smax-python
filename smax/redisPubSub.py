@@ -18,7 +18,7 @@ class RedisPubSubGet:
       self.connected = False
 
   def __enter__(self):
-        print('__enter__ called')
+#        print('__enter__ called')
         return self
     
   def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -26,11 +26,11 @@ class RedisPubSubGet:
           self.ps.unsubscribe()
           self.connected = False
           print("Unsubscribed to %s" % (self.channel))
-        print('__exit__ called')
-        if exc_type:
-            print(f'exc_type: {exc_type}')
-            print(f'exc_value: {exc_value}')
-            print(f'exc_traceback: {exc_traceback}')
+#        print('__exit__ called')
+#        if exc_type:
+#            print(f'exc_type: {exc_type}')
+#            print(f'exc_value: {exc_value}')
+#            print(f'exc_traceback: {exc_traceback}')
     
   def getMessage(self, timeout = 1000000.):
     while True:
@@ -59,7 +59,7 @@ class RedisPubSubSend:
       self.connected = False
 
   def __enter__(self):
-        print('__enter__ called')
+#        print('__enter__ called')
         return self
     
   def __exit__(self, exc_type, exc_value, exc_traceback):
@@ -67,11 +67,11 @@ class RedisPubSubSend:
           self.ps.unsubscribe()
           self.connected = False
           print("Unsubscribed to %s" % (self.channel))
-        print('__exit__ called')
-        if exc_type:
-            print(f'exc_type: {exc_type}')
-            print(f'exc_value: {exc_value}')
-            print(f'exc_traceback: {exc_traceback}')
+#        print('__exit__ called')
+#        if exc_type:
+#            print(f'exc_type: {exc_type}')
+#            print(f'exc_value: {exc_value}')
+#            print(f'exc_traceback: {exc_traceback}')
     
   def getResponse(self, timeout = 1000.):
     while True:
