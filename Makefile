@@ -1,4 +1,4 @@
-DIR=/common/lib/python3
+DIR=/linuxarmCommon/lib/python3/
 FILES=$(DIR)/redisPubSub.py $(DIR)/sendToRedis.py $(DIR)/getFromRedis.py
 
 install: $(DIR) $(FILES)
