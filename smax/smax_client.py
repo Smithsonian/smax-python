@@ -27,7 +27,7 @@ class SmaxClient:
         self.notifyWait = 0
         self.notifyTime = time()
 
-    def get(self, key, data_name):
+    def pull(self, key, data_name):
         """
         Get data which was stored with the smax macro HSetWithMeta along
         with the associated metadata.
@@ -47,16 +47,16 @@ class SmaxClient:
         if dataPlusMeta[0] is None:
             return None, None, None, None, None, None
         else:
-            return decode(dataPlusMeta)
+            return _decode(dataPlusMeta)
 
-    def simple_get(self, key, name):
+    def pull_no_meta(self, key, name):
         """
         This will get data without any metadata whether that datum was
         stored with the smax macro or not.
         """
         return self.db.hget(key, name).decode("utf-8")
 
-    def send(self, key, data_name, data, precision=None, suppress_small=None):
+    def share(self, key, data_name, data, precision=None, suppress_small=None):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -78,7 +78,7 @@ class SmaxClient:
             else:
                 return False
 
-        st, dataType, size = to_string(data,
+        st, dataType, size = _to_string(data,
                                        precision=precision,
                                        suppress_small=suppress_small)
         if size == 0:
@@ -96,7 +96,7 @@ class SmaxClient:
                 sys.stderr.flush()
                 self.notifyTime = time()
 
-    def set_hash(self, key, name, value):
+    def share_no_meta(self, key, name, value):
         """
         Simply send data to redis without any metadata.
         """
@@ -107,7 +107,7 @@ class SmaxClient:
         except (ConnectionError, TimeoutError):
             self.setSHA = None
 
-    def set_hashes_from_dict(self, key, data_dict):
+    def share_from_dict(self, key, data_dict):
         """
         Send a sequence of data to redis based on a dictionary containing
         data names indexing data values.  All go under the same key.
@@ -115,11 +115,11 @@ class SmaxClient:
         for k in data_dict.keys():
             if self.setSHA is None:
                 return False
-            self.set_hash(key, k, data_dict[k])
+            self.share_no_meta(key, k, data_dict[k])
 
 
-# Static Functions for smax.
-def decode(data_plus_meta):
+# "Static" internal functions for smax.
+def _decode(data_plus_meta):
 
     nameTypes = {'integer': int,
                  'int16': np.int16,
@@ -160,7 +160,7 @@ def decode(data_plus_meta):
     return d, typeName, dataDim, dataDate, source, sequence
 
 
-def to_string(data, precision=None, suppress_small=None):
+def _to_string(data, precision=None, suppress_small=None):
     typeNames = {int: 'integer',
                  np.int16: 'int16',
                  np.int32: 'int32',
