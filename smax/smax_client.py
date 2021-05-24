@@ -1,208 +1,134 @@
-import os
-import sys
-from time import time
-import numpy as np
-from redis import StrictRedis, ConnectionError, TimeoutError
+from abc import ABC, abstractmethod
+from collections import namedtuple
 
 
-class SmaxClient:
-    """
-    Combined class for both sending and getting data from redis.
-    """
-    def __init__(self, host="128.171.116.189", port=6379, db=0, prog_name=""):
-        self.db = StrictRedis(host=host, port=port, db=db)
-        try:
-            self.getSHA = self.db.hget('scripts', 'HGetWithMeta')
-            self.setSHA = self.db.hget('scripts', 'HSetWithMeta')
-        except (ConnectionError, TimeoutError):
-            print("Connecting to redis and getting scripts failed",
-                  file=sys.stderr, flush=True)
-            self.getSHA = None
-            self.setSHA = None
-        self.hostName = os.uname()[1]
-
-        if len(prog_name) > 0:
-            self.hostName += ':' + prog_name
-
-        self.notifyWait = 0
-        self.notifyTime = time()
-
-    def pull(self, key, data_name):
-        """
-        Get data which was stored with the smax macro HSetWithMeta along
-        with the associated metadata.
-        The return will be the data, typeName, dataDimension(s), dataDate,
-        source of the data, and a sequence number.
-        """
-        try:
-            dataPlusMeta = self.db.evalsha(self.getSHA, '1', key, data_name)
-        except Exception as inst:
-            print("Reading %s from Redis failed" % data_name, file=sys.stderr)
-            print(type(inst), file=sys.stderr)  # the exception instance
-            print(inst.args, file=sys.stderr)  # arguments stored in .args
-            print(inst, file=sys.stderr)  # __str__ allows args to be
-            # printed directly, but may be overridden in exception subclasses
-            sys.stderr.flush()
-            return None, None, None, None, None, None
-        if dataPlusMeta[0] is None:
-            return None, None, None, None, None, None
-        else:
-            return _decode(dataPlusMeta)
-
-    def pull_no_meta(self, key, name):
-        """
-        This will get data without any metadata whether that datum was
-        stored with the smax macro or not.
-        """
-        return self.db.hget(key, name).decode("utf-8")
-
-    def share(self, key, data_name, data, precision=None, suppress_small=None):
-        """
-        Send data to redis using the smax macro HSetWithMeta to include
-        metadata.  The metadata is typeName, dataDimension(s), dataDate,
-        source of the data, and a sequence number.  The first two are
-        determined from the data and the source from this computer's name
-        plus the program name if given when this class is instantiated.
-        Date and sequence number are added by the redis macro.
-        """
-
-        if self.setSHA is None:
-            if time() - self.notifyTime >= 600:
-                try:
-                    self.setSHA = self.db.hget('scripts', 'HSetWithMeta')
-                except (ConnectionError, TimeoutError):
-                    self.notifyTime = time()
-                    sys.stderr.write("Unable to connect and load redis macros\n")
-                    sys.stderr.flush()
-                    return False
-            else:
-                return False
-
-        st, dataType, size = _to_string(data,
-                                       precision=precision,
-                                       suppress_small=suppress_small)
-        if size == 0:
-            return False
-        try:
-            self.db.evalsha(self.setSHA, '1', key, self.hostName, data_name,
-                            st, dataType, size)
-        except Exception as inst:
-            if time() - self.notifyTime >= 600:
-                sys.stderr.write("Sending data to Redis failed\n")
-                print(type(inst), file=sys.stderr)  # the exception instance
-                print(inst.args, file=sys.stderr)  # arguments stored in .args
-                print(inst, file=sys.stderr)  # __str__ allows args to be
-                # printed directly, but may be overridden in exception subclasses
-                sys.stderr.flush()
-                self.notifyTime = time()
-
-    def share_no_meta(self, key, name, value):
-        """
-        Simply send data to redis without any metadata.
-        """
-        if self.setSHA is None:
-            return False
-        try:
-            self.db.hset(key, name, value)
-        except (ConnectionError, TimeoutError):
-            self.setSHA = None
-
-    def share_from_dict(self, key, data_dict):
-        """
-        Send a sequence of data to redis based on a dictionary containing
-        data names indexing data values.  All go under the same key.
-        """
-        for k in data_dict.keys():
-            if self.setSHA is None:
-                return False
-            self.share_no_meta(key, k, data_dict[k])
+# Named tuple for data and metadata returned from smax.
+SmaxData = namedtuple("SmaxData", "data type dim date source seq")
 
 
-# "Static" internal functions for smax.
-def _decode(data_plus_meta):
+class SmaxClient(ABC):
 
-    nameTypes = {'integer': int,
-                 'int16': np.int16,
-                 'int32': np.int32,
-                 'int64': np.int64,
-                 'int8': np.int8,
-                 'float': float,
-                 'float32': np.float32,
-                 'float64': np.float64,
-                 'str': str}
+    def __init__(self, *args, **kwargs):
+        self.client = self.smax_connect_to(*args, **kwargs)
 
-    typeName = data_plus_meta[1].decode("utf-8")
-    if typeName in nameTypes:
-        dataType = nameTypes[typeName]
-    else:
-        print("I can't deal with data of type ", typeName, file=sys.stderr)
-        return None, None, None, None, None, None
+    def __enter__(self, *args, **kwargs):
+        return self
 
-    dataDim = tuple(int(s) for s in data_plus_meta[2].decode("utf-8").split())
-    if len(dataDim) == 1:
-        dataDim = dataDim[0]
-    dataDate = float(data_plus_meta[3])
-    source = data_plus_meta[4].decode("utf-8")
-    sequence = int(data_plus_meta[5])
-    if dataType == str:
-        return data_plus_meta[0], dataType, dataDim, dataDate, source, sequence
-    elif dataDim == 1:  # single datum
-        if dataType == str:
-            d = data_plus_meta[0].decode("utf-8")
-        else:
-            d = dataType(data_plus_meta[0])
-        return d, typeName, dataDim, dataDate, source, sequence
-    else:  # this is some kind of array
-        d = tuple(float(s) for s in data_plus_meta[0].decode("utf-8").split())
-        d = np.array(d, dtype=dataType)
-        if type(dataDim) == tuple:  # n-d array
-            d = d.reshape(dataDim)
-    return d, typeName, dataDim, dataDate, source, sequence
+    def __exit__(self, *args, **kwargs):
+        return self.smax_disconnect()
 
+    @abstractmethod
+    def smax_connect_to(self, *args, **kwargs):
+        pass
 
-def _to_string(data, precision=None, suppress_small=None):
-    typeNames = {int: 'integer',
-                 np.int16: 'int16',
-                 np.int32: 'int32',
-                 np.int64: 'int64',
-                 np.int8: 'int8',
-                 float: 'float',
-                 np.float32: 'float32',
-                 np.float64: 'float64'}
+    @abstractmethod
+    def smax_disconnect(self):
+        pass
 
-    t = type(data)
-    if t in typeNames:
-        dataType = typeNames[t]
-    else:
-        dataType = "UNK"
-    if t == list or t == tuple:
-        d = np.array(data)
-        t = np.ndarray
-    else:
-        d = data
-    if t == np.ndarray:
-        dataType = d.dtype.name
-        s = d.shape
-        if len(s) == 1:
-            size = s[0]
-        else:
-            d = d.flatten()
-            size = " ".join(str(i) for i in s)
-        st = np.array_str(d, precision=precision,
-                          suppress_small=suppress_small,
-                          max_line_width=5000)[1:-1]
-    elif dataType[0] != 'U':
-        if precision is None:
-            st = str(d)
-        else:
-            st = str(round(d, precision))
-        size = 1
-    elif t == str:
-        st = d
-        size = len(st)
-        dataType = 'str'
-    else:
-        print("I don't know how to send " + str(t) + "to redis",
-              file=sys.stderr)
-        return "", "", 0
-    return st, dataType, size
+    @abstractmethod
+    def smax_pull(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_share(self, table, key, value):
+        pass
+
+    @abstractmethod
+    def smax_lazy_pull(self, table, key, value):
+        pass
+
+    @abstractmethod
+    def smax_lazy_end(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_subscribe(self, pattern, key):
+        pass
+
+    @abstractmethod
+    def smax_unsubscribe(self, pattern, key):
+        pass
+
+    @abstractmethod
+    def smax_wait_on_subscribed(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_wait_on_subscribed_group(self, match_table, changed_key):
+        pass
+
+    @abstractmethod
+    def smax_wait_on_subscribed_var(self, matchKey, changed_table):
+        pass
+
+    @abstractmethod
+    def smax_wait_on_any_subscribed(self, changed_table, changed_key):
+        pass
+
+    @abstractmethod
+    def smax_release_waits(self, pattern, key):
+        pass
+
+    @abstractmethod
+    def smax_queue(self, table, key, value, meta):
+        pass
+
+    @abstractmethod
+    def smax_queue_callback(self, function, *args):
+        pass
+
+    @abstractmethod
+    def smax_create_sync_point(self):
+        pass
+
+    @abstractmethod
+    def smax_sync(self, sync_point, timeout_millis):
+        pass
+
+    @abstractmethod
+    def smax_wait_queue_complete(self, timeout_millis):
+        pass
+
+    @abstractmethod
+    def smax_set_description(self, table, key, description):
+        pass
+
+    @abstractmethod
+    def smax_get_description(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_set_units(self, table, key, unit):
+        pass
+
+    @abstractmethod
+    def smax_get_units(self, table, key, unit):
+        pass
+
+    @abstractmethod
+    def smax_set_coordinate_system(self, table, key, coordinate_system):
+        pass
+
+    @abstractmethod
+    def smax_get_coordinate_system(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_create_coordinate_system(self, n_axis):
+        pass
+
+    @abstractmethod
+    def smax_push_meta(self, meta, table, key, value):
+        pass
+
+    @abstractmethod
+    def smax_pull_meta(self, table, key):
+        pass
+
+    @abstractmethod
+    def smax_set_resilient(self, value):
+        pass
+
+    @abstractmethod
+    def smax_is_resilient(self):
+        pass
