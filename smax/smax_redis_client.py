@@ -13,7 +13,7 @@ class SmaxRedisClient(SmaxClient):
                  program_name=None, hostname=None):
         """
         Constructor for SmaxRedisClient, automatically establishes connection
-        and sets the redis-py connection object to 'self.client'. This magic
+        and sets the redis-py connection object to 'self._client'. This magic
         happens in the SmaxClient parent class that is inherited.
         :param str redis_ip: IP address of redis-server.
         :param str redis_port: Port of redis-server.
@@ -66,8 +66,8 @@ class SmaxRedisClient(SmaxClient):
         release the connection, this disconnect function will do it.
         """
 
-        if self.client.connection:
-            self.client.connection.disconnect()
+        if self._client.connection:
+            self._client.connection.disconnect()
         logging.info(f"Disconnected redis server {self.redis_ip}:{self.redis_port} db={self.redis_db}")
 
     def smax_pull(self, table, key):
@@ -81,7 +81,7 @@ class SmaxRedisClient(SmaxClient):
         :rtype: SmaxData
         """
         try:
-            lua_data = self.client.evalsha(self.getSHA, '1', table, key)
+            lua_data = self._client.evalsha(self.getSHA, '1', table, key)
         except (ConnectionError, TimeoutError):
             logging.error(f"Reading {table}:{key} from Redis failed")
             raise
@@ -102,12 +102,60 @@ class SmaxRedisClient(SmaxClient):
         :return: tuple of (converted string of data, type, size) that was sent to redis.
         """
 
-        data_string, data_type, size = _to_smax_format(value)
+        # Derive the type according to Python.
+        python_type = type(value)
 
+        # If this is a single value of a supported type, convert to string and return.
+        if python_type in _REVERSE_TYPE_MAP:
+            type_name = _REVERSE_TYPE_MAP[python_type]
+            return self._evalsha_set(table, key, str(value), type_name, 1)
+
+        # If python type is list or tuple, first convert to numpy array.
+        converted_data = None
+        if python_type == list or python_type == tuple:
+            converted_data = np.array(value)
+            python_type = np.ndarray
+
+        # Now if its a numpy array, flatten, convert to a string, and return.
+        if python_type == np.ndarray:
+            type_name = converted_data.dtype.name
+
+            # For some reason, numpy returns an str160/str128 type on some platforms.
+            if "str" in type_name:
+                type_name = "str"
+
+            # If the shape is a single dimension, set 'size' equal to that value.
+            data_shape = converted_data.shape
+            if len(data_shape) == 1:
+                size = data_shape[0]
+
+            # Otherwise, flatten and make a space delimited string of dimensions.
+            else:
+                converted_data = converted_data.flatten()
+                size = " ".join(str(i) for i in data_shape)
+
+            # Create a string representation of the data in the array.
+            converted_data = np.array_str(converted_data, max_line_width=5000)[1:-1]
+            return self._evalsha_set(table, key, converted_data, type_name, size)
+
+        else:
+            raise TypeError(f"I don't know how to convert {python_type} for SMAX")
+
+    def _evalsha_set(self, table, key, data_string, type_name, size):
+        """
+        Private function to make a call to redis evalsha using the setSHA LUA script.
+        :param str table: SMAX table name
+        :param str key: SMAX key name
+        :param str data_string: Single data value that has been already converted to proper SMAX string format.
+        :param str type_name: String representation of type
+        :param size: Representation of the dimensions of the data. If one dimension, than a single integer.
+                     Otherwise will be a string of space delimited dimension values.
+        :return: tuple of (converted string of data, type, size) that was sent to redis.
+        """
         try:
-            self.client.evalsha(self.setSHA, '1', table, self.hostname, key,
-                                data_string, data_type, size)
-            return data_string, data_type, size
+            self._client.evalsha(self.setSHA, '1', table, self.hostname, key,
+                                 data_string, type_name, size)
+            return data_string, type_name, size
         except (ConnectionError, TimeoutError):
             logging.error("Redis seems down, unable to call the setSHA LUA script.")
             raise
@@ -228,48 +276,6 @@ def _decode(data_plus_meta):
             data = data.reshape(data_dim)
 
     return SmaxData(data, type_name, data_dim, data_date, source, sequence)
-
-
-def _to_smax_format(data):
-    # Derive the type according to Python.
-    python_type = type(data)
-
-    # If this is a single value of a supported type, convert to string and return.
-    if python_type in _REVERSE_TYPE_MAP:
-        type_name = _REVERSE_TYPE_MAP[python_type]
-        return str(data), type_name, 1
-
-    # If python type is list or tuple, first convert to numpy array.
-    converted_data = None
-    if python_type == list or python_type == tuple:
-        converted_data = np.array(data)
-        python_type = np.ndarray
-
-    # Now if its a numpy array, flatten, convert to a string, and return.
-    if python_type == np.ndarray:
-        type_name = converted_data.dtype.name
-
-        # For some reason, numpy returns an str160 type on some platforms.
-        if type_name == "str160":
-            type_name = "str"
-
-        data_shape = converted_data.shape
-
-        # If the shape is a single dimension, set 'size' equal to that value.
-        if len(data_shape) == 1:
-            size = data_shape[0]
-
-        # Otherwise, flatten and make a space delimited string of dimensions.
-        else:
-            converted_data = converted_data.flatten()
-            size = " ".join(str(i) for i in data_shape)
-
-        # Create a string representation of the data in the array.
-        converted_data = np.array_str(converted_data, max_line_width=5000)[1:-1]
-        return converted_data, type_name, size
-
-    else:
-        raise TypeError(f"I don't know how to convert {python_type} for SMAX")
 
 
 # Lookup tables for converting python types to smax type names.

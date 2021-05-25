@@ -9,7 +9,7 @@ SmaxData = namedtuple("SmaxData", "data type dim date source seq")
 class SmaxClient(ABC):
 
     def __init__(self, *args, **kwargs):
-        self.client = self.smax_connect_to(*args, **kwargs)
+        self._client = self.smax_connect_to(*args, **kwargs)
 
     def __enter__(self, *args, **kwargs):
         return self
