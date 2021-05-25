@@ -1,6 +1,5 @@
+import logging
 import os
-import sys
-from time import time
 
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
@@ -12,15 +11,23 @@ class SmaxRedisClient(SmaxClient):
 
     def __init__(self, redis_ip="128.171.116.189", redis_port=6379, redis_db=0,
                  program_name=None, hostname=None):
+        """
+        Constructor for SmaxRedisClient, automatically establishes connection
+        and sets the redis-py connection object to 'self.client'. This magic
+        happens in the SmaxClient parent class that is inherited.
+        :param str redis_ip: IP address of redis-server.
+        :param str redis_port: Port of redis-server.
+        :param int redis_db: Database index to connect to.
+        :param str program_name: Optional program name to be appended to hostname.
+        :param str hostname: Optional hostname, obtained automatically otherwise.
+        """
         self.redis_ip = redis_ip
         self.redis_port = redis_port
         self.redis_db = redis_db
         self.getSHA = None
         self.setSHA = None
-        self.notify_wait = 0
-        self.notify_time = time()
 
-        # Obtain hostname automatically, unless 'hostname' argument is used.
+        # Obtain hostname automatically, unless 'hostname' argument is passed.
         self.hostname = os.uname()[1] if hostname is None else hostname
 
         # Optionally add a program name into the hostname.
@@ -31,49 +38,57 @@ class SmaxRedisClient(SmaxClient):
         super().__init__(redis_ip, redis_port, redis_db)
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
+        """
+        Uses the redis-py library to establish a connection to redis, then
+        obtains and stores the LUA scripts in the object (ex self.getSHA). This
+        function is called automatically by the SmaxClient parent class, so
+        there shouldn't be a need to call this explicitly.
+        :param str redis_ip: IP address of redis-server.
+        :param str redis_port: Port of redis-server.
+        :param int redis_db: Database index to connect to.
+        :return: Redis connection object
+        :rtype: Redis
+        """
         try:
             # Connect to redis-server, and store LUA scripts on the object.
             redis_db = StrictRedis(host=redis_ip, port=redis_port, db=redis_db)
             self.getSHA = redis_db.hget('scripts', 'HGetWithMeta')
             self.setSHA = redis_db.hget('scripts', 'HSetWithMeta')
+            logging.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_db
         except (ConnectionError, TimeoutError):
-            print("Connecting to redis and getting scripts failed",
-                  file=sys.stderr, flush=True)
+            logging.error("Connecting to redis and getting scripts failed")
             raise
 
     def smax_disconnect(self):
-        # Python manages a connection pool automatically, if somehow that fails
-        # release the connection, this disconnect function will do it.
+        """
+        Python manages a connection pool automatically, if somehow that fails
+        release the connection, this disconnect function will do it.
+        """
+
         if self.client.connection:
             self.client.connection.disconnect()
+        logging.info(f"Disconnected redis server {self.redis_ip}:{self.redis_port} db={self.redis_db}")
 
     def smax_pull(self, table, key):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
         the associated metadata. The return will be the data, typeName,
         dataDimension(s), dataDate, source of the data, and a sequence number.
-        :param table: SMAX table name
-        :param key: SMAX key name
-        :return: SmaxData object: (data, type, dimension(s), date, source, sequence)
+        :param str table: SMAX table name
+        :param str key: SMAX key name
+        :return: SmaxData tuple data, type, dimension(s), date, source, sequence
+        :rtype: SmaxData
         """
         try:
             lua_data = self.client.evalsha(self.getSHA, '1', table, key)
+        except (ConnectionError, TimeoutError):
+            logging.error(f"Reading {table}:{key} from Redis failed")
+            raise
 
-        except Exception as inst:
-            print("Reading %s from Redis failed" % key, file=sys.stderr)
-            print(type(inst), file=sys.stderr)  # the exception instance
-            print(inst.args, file=sys.stderr)  # arguments stored in .args
-            print(inst, file=sys.stderr)  # __str__ allows args to be
-            # printed directly, but may be overridden in exception subclasses
-            sys.stderr.flush()
-            return SmaxData(None, None, None, None, None, None)
-        if lua_data[0] is None:
-            return SmaxData(None, None, None, None, None, None)
-        else:
-            return _decode(lua_data)
+        return _decode(lua_data)
 
-    def smax_share(self, table, key, value, precision=None, suppress_small=None):
+    def smax_share(self, table, key, value):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -81,37 +96,21 @@ class SmaxRedisClient(SmaxClient):
         determined from the data and the source from this computer's name
         plus the program name if given when this class is instantiated.
         Date and sequence number are added by the redis macro.
+        :param str table: SMAX table name
+        :param str key: SMAX key name
+        :param value: data to store in smax, can be any defined type, list, array, or numpy array.
+        :return: tuple of (converted string of data, type, size) that was sent to redis.
         """
 
-        if self.setSHA is None:
-            if time() - self.notify_time >= 600:
-                try:
-                    self.setSHA = self.client.hget('scripts', 'HSetWithMeta')
-                except (ConnectionError, TimeoutError):
-                    self.notify_time = time()
-                    sys.stderr.write("Unable to connect and load redis macros\n")
-                    sys.stderr.flush()
-                    return False
-            else:
-                return False
+        data_string, data_type, size = _to_smax_format(value)
 
-        data_string, data_type, size = _to_string(value,
-                                                  precision=precision,
-                                                  suppress_small=suppress_small)
-        if size == 0:
-            return False
         try:
             self.client.evalsha(self.setSHA, '1', table, self.hostname, key,
                                 data_string, data_type, size)
-        except Exception as inst:
-            if time() - self.notify_time >= 600:
-                sys.stderr.write("Sending data to Redis failed\n")
-                print(type(inst), file=sys.stderr)  # the exception instance
-                print(inst.args, file=sys.stderr)  # arguments stored in .args
-                print(inst, file=sys.stderr)  # __str__ allows args to be
-                # printed directly, but may be overridden in exception subclasses
-                sys.stderr.flush()
-                self.notify_time = time()
+            return data_string, data_type, size
+        except (ConnectionError, TimeoutError):
+            logging.error("Redis seems down, unable to call the setSHA LUA script.")
+            raise
 
     def smax_lazy_pull(self, table, key, value):
         pass
@@ -131,7 +130,7 @@ class SmaxRedisClient(SmaxClient):
     def smax_wait_on_subscribed_group(self, match_table, changed_key):
         pass
 
-    def smax_wait_on_subscribed_var(self, matchKey, changed_table):
+    def smax_wait_on_subscribed_var(self, match_key, changed_table):
         pass
 
     def smax_wait_on_any_subscribed(self, changed_table, changed_key):
@@ -191,74 +190,89 @@ class SmaxRedisClient(SmaxClient):
 
 # "Static" internal functions for smax.
 def _decode(data_plus_meta):
+    # Extract the type out of the meta data, and map string to real type object.
     type_name = data_plus_meta[1].decode("utf-8")
     if type_name in _TYPE_MAP:
         data_type = _TYPE_MAP[type_name]
     else:
-        print("I can't deal with data of type ", type_name, file=sys.stderr)
-        return SmaxData(None, None, None, None, None, None)
+        raise TypeError(f"I can't deal with data of type {type_name}")
 
+    # Extract dimension information from meta data.
     data_dim = tuple(int(s) for s in data_plus_meta[2].decode("utf-8").split())
+
+    # If only one dimension convert to a single value (rather than list)
     if len(data_dim) == 1:
         data_dim = data_dim[0]
+
+    # Extract data, source and sequence from meta data.
     data_date = float(data_plus_meta[3])
     source = data_plus_meta[4].decode("utf-8")
     sequence = int(data_plus_meta[5])
-    if data_type == str:
-        return SmaxData(data_plus_meta[0], data_type, data_dim, data_date, source, sequence)
-    elif data_dim == 1:  # single datum
+
+    # If there is only a single value, decode and return.
+    if data_dim == 1:
         if data_type == str:
-            d = data_plus_meta[0].decode("utf-8")
+            data = data_plus_meta[0].decode("utf-8")
         else:
-            d = data_type(data_plus_meta[0])
-        return SmaxData(d, type_name, data_dim, data_date, source, sequence)
-    else:  # this is some kind of array
-        d = tuple(float(s) for s in data_plus_meta[0].decode("utf-8").split())
-        d = np.array(d, dtype=data_type)
+            data = data_type(data_plus_meta[0])
+
+    # If type data type is a string, return the data as-is. 
+    elif data_type == str:
+        data = data_type(data_plus_meta[0])
+
+    # This is some kind of array.
+    else:
+        data = tuple(float(s) for s in data_plus_meta[0].decode("utf-8").split())
+        data = np.array(data, dtype=data_type)
         if type(data_dim) == tuple:  # n-d array
-            d = d.reshape(data_dim)
+            data = data.reshape(data_dim)
 
-    return SmaxData(d, type_name, data_dim, data_date, source, sequence)
+    return SmaxData(data, type_name, data_dim, data_date, source, sequence)
 
 
-def _to_string(data, precision=None, suppress_small=None):
+def _to_smax_format(data):
+    # Derive the type according to Python.
+    python_type = type(data)
 
-    t = type(data)
-    if t in _REVERSE_TYPE_MAP:
-        data_type = _REVERSE_TYPE_MAP[t]
-    else:
-        data_type = "UNK"
-    if t == list or t == tuple:
-        d = np.array(data)
-        t = np.ndarray
-    else:
-        d = data
-    if t == np.ndarray:
-        data_type = d.dtype.name
-        s = d.shape
-        if len(s) == 1:
-            size = s[0]
+    # If this is a single value of a supported type, convert to string and return.
+    if python_type in _REVERSE_TYPE_MAP:
+        type_name = _REVERSE_TYPE_MAP[python_type]
+        return str(data), type_name, 1
+
+    # If python type is list or tuple, first convert to numpy array.
+    converted_data = None
+    if python_type == list or python_type == tuple:
+        converted_data = np.array(data)
+        python_type = np.ndarray
+
+    # Now if its a numpy array, flatten, convert to a string, and return.
+    if python_type == np.ndarray:
+        type_name = converted_data.dtype.name
+
+        # For some reason, numpy returns an str160 type on some platforms.
+        if type_name == "str160":
+            type_name = "str"
+
+        data_shape = converted_data.shape
+
+        # If the shape is a single dimension, set 'size' equal to that value.
+        if len(data_shape) == 1:
+            size = data_shape[0]
+
+        # Otherwise, flatten and make a space delimited string of dimensions.
         else:
-            d = d.flatten()
-            size = " ".join(str(i) for i in s)
-        st = np.array_str(d, precision=precision, suppress_small=suppress_small,
-                          max_line_width=5000)[1:-1]
-    elif data_type[0] != 'U':
-        if precision is None:
-            st = str(d)
-        else:
-            st = str(round(d, precision))
-        size = 1
-    elif t == str:
-        st = d
-        size = len(st)
-        data_type = 'str'
+            converted_data = converted_data.flatten()
+            size = " ".join(str(i) for i in data_shape)
+
+        # Create a string representation of the data in the array.
+        converted_data = np.array_str(converted_data, max_line_width=5000)[1:-1]
+        return converted_data, type_name, size
+
     else:
-        print("I don't know how to send " + str(t) + "to redis", file=sys.stderr)
-        return "", "", 0
-    return st, data_type, size
+        raise TypeError(f"I don't know how to convert {python_type} for SMAX")
 
 
+# Lookup tables for converting python types to smax type names.
 _TYPE_MAP = {'integer': int,
              'int16': np.int16,
              'int32': np.int32,
@@ -267,5 +281,7 @@ _TYPE_MAP = {'integer': int,
              'float': float,
              'float32': np.float32,
              'float64': np.float64,
-             'str': str}
+             'str': str,
+             'str128': str,
+             'str160': str}
 _REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
