@@ -18,21 +18,26 @@ class SmaxRedisClient(SmaxClient):
         :param str redis_ip: IP address of redis-server.
         :param str redis_port: Port of redis-server.
         :param int redis_db: Database index to connect to.
-        :param str program_name: Optional program name to be appended to hostname.
+        :param str program_name: Optional program name gets appended to hostname.
         :param str hostname: Optional hostname, obtained automatically otherwise.
         """
-        self.redis_ip = redis_ip
-        self.redis_port = redis_port
-        self.redis_db = redis_db
-        self.getSHA = None
-        self.setSHA = None
 
-        # Obtain hostname automatically, unless 'hostname' argument is passed.
-        self.hostname = os.uname()[1] if hostname is None else hostname
+        # Logging convention for messages to have module names in them.
+        self.logger = logging.getLogger(__name__)
 
-        # Optionally add a program name into the hostname.
+        # Attributes for package, not exposed to users.
+        self._redis_ip = redis_ip
+        self._redis_port = redis_port
+        self._redis_db = redis_db
+        self._getSHA = None
+        self._setSHA = None
+
+        # Obtain _hostname automatically, unless '_hostname' argument is passed.
+        self._hostname = os.uname()[1] if hostname is None else hostname
+
+        # Optionally add a program name into the _hostname.
         if program_name is not None:
-            self.hostname += ':' + program_name
+            self._hostname += ':' + program_name
 
         # Call parent constructor, which calls smax_connect_to().
         super().__init__(redis_ip, redis_port, redis_db)
@@ -40,7 +45,7 @@ class SmaxRedisClient(SmaxClient):
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
         """
         Uses the redis-py library to establish a connection to redis, then
-        obtains and stores the LUA scripts in the object (ex self.getSHA). This
+        obtains and stores the LUA scripts in the object (ex self._getSHA). This
         function is called automatically by the SmaxClient parent class, so
         there shouldn't be a need to call this explicitly.
         :param str redis_ip: IP address of redis-server.
@@ -51,13 +56,13 @@ class SmaxRedisClient(SmaxClient):
         """
         try:
             # Connect to redis-server, and store LUA scripts on the object.
-            redis_db = StrictRedis(host=redis_ip, port=redis_port, db=redis_db)
-            self.getSHA = redis_db.hget('scripts', 'HGetWithMeta')
-            self.setSHA = redis_db.hget('scripts', 'HSetWithMeta')
-            logging.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
-            return redis_db
+            redis_client = StrictRedis(host=redis_ip, port=redis_port, db=redis_db)
+            self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
+            self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
+            self.logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
+            return redis_client
         except (ConnectionError, TimeoutError):
-            logging.error("Connecting to redis and getting scripts failed")
+            self.logger.info("Connecting to redis and getting scripts failed")
             raise
 
     def smax_disconnect(self):
@@ -68,7 +73,7 @@ class SmaxRedisClient(SmaxClient):
 
         if self._client.connection:
             self._client.connection.disconnect()
-        logging.info(f"Disconnected redis server {self.redis_ip}:{self.redis_port} db={self.redis_db}")
+        self.logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
     def smax_pull(self, table, key):
         """
@@ -81,9 +86,9 @@ class SmaxRedisClient(SmaxClient):
         :rtype: SmaxData
         """
         try:
-            lua_data = self._client.evalsha(self.getSHA, '1', table, key)
+            lua_data = self._client.evalsha(self._getSHA, '1', table, key)
         except (ConnectionError, TimeoutError):
-            logging.error(f"Reading {table}:{key} from Redis failed")
+            self.logger.error(f"Reading {table}:{key} from Redis failed")
             raise
 
         return _decode(lua_data)
@@ -105,7 +110,7 @@ class SmaxRedisClient(SmaxClient):
         # Derive the type according to Python.
         python_type = type(value)
 
-        # If this is a single value of a supported type, convert to string and return.
+        # Single value of a supported type, cast to string and send to redis.
         if python_type in _REVERSE_TYPE_MAP:
             type_name = _REVERSE_TYPE_MAP[python_type]
             return self._evalsha_set(table, key, str(value), type_name, 1)
@@ -120,16 +125,12 @@ class SmaxRedisClient(SmaxClient):
         if python_type == np.ndarray:
             type_name = converted_data.dtype.name
 
-            # For some reason, numpy returns an str160/str128 type on some platforms.
-            if "str" in type_name:
-                type_name = "str"
-
             # If the shape is a single dimension, set 'size' equal to that value.
             data_shape = converted_data.shape
             if len(data_shape) == 1:
                 size = data_shape[0]
 
-            # Otherwise, flatten and make a space delimited string of dimensions.
+            # Flatten and make a space delimited string of dimensions.
             else:
                 converted_data = converted_data.flatten()
                 size = " ".join(str(i) for i in data_shape)
@@ -139,25 +140,26 @@ class SmaxRedisClient(SmaxClient):
             return self._evalsha_set(table, key, converted_data, type_name, size)
 
         else:
-            raise TypeError(f"I don't know how to convert {python_type} for SMAX")
+            raise TypeError(f"Unable to convert {python_type} for SMAX")
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         """
-        Private function to make a call to redis evalsha using the setSHA LUA script.
+        Private function that calls evalsha() using an SMAX LUA script.
         :param str table: SMAX table name
         :param str key: SMAX key name
-        :param str data_string: Single data value that has been already converted to proper SMAX string format.
+        :param str data_string: Data converted to proper SMAX string format.
         :param str type_name: String representation of type
-        :param size: Representation of the dimensions of the data. If one dimension, than a single integer.
-                     Otherwise will be a string of space delimited dimension values.
-        :return: tuple of (converted string of data, type, size) that was sent to redis.
+        :param size: Representation of the dimensions of the data. If one
+                     dimension, than a single integer.Otherwise will be a string
+                     of space delimited dimension values.
+        :return: tuple of (data, type, size) that was sent to redis.
         """
         try:
-            self._client.evalsha(self.setSHA, '1', table, self.hostname, key,
+            self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
                                  data_string, type_name, size)
             return data_string, type_name, size
         except (ConnectionError, TimeoutError):
-            logging.error("Redis seems down, unable to call the setSHA LUA script.")
+            self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
 
     def smax_lazy_pull(self, table, key, value):
@@ -287,7 +289,7 @@ _TYPE_MAP = {'integer': int,
              'float': float,
              'float32': np.float32,
              'float64': np.float64,
-             'str': str,
              'str128': str,
-             'str160': str}
+             'str160': str,
+             'str': str}
 _REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
