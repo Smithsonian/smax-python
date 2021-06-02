@@ -115,28 +115,38 @@ class SmaxRedisClient(SmaxClient):
             type_name = _REVERSE_TYPE_MAP[python_type]
             return self._evalsha_set(table, key, str(value), type_name, 1)
 
-        # If python type is list or tuple, first convert to numpy array.
-        converted_data = None
+        # Copy the data into a variable that we will manipulate for smax.
+        converted_data = value
+
+        # If python type is list or tuple.
         if python_type == list or python_type == tuple:
-            converted_data = np.array(value)
+
+            # Convert to numpy array, dtype="O" preserves the original types.
+            converted_data = np.array(value, dtype="O")
             python_type = np.ndarray
 
         # Now if its a numpy array, flatten, convert to a string, and return.
-        if python_type == np.ndarray:
-            type_name = converted_data.dtype.name
+        if python_type == np.ndarray or python_type == np.array:
 
             # If the shape is a single dimension, set 'size' equal to that value.
             data_shape = converted_data.shape
             if len(data_shape) == 1:
                 size = data_shape[0]
-
-            # Flatten and make a space delimited string of dimensions.
             else:
-                converted_data = converted_data.flatten()
+                # Convert shape tuple to a space delimited list for smax.
                 size = " ".join(str(i) for i in data_shape)
 
+                # Flatten and make a space delimited string of dimensions.
+                converted_data = converted_data.flatten()
+
+            # Check this 1D representation of the data for type uniformity.
+            if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
+                raise TypeError("All values in list are not the same type.")
+
+            type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
+
             # Create a string representation of the data in the array.
-            converted_data = np.array_str(converted_data, max_line_width=5000)[1:-1]
+            converted_data = ' '.join(str(x) for x in converted_data)
             return self._evalsha_set(table, key, converted_data, type_name, size)
 
         else:
@@ -247,6 +257,11 @@ def _decode(data_plus_meta):
     else:
         raise TypeError(f"I can't deal with data of type {type_name}")
 
+    # Extract data, source and sequence from meta data.
+    data_date = float(data_plus_meta[3])
+    source = data_plus_meta[4].decode("utf-8")
+    sequence = int(data_plus_meta[5])
+
     # Extract dimension information from meta data.
     data_dim = tuple(int(s) for s in data_plus_meta[2].decode("utf-8").split())
 
@@ -254,30 +269,32 @@ def _decode(data_plus_meta):
     if len(data_dim) == 1:
         data_dim = data_dim[0]
 
-    # Extract data, source and sequence from meta data.
-    data_date = float(data_plus_meta[3])
-    source = data_plus_meta[4].decode("utf-8")
-    sequence = int(data_plus_meta[5])
-
-    # If there is only a single value, decode and return.
+    # If there is only a single value, cast to the appropriate type and return.
     if data_dim == 1:
         if data_type == str:
             data = data_plus_meta[0].decode("utf-8")
         else:
             data = data_type(data_plus_meta[0])
-
-    # If type data type is a string, return the data as-is. 
-    elif data_type == str:
-        data = data_type(data_plus_meta[0])
+        return SmaxData(data, data_type, data_dim, data_date, source, sequence)
 
     # This is some kind of array.
     else:
-        data = tuple(float(s) for s in data_plus_meta[0].decode("utf-8").split())
-        data = np.array(data, dtype=data_type)
+        data = data_plus_meta[0].decode("utf-8").split(" ")
+
+        # If this is a list of strings, just clean up string and return.
+        if data_type == str:
+            # Remove the leading and trailing \' in each string in the list.
+            data = [s.strip("\'") for s in data]
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+        else:
+            # Use numpy for all other numerical types
+            data = np.array(data, dtype=data_type)
+
+        # If this is a multi-dimensional array, reshape with numpy.
         if type(data_dim) == tuple:  # n-d array
             data = data.reshape(data_dim)
 
-    return SmaxData(data, type_name, data_dim, data_date, source, sequence)
+    return SmaxData(data, data_type, data_dim, data_date, source, sequence)
 
 
 # Lookup tables for converting python types to smax type names.
