@@ -41,7 +41,10 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
-          activate-environment: true
+          activate-environment: "smax"
+
+      - name: Activate conda enviornment
+        run: conda activate smax
 
       - name: Install requirements.txt
         run: conda install --file ./requirements.txt
