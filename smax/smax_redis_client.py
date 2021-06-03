@@ -1,5 +1,5 @@
 import logging
-import os
+import socket
 
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
@@ -33,7 +33,7 @@ class SmaxRedisClient(SmaxClient):
         self._setSHA = None
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
-        self._hostname = os.uname()[1] if hostname is None else hostname
+        self._hostname = socket.gethostname() if hostname is None else hostname
 
         # Optionally add a program name into the _hostname.
         if program_name is not None:
