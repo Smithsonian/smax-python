@@ -1,0 +1,9 @@
+name: smax
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - numpy
+  - pytest
+  - redis-py
+  - redis

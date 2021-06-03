@@ -1,4 +1,0 @@
-numpy
-pytest
-redis-py
-redis

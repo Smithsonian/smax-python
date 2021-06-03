@@ -23,7 +23,7 @@ jobs:
 #        run: |
 #          python -m pip install --upgrade pip
 #          pip install flake8 pytest
-#          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+#          if [ -f environment.yml ]; then pip install -r environment.yml; fi
 #
 #      - name: Lint with flake8
 #        run: |
@@ -37,22 +37,12 @@ jobs:
 #        with:
 #          redis-version: ${{ matrix.redis-version }}
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
-          activate-environment: "smax"
-
-      - name: Initialize conda in bash
-        run: conda init bash
-
-      - name: Source the bashrc file
-        run: source /home/runner/.bashrc
-
-      - name: Activate conda enviornment
-        run: conda activate smax
-
-      - name: Install requirements.txt
-        run: conda install --file ./requirements.txt
+          activate-environment: smax
+          environment-file: environment.yml
+          python-version: 3.8
+          auto-activate-base: false
 
       - name: Start Redis
         run: redis-server ./redis_config_files/redis.conf &
