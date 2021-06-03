@@ -43,7 +43,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install requirements.txt
-        run: conda install -r ./requirements.txt
+        run: conda install --file ./requirements.txt
 
       - name: Start Redis
         run: redis-server ./redis_config_files/redis.conf &
