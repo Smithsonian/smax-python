@@ -50,7 +50,11 @@ jobs:
         run: redis-server ./redis_config_files/redis.conf &
 
       - name: Load LUA scripts
-        run: ./redis_config_files/initscripts.sh
+        run: |
+          cd redis_config_files
+          ./initscripts.sh
 
       - name: Test with pytest
-        run: pytest
+        run: |
+          cd ..
+          pytest
