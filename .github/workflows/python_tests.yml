@@ -45,6 +45,9 @@ jobs:
       - name: Initialize conda in bash
         run: conda init bash
 
+      - name: Source the bashrc file
+        run: source /home/runner/.bashrc
+
       - name: Activate conda enviornment
         run: conda activate smax
 
