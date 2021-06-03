@@ -37,7 +37,7 @@ jobs:
 #        with:
 #          redis-version: ${{ matrix.redis-version }}
       - name: Setup Miniconda
-      - uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: smax
           environment-file: environment.yml
