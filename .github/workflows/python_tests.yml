@@ -9,7 +9,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.8]
-        redis-version: [5]
 
     steps:
       - name: Git checkout
@@ -42,6 +41,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           activate-environment: "smax"
+
+      - name: Initialize conda in bash
+        run: conda init bash
 
       - name: Activate conda enviornment
         run: conda activate smax
