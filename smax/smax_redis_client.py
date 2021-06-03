@@ -91,7 +91,51 @@ class SmaxRedisClient(SmaxClient):
             self.logger.error(f"Reading {table}:{key} from Redis failed")
             raise
 
-        return _decode(lua_data)
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode("utf-8")
+        if type_name in _TYPE_MAP:
+            data_type = _TYPE_MAP[type_name]
+        else:
+            raise TypeError(f"I can't deal with data of type {type_name}")
+
+        # Extract data, source and sequence from meta data.
+        data_date = float(lua_data[3])
+        source = lua_data[4].decode("utf-8")
+        sequence = int(lua_data[5])
+
+        # Extract dimension information from meta data.
+        data_dim = tuple(int(s) for s in lua_data[2].decode("utf-8").split())
+
+        # If only one dimension convert to a single value (rather than list)
+        if len(data_dim) == 1:
+            data_dim = data_dim[0]
+
+        # If there is only a single value, cast to the appropriate type and return.
+        if data_dim == 1:
+            if data_type == str:
+                data = lua_data[0].decode("utf-8")
+            else:
+                data = data_type(lua_data[0])
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+        # This is some kind of array.
+        else:
+            data = lua_data[0].decode("utf-8").split(" ")
+
+            # If this is a list of strings, just clean up string and return.
+            if data_type == str:
+                # Remove the leading and trailing \' in each string in the list.
+                data = [s.strip("\'") for s in data]
+                return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            else:
+                # Use numpy for all other numerical types
+                data = np.array(data, dtype=data_type)
+
+            # If this is a multi-dimensional array, reshape with numpy.
+            if type(data_dim) == tuple:  # n-d array
+                data = data.reshape(data_dim)
+
+        return SmaxData(data, data_type, data_dim, data_date, source, sequence)
 
     def smax_share(self, table, key, value):
         """
@@ -118,7 +162,7 @@ class SmaxRedisClient(SmaxClient):
         # Copy the data into a variable that we will manipulate for smax.
         converted_data = value
 
-        # If python type is list or tuple.
+        # If type is list or tuple, convert to numpy array for further manipulation.
         if python_type == list or python_type == tuple:
 
             # Convert to numpy array, dtype="O" preserves the original types.
@@ -246,55 +290,6 @@ class SmaxRedisClient(SmaxClient):
 
     def smax_is_resilient(self):
         pass
-
-
-# "Static" internal functions for smax.
-def _decode(data_plus_meta):
-    # Extract the type out of the meta data, and map string to real type object.
-    type_name = data_plus_meta[1].decode("utf-8")
-    if type_name in _TYPE_MAP:
-        data_type = _TYPE_MAP[type_name]
-    else:
-        raise TypeError(f"I can't deal with data of type {type_name}")
-
-    # Extract data, source and sequence from meta data.
-    data_date = float(data_plus_meta[3])
-    source = data_plus_meta[4].decode("utf-8")
-    sequence = int(data_plus_meta[5])
-
-    # Extract dimension information from meta data.
-    data_dim = tuple(int(s) for s in data_plus_meta[2].decode("utf-8").split())
-
-    # If only one dimension convert to a single value (rather than list)
-    if len(data_dim) == 1:
-        data_dim = data_dim[0]
-
-    # If there is only a single value, cast to the appropriate type and return.
-    if data_dim == 1:
-        if data_type == str:
-            data = data_plus_meta[0].decode("utf-8")
-        else:
-            data = data_type(data_plus_meta[0])
-        return SmaxData(data, data_type, data_dim, data_date, source, sequence)
-
-    # This is some kind of array.
-    else:
-        data = data_plus_meta[0].decode("utf-8").split(" ")
-
-        # If this is a list of strings, just clean up string and return.
-        if data_type == str:
-            # Remove the leading and trailing \' in each string in the list.
-            data = [s.strip("\'") for s in data]
-            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
-        else:
-            # Use numpy for all other numerical types
-            data = np.array(data, dtype=data_type)
-
-        # If this is a multi-dimensional array, reshape with numpy.
-        if type(data_dim) == tuple:  # n-d array
-            data = data.reshape(data_dim)
-
-    return SmaxData(data, data_type, data_dim, data_date, source, sequence)
 
 
 # Lookup tables for converting python types to smax type names.
