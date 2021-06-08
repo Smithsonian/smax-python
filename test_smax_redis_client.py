@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from smax import SmaxRedisClient
+from redis import TimeoutError
 
 
 @pytest.fixture
@@ -89,3 +90,37 @@ def test_roundtrip_2d_float_array(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
+
+
+def test_pubsub(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub")
+    expected_data = "just a string"
+    expected_type = str
+    expected_dim = 1
+    table = "pytest"
+    key = "test_pubsub"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_wait_on_any_subscribed()
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+
+
+def test_pubsub_with_timeout(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub")
+    expected_data = "just a string"
+    expected_type = str
+    expected_dim = 1
+    table = "pytest"
+    key = "test_pubsub"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+
+
+def test_pubsub_with_timeout_exception(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub")
+    with pytest.raises(TimeoutError):
+        smax_client.smax_wait_on_any_subscribed(timeout=.5)

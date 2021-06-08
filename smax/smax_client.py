@@ -43,15 +43,15 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_subscribe(self, pattern, key):
+    def smax_subscribe(self, pattern):
         pass
 
     @abstractmethod
-    def smax_unsubscribe(self, pattern, key):
+    def smax_unsubscribe(self, pattern):
         pass
 
     @abstractmethod
-    def smax_wait_on_subscribed(self, table, key):
+    def smax_wait_on_subscribed(self, pattern):
         pass
 
     @abstractmethod
@@ -63,7 +63,7 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_wait_on_any_subscribed(self, changed_table, changed_key):
+    def smax_wait_on_any_subscribed(self):
         pass
 
     @abstractmethod

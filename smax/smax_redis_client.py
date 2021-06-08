@@ -1,5 +1,6 @@
 import logging
 import socket
+import time
 
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
@@ -31,6 +32,7 @@ class SmaxRedisClient(SmaxClient):
         self._redis_db = redis_db
         self._getSHA = None
         self._setSHA = None
+        self._pubsub = None
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
         self._hostname = socket.gethostname() if hostname is None else hostname
@@ -56,7 +58,10 @@ class SmaxRedisClient(SmaxClient):
         """
         try:
             # Connect to redis-server, and store LUA scripts on the object.
-            redis_client = StrictRedis(host=redis_ip, port=redis_port, db=redis_db)
+            redis_client = StrictRedis(host=redis_ip,
+                                       port=redis_port,
+                                       db=redis_db,
+                                       health_check_interval=30)
             self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
             self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
             self.logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
@@ -85,6 +90,7 @@ class SmaxRedisClient(SmaxClient):
         :return: SmaxData tuple data, type, dimension(s), date, source, sequence
         :rtype: SmaxData
         """
+
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
         except (ConnectionError, TimeoutError):
@@ -164,7 +170,6 @@ class SmaxRedisClient(SmaxClient):
 
         # If type is list or tuple, convert to numpy array for further manipulation.
         if python_type == list or python_type == tuple:
-
             # Convert to numpy array, dtype="O" preserves the original types.
             converted_data = np.array(value, dtype="O")
             python_type = np.ndarray
@@ -222,13 +227,26 @@ class SmaxRedisClient(SmaxClient):
     def smax_lazy_end(self, table, key):
         pass
 
-    def smax_subscribe(self, pattern, key):
-        pass
+    def smax_subscribe(self, pattern):
+        if self._pubsub is None:
+            self._pubsub = self._client.pubsub()
 
-    def smax_unsubscribe(self, pattern, key):
-        pass
+        if pattern.endswith("*"):
+            self._pubsub.psubscribe(f"smax:{pattern}")
+        else:
+            self._pubsub.subscribe(f"smax:{pattern}")
 
-    def smax_wait_on_subscribed(self, table, key):
+    def smax_unsubscribe(self, pattern=None):
+        if self._pubsub is not None:
+            if pattern is None:
+                self._pubsub.punsubscribe()
+                self._pubsub.unsubscribe()
+            elif pattern.endswith("*"):
+                self._pubsub.punsubscribe(f"smax:{pattern}")
+            else:
+                self._pubsub.unsubscribe(f"smax:{pattern}")
+
+    def smax_wait_on_subscribed(self, pattern):
         pass
 
     def smax_wait_on_subscribed_group(self, match_table, changed_key):
@@ -237,8 +255,33 @@ class SmaxRedisClient(SmaxClient):
     def smax_wait_on_subscribed_var(self, match_key, changed_table):
         pass
 
-    def smax_wait_on_any_subscribed(self, changed_table, changed_key):
-        pass
+    def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+
+        # Throw away any blank messages or of type 'subscribe'
+        found_real_message = False
+        message = None
+        channel = None
+
+        while not found_real_message:
+            if timeout is None:
+                for message in self._pubsub.listen():
+                    break
+            else:
+                message = self._pubsub.get_message(timeout=timeout)
+
+            if message is None:
+                raise TimeoutError("Timed out waiting for redis message.")
+            elif message["type"] == "message":
+                channel = message["channel"].decode("utf-8")
+                if channel.startswith("smax:"):
+                    found_real_message = True
+
+        if notification_only:
+            return message
+        else:
+            table = channel[5:channel.rfind(":")]
+            key = channel.split(":")[-1]
+            return self.smax_pull(table, key)
 
     def smax_release_waits(self, pattern, key):
         pass
