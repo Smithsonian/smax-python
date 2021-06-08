@@ -7,3 +7,4 @@ dependencies:
   - pytest
   - redis-py
   - redis
+  - hiredis
