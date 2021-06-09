@@ -227,20 +227,28 @@ class SmaxRedisClient(SmaxClient):
     def smax_lazy_end(self, table, key):
         pass
 
-    def smax_subscribe(self, pattern):
+    def smax_subscribe(self, pattern, callback=None):
         """
         Subscribe to a redis field or group of fields. You can type the full
         name of the field you'd like to subscribe too, or use a wildcard "*"
         character to specify a pattern.
-        :param pattern: Either full name of smax field, or a pattern using a '*'
+        :param pattern: Either full name of smax field, or use a wildcard '*' at
+        the end of the pattern to be notified for anything underneath.
+        :param callback: Optional callback function to process notifications.
         """
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
 
         if pattern.endswith("*"):
-            self._pubsub.psubscribe(f"smax:{pattern}")
+            if callback is None:
+                self._pubsub.psubscribe(f"smax:{pattern}")
+            else:
+                self._pubsub.psubscribe(**{f"smax:{pattern}": callback})
         else:
-            self._pubsub.subscribe(f"smax:{pattern}")
+            if callback is None:
+                self._pubsub.subscribe(f"smax:{pattern}")
+            else:
+                self._pubsub.subscribe(**{f"smax:{pattern}": callback})
 
     def smax_unsubscribe(self, pattern=None):
         if self._pubsub is not None:

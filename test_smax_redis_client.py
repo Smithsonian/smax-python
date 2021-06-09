@@ -164,3 +164,15 @@ def test_pubsub_wait_on_pattern(smax_client):
     result2 = smax_client.smax_wait_on_subscribed("*temp*")
     assert result1.data == expected_data1
     assert result2.data == expected_data2
+
+
+def test_pubsub_callback(smax_client):
+    expected_value = "fpga1value"
+
+    def my_callback(message):
+        print(message)
+        assert message.data == expected_value
+
+    smax_client.smax_subscribe("pytest:test_pubsub*", my_callback)
+    smax_client.smax_share("pytest:test_pubsub:fpga1", "temp", expected_value)
+
