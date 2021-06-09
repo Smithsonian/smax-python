@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import socket
 
 from smax import SmaxRedisClient
 from redis import TimeoutError
@@ -106,6 +107,20 @@ def test_pubsub(smax_client):
     assert result.dim == expected_dim
 
 
+def test_pubsub_pattern(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub*")
+    expected_data = "just a string"
+    expected_type = str
+    expected_dim = 1
+    table = "pytest:test_pubsub"
+    key = "pattern"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_wait_on_any_subscribed()
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+
+
 def test_pubsub_with_timeout(smax_client):
     smax_client.smax_subscribe("pytest:test_pubsub")
     expected_data = "just a string"
@@ -124,3 +139,28 @@ def test_pubsub_with_timeout_exception(smax_client):
     smax_client.smax_subscribe("pytest:test_pubsub")
     with pytest.raises(TimeoutError):
         smax_client.smax_wait_on_any_subscribed(timeout=.5)
+
+
+def test_pubsub_notification(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub")
+    expected_data = socket.gethostname()
+    expected_channel = "smax:pytest:test_pubsub"
+    table = "pytest"
+    key = "test_pubsub"
+    smax_client.smax_share(table, key, "doesn't matter")
+    result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
+    assert result["data"].decode("utf-8") == expected_data
+    assert result["pattern"].decode("utf-8") == expected_channel
+
+
+def test_pubsub_wait_on_pattern(smax_client):
+    smax_client.smax_subscribe("pytest:test_pubsub*")
+    expected_data1 = "fpga1value"
+    expected_data2 = "fpga2value"
+    smax_client.smax_share("pytest:test_pubsub:nop", "nop", "nopvalue")
+    smax_client.smax_share("pytest:test_pubsub:fpga1", "temp", "fpga1value")
+    smax_client.smax_share("pytest:test_pubsub:fpga2", "temp", "fpga2value")
+    result1 = smax_client.smax_wait_on_subscribed("*temp*")
+    result2 = smax_client.smax_wait_on_subscribed("*temp*")
+    assert result1.data == expected_data1
+    assert result2.data == expected_data2

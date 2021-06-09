@@ -1,9 +1,9 @@
 import logging
 import socket
-import time
 
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
+from fnmatch import fnmatch
 
 from .smax_client import SmaxClient, SmaxData
 
@@ -228,6 +228,12 @@ class SmaxRedisClient(SmaxClient):
         pass
 
     def smax_subscribe(self, pattern):
+        """
+        Subscribe to a redis field or group of fields. You can type the full
+        name of the field you'd like to subscribe too, or use a wildcard "*"
+        character to specify a pattern.
+        :param pattern: Either full name of smax field, or a pattern using a '*'
+        """
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
 
@@ -246,17 +252,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 self._pubsub.unsubscribe(f"smax:{pattern}")
 
-    def smax_wait_on_subscribed(self, pattern):
-        pass
-
-    def smax_wait_on_subscribed_group(self, match_table, changed_key):
-        pass
-
-    def smax_wait_on_subscribed_var(self, match_key, changed_table):
-        pass
-
-    def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
-
+    def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
         # Throw away any blank messages or of type 'subscribe'
         found_real_message = False
         message = None
@@ -271,10 +267,13 @@ class SmaxRedisClient(SmaxClient):
 
             if message is None:
                 raise TimeoutError("Timed out waiting for redis message.")
-            elif message["type"] == "message":
+            elif message["type"] == "message" or message["type"] == "pmessage":
                 channel = message["channel"].decode("utf-8")
                 if channel.startswith("smax:"):
-                    found_real_message = True
+                    if pattern is None:
+                        found_real_message = True
+                    elif fnmatch(channel[5:], pattern):
+                        found_real_message = True
 
         if notification_only:
             return message
@@ -282,6 +281,21 @@ class SmaxRedisClient(SmaxClient):
             table = channel[5:channel.rfind(":")]
             key = channel.split(":")[-1]
             return self.smax_pull(table, key)
+
+    def smax_wait_on_subscribed(self, pattern, timeout=None,
+                                notification_only=False):
+        return self._redis_listen(pattern=pattern, timeout=timeout,
+                                  notification_only=notification_only)
+
+    def smax_wait_on_subscribed_group(self, match_table, changed_key):
+        pass
+
+    def smax_wait_on_subscribed_var(self, match_key, changed_table):
+        pass
+
+    def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+        return self._redis_listen(timeout=timeout,
+                                  notification_only=notification_only)
 
     def smax_release_waits(self, pattern, key):
         pass
