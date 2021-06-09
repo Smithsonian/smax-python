@@ -150,7 +150,7 @@ def test_pubsub_notification(smax_client):
     smax_client.smax_share(table, key, "doesn't matter")
     result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
     assert result["data"].decode("utf-8") == expected_data
-    assert result["pattern"].decode("utf-8") == expected_channel
+    assert result["channel"].decode("utf-8") == expected_channel
 
 
 def test_pubsub_wait_on_pattern(smax_client):
