@@ -55,14 +55,6 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_wait_on_subscribed_group(self, match_table, changed_key):
-        pass
-
-    @abstractmethod
-    def smax_wait_on_subscribed_var(self, match_key, changed_table):
-        pass
-
-    @abstractmethod
     def smax_wait_on_any_subscribed(self):
         pass
 

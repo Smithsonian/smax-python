@@ -170,9 +170,43 @@ def test_pubsub_callback(smax_client):
     expected_value = "fpga1value"
 
     def my_callback(message):
-        print(message)
         assert message.data == expected_value
 
     smax_client.smax_subscribe("pytest:test_pubsub*", my_callback)
     smax_client.smax_share("pytest:test_pubsub:fpga1", "temp", expected_value)
 
+
+def test_pull_struct(smax_client):
+
+    expected_temp_value1 = np.array([42, 24])
+    expected_temp_value2 = np.array([24, 42])
+    expected_firmware_value1 = 1.0
+    expected_firmware_value2 = 1.1
+    expected_type_temp = np.int64
+    expected_dim_temp = 2
+    expected_type_firmware = float
+    expected_dim_firmware = 1
+
+    smax_client.smax_share("swarm:dbe:roach2-01", "temp", expected_temp_value1)
+    smax_client.smax_share("swarm:dbe:roach2-02", "temp", expected_temp_value2)
+    smax_client.smax_share("swarm:dbe:roach2-01", "firmware", expected_firmware_value1)
+    smax_client.smax_share("swarm:dbe:roach2-02", "firmware", expected_firmware_value2)
+    result = smax_client.smax_pull("swarm", "dbe")
+
+    roach01_temp = result["swarm"]["dbe"]["roach2-01"]["temp"]
+    roach02_temp = result["swarm"]["dbe"]["roach2-02"]["temp"]
+    roach01_firmware = result["swarm"]["dbe"]["roach2-01"]["firmware"]
+    roach02_firmware = result["swarm"]["dbe"]["roach2-02"]["firmware"]
+
+    assert (roach01_temp.data == expected_temp_value1).all()
+    assert (roach02_temp.data == expected_temp_value2).all()
+    assert roach01_firmware.data == expected_firmware_value1
+    assert roach02_firmware.data == expected_firmware_value2
+    assert roach01_temp.type == expected_type_temp
+    assert roach02_temp.type == expected_type_temp
+    assert roach01_firmware.type == expected_type_firmware
+    assert roach02_firmware.type == expected_type_firmware
+    assert roach01_temp.dim == expected_dim_temp
+    assert roach02_temp.dim == expected_dim_temp
+    assert roach01_firmware.dim == expected_dim_firmware
+    assert roach02_firmware.dim == expected_dim_firmware

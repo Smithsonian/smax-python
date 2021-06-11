@@ -33,6 +33,7 @@ class SmaxRedisClient(SmaxClient):
         self._getSHA = None
         self._setSHA = None
         self._pubsub = None
+        self._getstructSHA = None
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
         self._hostname = socket.gethostname() if hostname is None else hostname
@@ -64,6 +65,7 @@ class SmaxRedisClient(SmaxClient):
                                        health_check_interval=30)
             self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
             self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
+            self._getstructSHA = redis_client.hget('scripts', 'GetStruct')
             self.logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
@@ -80,25 +82,11 @@ class SmaxRedisClient(SmaxClient):
             self._client.connection.disconnect()
         self.logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
-    def smax_pull(self, table, key):
-        """
-        Get data which was stored with the smax macro HSetWithMeta along with
-        the associated metadata. The return will be the data, typeName,
-        dataDimension(s), dataDate, source of the data, and a sequence number.
-        :param str table: SMAX table name
-        :param str key: SMAX key name
-        :return: SmaxData tuple data, type, dimension(s), date, source, sequence
-        :rtype: SmaxData
-        """
-
-        try:
-            lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-        except (ConnectionError, TimeoutError):
-            self.logger.error(f"Reading {table}:{key} from Redis failed")
-            raise
+    def _parse_lua_pull_response(self, lua_data):
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
+
         if type_name in _TYPE_MAP:
             data_type = _TYPE_MAP[type_name]
         else:
@@ -141,7 +129,54 @@ class SmaxRedisClient(SmaxClient):
             if type(data_dim) == tuple:  # n-d array
                 data = data.reshape(data_dim)
 
-        return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+    def smax_pull(self, table, key):
+        """
+        Get data which was stored with the smax macro HSetWithMeta along with
+        the associated metadata. The return will be the data, typeName,
+        dataDimension(s), dataDate, source of the data, and a sequence number.
+        :param str table: SMAX table name
+        :param str key: SMAX key name
+        :return: SmaxData tuple data, type, dimension(s), date, source, sequence
+        :rtype: SmaxData
+        """
+
+        try:
+            lua_data = self._client.evalsha(self._getSHA, '1', table, key)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(f"Reading {table}:{key} from Redis failed")
+            raise
+
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode("utf-8")
+
+        if type_name == "struct":
+            ls = self._client.evalsha(self._getstructSHA, '1', table, key)
+            tree = {}
+
+            for i, item in enumerate(ls[0]):
+                t = tree
+                names = item.decode("utf-8").split(':')
+                for j, part in enumerate(names):
+                    t = t.setdefault(part, {})
+                    if j == len(names) - 1:
+                        for k, leaf in enumerate(ls[i + i + 1]):
+                            lua_type = ls[i + i + 2][1][k]
+
+                            if lua_type.decode("utf-8") == "struct":
+                                continue
+
+                            lua_data = ls[i + i + 2][0][k]
+                            lua_dim = ls[i + i + 2][2][k]
+                            lua_date = ls[i + i + 2][3][k]
+                            lua_hostname = ls[i + i + 2][4][k]
+                            lua_sequence = ls[i + i + 2][5][k]
+                            smax_data_object = self._parse_lua_pull_response([lua_data, lua_type, lua_dim, lua_date, lua_hostname, lua_sequence])
+                            t.setdefault(ls[i + i + 1][k].decode("utf-8"), smax_data_object)
+            return tree
+
+        return self._parse_lua_pull_response(lua_data)
 
     def smax_share(self, table, key, value):
         """
@@ -231,7 +266,8 @@ class SmaxRedisClient(SmaxClient):
         """
         Subscribe to a redis field or group of fields. You can type the full
         name of the field you'd like to subscribe too, or use a wildcard "*"
-        character to specify a pattern.
+        character to specify a pattern. Use a callback for asynchronous
+        processing of notifications, or use one of the smax_wait_on functions.
         :param pattern: Either full name of smax field, or use a wildcard '*' at
         the end of the pattern to be notified for anything underneath.
         :param callback: Optional callback function to process notifications.
@@ -294,12 +330,6 @@ class SmaxRedisClient(SmaxClient):
                                 notification_only=False):
         return self._redis_listen(pattern=pattern, timeout=timeout,
                                   notification_only=notification_only)
-
-    def smax_wait_on_subscribed_group(self, match_table, changed_key):
-        pass
-
-    def smax_wait_on_subscribed_var(self, match_key, changed_table):
-        pass
 
     def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
         return self._redis_listen(timeout=timeout,
