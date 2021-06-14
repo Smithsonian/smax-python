@@ -11,6 +11,21 @@ def smax_client():
     return SmaxRedisClient("localhost")
 
 
+def test_context_manager():
+    expected_data = "just a string"
+    expected_type = str
+    expected_dim = 1
+    table = "pytest"
+    key = "test_roundtrip_string"
+    with SmaxRedisClient("localhost") as s:
+        s.smax_share(table, key, expected_data)
+        result = s.smax_pull(table, key)
+
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+
+
 def test_roundtrip_string(smax_client):
     expected_data = "just a string"
     expected_type = str
