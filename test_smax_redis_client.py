@@ -178,11 +178,11 @@ def test_pubsub_callback(smax_client):
 
 def test_pull_struct(smax_client):
 
-    expected_temp_value1 = np.array([42, 24])
-    expected_temp_value2 = np.array([24, 42])
+    expected_temp_value1 = np.array([42, 24], dtype=np.int32)
+    expected_temp_value2 = np.array([24, 42], dtype=np.int32)
     expected_firmware_value1 = 1.0
     expected_firmware_value2 = 1.1
-    expected_type_temp = np.int64
+    expected_type_temp = np.int32
     expected_dim_temp = 2
     expected_type_firmware = float
     expected_dim_firmware = 1

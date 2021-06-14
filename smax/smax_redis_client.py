@@ -151,29 +151,52 @@ class SmaxRedisClient(SmaxClient):
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
 
+        # If the lua response says its a struct we have to now use another LUA
+        # script to go back to redis and collect the struct.
         if type_name == "struct":
-            ls = self._client.evalsha(self._getstructSHA, '1', table, key)
+            lua_struct = self._client.evalsha(self._getstructSHA, '1', table, key)
+
+            # The struct will be parsed into a nested python dictionary.
             tree = {}
-
-            for i, item in enumerate(ls[0]):
+            for struct_name_index, stuct_name in enumerate(lua_struct[0]):
                 t = tree
-                names = item.decode("utf-8").split(':')
-                for j, part in enumerate(names):
-                    t = t.setdefault(part, {})
-                    if j == len(names) - 1:
-                        for k, leaf in enumerate(ls[i + i + 1]):
-                            lua_type = ls[i + i + 2][1][k]
+                names = stuct_name.decode("utf-8").split(':')
 
+                for table_name_index, table_name in enumerate(names):
+
+                    # Grow a new hierarchical level with a blank dictionary.
+                    t = t.setdefault(table_name, {})
+
+                    # If this is the last name in the path, add actual data.
+                    if table_name_index == len(names) - 1:
+
+                        # Create offset indices for more readable code.
+                        offset = struct_name_index + struct_name_index + 1
+                        offset2 = struct_name_index + struct_name_index + 2
+
+                        # Process leaf node like it is a normal smax_pull.
+                        for leaf_index, leaf in enumerate(lua_struct[offset]):
+
+                            # If the leaf says its a struct, ignore it.
+                            lua_type = lua_struct[offset2][1][leaf_index]
                             if lua_type.decode("utf-8") == "struct":
                                 continue
 
-                            lua_data = ls[i + i + 2][0][k]
-                            lua_dim = ls[i + i + 2][2][k]
-                            lua_date = ls[i + i + 2][3][k]
-                            lua_hostname = ls[i + i + 2][4][k]
-                            lua_sequence = ls[i + i + 2][5][k]
-                            smax_data_object = self._parse_lua_pull_response([lua_data, lua_type, lua_dim, lua_date, lua_hostname, lua_sequence])
-                            t.setdefault(ls[i + i + 1][k].decode("utf-8"), smax_data_object)
+                            # Extract data and metadata to pass into parser.
+                            lua_data = lua_struct[offset2][0][leaf_index]
+                            lua_dim = lua_struct[offset2][2][leaf_index]
+                            lua_date = lua_struct[offset2][3][leaf_index]
+                            lua_hostname = lua_struct[offset2][4][leaf_index]
+                            lua_sequence = lua_struct[offset2][5][leaf_index]
+
+                            # Parser will return an SmaxData object.
+                            smax_data_object = self._parse_lua_pull_response(
+                                [lua_data, lua_type, lua_dim, lua_date,
+                                 lua_hostname, lua_sequence])
+
+                            # Add SmaxData object into the nested dictionary.
+                            t.setdefault(lua_struct[offset][leaf_index].decode("utf-8"),
+                                         smax_data_object)
             return tree
 
         return self._parse_lua_pull_response(lua_data)
@@ -188,8 +211,8 @@ class SmaxRedisClient(SmaxClient):
         Date and sequence number are added by the redis macro.
         :param str table: SMAX table name
         :param str key: SMAX key name
-        :param value: data to store in smax, can be any defined type, list, array, or numpy array.
-        :return: tuple of (converted string of data, type, size) that was sent to redis.
+        :param value: data to store, can be any supported type.
+        :return: tuple of (string of data, type, size) that was sent to redis.
         """
 
         # Derive the type according to Python.
