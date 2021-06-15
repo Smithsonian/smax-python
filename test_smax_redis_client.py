@@ -12,11 +12,11 @@ def smax_client():
 
 
 def test_context_manager():
-    expected_data = "just a string"
+    expected_data = "just a context manager string"
     expected_type = str
     expected_dim = 1
     table = "pytest"
-    key = "test_roundtrip_string"
+    key = "test_context_manager_string"
     with SmaxRedisClient("localhost") as s:
         s.smax_share(table, key, expected_data)
         result = s.smax_pull(table, key)
@@ -27,7 +27,7 @@ def test_context_manager():
 
 
 def test_roundtrip_string(smax_client):
-    expected_data = "just a string"
+    expected_data = "just a roundtrip string"
     expected_type = str
     expected_dim = 1
     table = "pytest"
@@ -85,7 +85,7 @@ def test_roundtrip_float_list(smax_client):
     expected_type = expected_data.dtype
     expected_dim = len(data)
     table = "pytest"
-    key = "test_roundtrip_string_list"
+    key = "test_roundtrip_float_list"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
     assert np.array_equal(result.data, expected_data.data)
@@ -137,12 +137,12 @@ def test_pubsub_pattern(smax_client):
 
 
 def test_pubsub_with_timeout(smax_client):
-    smax_client.smax_subscribe("pytest:test_pubsub")
-    expected_data = "just a string"
+    smax_client.smax_subscribe("pytest:test_pubsub_with_timeout")
+    expected_data = "just a timeout string"
     expected_type = str
     expected_dim = 1
     table = "pytest"
-    key = "test_pubsub"
+    key = "test_pubsub_with_timeout"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
     assert result.data == expected_data

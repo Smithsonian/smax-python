@@ -1,9 +1,9 @@
 import logging
 import socket
+from fnmatch import fnmatch
 
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
-from fnmatch import fnmatch
 
 from .smax_client import SmaxClient, SmaxData, SmaxCommand
 
@@ -82,7 +82,8 @@ class SmaxRedisClient(SmaxClient):
             self._client.connection.disconnect()
         self.logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
-    def _parse_lua_pull_response(self, lua_data):
+    @staticmethod
+    def _parse_lua_pull_response(lua_data):
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
@@ -203,7 +204,14 @@ class SmaxRedisClient(SmaxClient):
 
         return self._parse_lua_pull_response(lua_data)
 
-    def _to_smax_format(self, value):
+    @staticmethod
+    def _to_smax_format(value):
+        """
+        Private function that converts a given data value to the string format
+        that SMAX supports.
+        :param value: Any supported data type, including (nested) dicts.
+        :return: tuple of (data_string, type_name, dim_string)
+        """
         # Derive the type according to Python.
         python_type = type(value)
 
@@ -252,13 +260,23 @@ class SmaxRedisClient(SmaxClient):
         else:
             raise TypeError(f"Unable to convert {python_type} for SMAX")
 
-    def recurse_nested_dict(self, dictionary, table=None, commands=[]):
+    def _recurse_nested_dict(self, dictionary, table=None):
+        """
+        Private function to recursively traverse a nested dictionary, finding
+        the leaf nodes that have actual data values.  Each real data value
+        ends up as an SmaxCommand object and gets appended to a list, which is
+        returned after the dictionary is searched.
+        :param dictionary: Dict containing keys that exist in SMAX.
+        :param table: Do not use, this is used to build the table name as the function recurses.
+        :return: List of SmaxCommand objects.
+        """
+        commands = []
         for key, value in dictionary.items():
             if isinstance(value, dict):
                 if table is None:
-                    self.recurse_nested_dict(value, key)
+                    self._recurse_nested_dict(value, key)
                 else:
-                    self.recurse_nested_dict(value, f"{table}:{key}")
+                    self._recurse_nested_dict(value, f"{table}:{key}")
             else:
                 converted_data, type_name, size = self._to_smax_format(value)
                 commands.append(SmaxCommand(table, key, converted_data, type_name, size))
@@ -274,8 +292,8 @@ class SmaxRedisClient(SmaxClient):
         Date and sequence number are added by the redis macro.
         :param str table: SMAX table name
         :param str key: SMAX key name
-        :param value: data to store, can be any supported type.
-        :return: tuple of (string of data, type, size) that was sent to redis.
+        :param value: data to store, takes supported types, including (nested) dicts.
+        :return: return value from redis-py's evalsha() function.
         """
 
         # If this is not a dict, then convert data to smax format and send.
@@ -285,7 +303,7 @@ class SmaxRedisClient(SmaxClient):
         else:
             # Recursively traverse the (nested) dictionary to generate a set
             # of values to update atomically.
-            self._pipeline_evalsha_set(table, key, self.recurse_nested_dict(value))
+            return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         """
@@ -300,9 +318,8 @@ class SmaxRedisClient(SmaxClient):
         :return: tuple of (data, type, size) that was sent to redis.
         """
         try:
-            self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
-                                 data_string, type_name, size)
-            return data_string, type_name, size
+            return self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
+                                        data_string, type_name, size)
         except (ConnectionError, TimeoutError):
             self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
@@ -364,6 +381,19 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.unsubscribe(f"smax:{pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
+        """
+        Private function to help implement the "wait" functions in this API.
+        In the redis-py library, the listen() function is a blocking call, so
+        it gets used if there is no timeout specified.  When there is a timeout,
+        the get_message() function is used, because listen() doesn't take a timeout
+        value.  The get_message() function doesn't block by default, but when
+        a timeout is specified it blocks until the timeout is reached. This function
+        will raise a redis Timeout exception when the timeout is reached.
+        :param pattern: SMAX table/key pattern to listen on.
+        :param timeout: Value in seconds to wait before raising timeout exception.
+        :param notification_only: Boolean flag to only return the notification from redis.
+        :return: Either a notification or the actual pulled data.
+        """
         # Throw away any blank messages or of type 'subscribe'
         found_real_message = False
         message = None
