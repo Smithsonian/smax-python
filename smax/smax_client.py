@@ -35,14 +35,6 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_lazy_pull(self, table, key, value):
-        pass
-
-    @abstractmethod
-    def smax_lazy_end(self, table, key):
-        pass
-
-    @abstractmethod
     def smax_subscribe(self, pattern):
         pass
 
@@ -56,30 +48,6 @@ class SmaxClient(ABC):
 
     @abstractmethod
     def smax_wait_on_any_subscribed(self):
-        pass
-
-    @abstractmethod
-    def smax_release_waits(self, pattern, key):
-        pass
-
-    @abstractmethod
-    def smax_queue(self, table, key, value, meta):
-        pass
-
-    @abstractmethod
-    def smax_queue_callback(self, function, *args):
-        pass
-
-    @abstractmethod
-    def smax_create_sync_point(self):
-        pass
-
-    @abstractmethod
-    def smax_sync(self, sync_point, timeout_millis):
-        pass
-
-    @abstractmethod
-    def smax_wait_queue_complete(self, timeout_millis):
         pass
 
     @abstractmethod
@@ -116,12 +84,4 @@ class SmaxClient(ABC):
 
     @abstractmethod
     def smax_pull_meta(self, table, key):
-        pass
-
-    @abstractmethod
-    def smax_set_resilient(self, value):
-        pass
-
-    @abstractmethod
-    def smax_is_resilient(self):
         pass

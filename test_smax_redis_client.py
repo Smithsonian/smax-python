@@ -241,20 +241,20 @@ def test_share_struct(smax_client):
 
     smax_client.smax_share("swarm", "dbe", struct)
     result = smax_client.smax_pull("swarm", "dbe")
-    roach01_temp = result["swarm"]["dbe"]["roach2-03"]["temp"]
-    roach02_temp = result["swarm"]["dbe"]["roach2-04"]["temp"]
-    roach01_firmware = result["swarm"]["dbe"]["roach2-03"]["firmware"]
-    roach02_firmware = result["swarm"]["dbe"]["roach2-04"]["firmware"]
+    roach03_temp = result["swarm"]["dbe"]["roach2-03"]["temp"]
+    roach04_temp = result["swarm"]["dbe"]["roach2-04"]["temp"]
+    roach03_firmware = result["swarm"]["dbe"]["roach2-03"]["firmware"]
+    roach04_firmware = result["swarm"]["dbe"]["roach2-04"]["firmware"]
 
-    assert roach01_temp.data == expected_temp_value1
-    assert roach02_temp.data == expected_temp_value2
-    assert roach01_firmware.data == expected_firmware_value1
-    assert roach02_firmware.data == expected_firmware_value2
-    assert roach01_temp.type == expected_type_temp
-    assert roach02_temp.type == expected_type_temp
-    assert roach01_firmware.type == expected_type_firmware
-    assert roach02_firmware.type == expected_type_firmware
-    assert roach01_temp.dim == expected_dim_temp
-    assert roach02_temp.dim == expected_dim_temp
-    assert roach01_firmware.dim == expected_dim_firmware
-    assert roach02_firmware.dim == expected_dim_firmware
+    assert roach03_temp.data == expected_temp_value1
+    assert roach04_temp.data == expected_temp_value2
+    assert roach03_firmware.data == expected_firmware_value1
+    assert roach04_firmware.data == expected_firmware_value2
+    assert roach03_temp.type == expected_type_temp
+    assert roach04_temp.type == expected_type_temp
+    assert roach03_firmware.type == expected_type_firmware
+    assert roach04_firmware.type == expected_type_firmware
+    assert roach03_temp.dim == expected_dim_temp
+    assert roach04_temp.dim == expected_dim_temp
+    assert roach03_firmware.dim == expected_dim_firmware
+    assert roach04_firmware.dim == expected_dim_firmware

@@ -281,7 +281,7 @@ class SmaxRedisClient(SmaxClient):
         else:
             raise TypeError(f"Unable to convert {python_type} for SMAX")
 
-    def _recurse_nested_dict(self, dictionary, table=None):
+    def _recurse_nested_dict(self, dictionary, table=None, commands=[]):
         """
         Private function to recursively traverse a nested dictionary, finding
         the leaf nodes that have actual data values.  Each real data value
@@ -295,7 +295,6 @@ class SmaxRedisClient(SmaxClient):
             list: List of SmaxCommand objects.
         """
 
-        commands = []
         for key, value in dictionary.items():
             if isinstance(value, dict):
                 if table is None:
@@ -504,7 +503,6 @@ class SmaxRedisClient(SmaxClient):
         If you use smax_subscribe without a callback, you can use this function
         to block until a message is received from any channel you are subscribed to.
         Args:
-            pattern (str): SMAX table/key pattern to listen on.
             timeout (int): Value in seconds to wait before raising timeout exception.
             notification_only (bool): If True, only returns the notification from redis.
 
@@ -513,24 +511,6 @@ class SmaxRedisClient(SmaxClient):
         """
         return self._redis_listen(timeout=timeout,
                                   notification_only=notification_only)
-
-    def smax_release_waits(self, pattern, key):
-        pass
-
-    def smax_queue(self, table, key, value, meta):
-        pass
-
-    def smax_queue_callback(self, function, *args):
-        pass
-
-    def smax_create_sync_point(self):
-        pass
-
-    def smax_sync(self, sync_point, timeout_millis):
-        pass
-
-    def smax_wait_queue_complete(self, timeout_millis):
-        pass
 
     def smax_set_description(self, table, key, description):
         pass
@@ -557,12 +537,6 @@ class SmaxRedisClient(SmaxClient):
         pass
 
     def smax_pull_meta(self, table, key):
-        pass
-
-    def smax_set_resilient(self, value):
-        pass
-
-    def smax_is_resilient(self):
         pass
 
 
