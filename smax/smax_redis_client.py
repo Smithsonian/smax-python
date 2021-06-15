@@ -5,7 +5,7 @@ import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
 from fnmatch import fnmatch
 
-from .smax_client import SmaxClient, SmaxData
+from .smax_client import SmaxClient, SmaxData, SmaxCommand
 
 
 class SmaxRedisClient(SmaxClient):
@@ -136,6 +136,8 @@ class SmaxRedisClient(SmaxClient):
         Get data which was stored with the smax macro HSetWithMeta along with
         the associated metadata. The return will be the data, typeName,
         dataDimension(s), dataDate, source of the data, and a sequence number.
+        If you pulled a struct, you will get a nested dictionary back, with
+        each leaf being an SmaxData object.
         :param str table: SMAX table name
         :param str key: SMAX key name
         :return: SmaxData tuple data, type, dimension(s), date, source, sequence
@@ -201,27 +203,18 @@ class SmaxRedisClient(SmaxClient):
 
         return self._parse_lua_pull_response(lua_data)
 
-    def smax_share(self, table, key, value):
-        """
-        Send data to redis using the smax macro HSetWithMeta to include
-        metadata.  The metadata is typeName, dataDimension(s), dataDate,
-        source of the data, and a sequence number.  The first two are
-        determined from the data and the source from this computer's name
-        plus the program name if given when this class is instantiated.
-        Date and sequence number are added by the redis macro.
-        :param str table: SMAX table name
-        :param str key: SMAX key name
-        :param value: data to store, can be any supported type.
-        :return: tuple of (string of data, type, size) that was sent to redis.
-        """
-
+    def _to_smax_format(self, value):
         # Derive the type according to Python.
         python_type = type(value)
 
         # Single value of a supported type, cast to string and send to redis.
         if python_type in _REVERSE_TYPE_MAP:
             type_name = _REVERSE_TYPE_MAP[python_type]
-            return self._evalsha_set(table, key, str(value), type_name, 1)
+            return str(value), type_name, 1
+
+        # If this is an SmaxData object, just pass along the data attribute.
+        if python_type == SmaxData:
+            value = value.data
 
         # Copy the data into a variable that we will manipulate for smax.
         converted_data = value
@@ -254,10 +247,45 @@ class SmaxRedisClient(SmaxClient):
 
             # Create a string representation of the data in the array.
             converted_data = ' '.join(str(x) for x in converted_data)
-            return self._evalsha_set(table, key, converted_data, type_name, size)
+            return converted_data, type_name, size
 
         else:
             raise TypeError(f"Unable to convert {python_type} for SMAX")
+
+    def recurse_nested_dict(self, dictionary, table=None, commands=[]):
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                if table is None:
+                    self.recurse_nested_dict(value, key)
+                else:
+                    self.recurse_nested_dict(value, f"{table}:{key}")
+            else:
+                converted_data, type_name, size = self._to_smax_format(value)
+                commands.append(SmaxCommand(table, key, converted_data, type_name, size))
+        return commands
+
+    def smax_share(self, table, key, value):
+        """
+        Send data to redis using the smax macro HSetWithMeta to include
+        metadata.  The metadata is typeName, dataDimension(s), dataDate,
+        source of the data, and a sequence number.  The first two are
+        determined from the data and the source from this computer's name
+        plus the program name if given when this class is instantiated.
+        Date and sequence number are added by the redis macro.
+        :param str table: SMAX table name
+        :param str key: SMAX key name
+        :param value: data to store, can be any supported type.
+        :return: tuple of (string of data, type, size) that was sent to redis.
+        """
+
+        # If this is not a dict, then convert data to smax format and send.
+        if not isinstance(value, dict):
+            converted_data, type_name, size = self._to_smax_format(value)
+            return self._evalsha_set(table, key, converted_data, type_name, size)
+        else:
+            # Recursively traverse the (nested) dictionary to generate a set
+            # of values to update atomically.
+            self._pipeline_evalsha_set(table, key, self.recurse_nested_dict(value))
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         """
@@ -275,6 +303,22 @@ class SmaxRedisClient(SmaxClient):
             self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
                                  data_string, type_name, size)
             return data_string, type_name, size
+        except (ConnectionError, TimeoutError):
+            self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
+            raise
+
+    def _pipeline_evalsha_set(self, table, key, commands):
+        try:
+            pipeline = self._client.pipeline()
+            for command in commands:
+                pipeline.evalsha(self._setSHA, '1',
+                                 f"{table}:{key}:{command.table}",
+                                 self._hostname,
+                                 command.key,
+                                 command.data,
+                                 command.type,
+                                 command.dim)
+            pipeline.execute()
         except (ConnectionError, TimeoutError):
             self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise

@@ -192,7 +192,6 @@ def test_pubsub_callback(smax_client):
 
 
 def test_pull_struct(smax_client):
-
     expected_temp_value1 = np.array([42, 24], dtype=np.int32)
     expected_temp_value2 = np.array([24, 42], dtype=np.int32)
     expected_firmware_value1 = 1.0
@@ -215,6 +214,40 @@ def test_pull_struct(smax_client):
 
     assert (roach01_temp.data == expected_temp_value1).all()
     assert (roach02_temp.data == expected_temp_value2).all()
+    assert roach01_firmware.data == expected_firmware_value1
+    assert roach02_firmware.data == expected_firmware_value2
+    assert roach01_temp.type == expected_type_temp
+    assert roach02_temp.type == expected_type_temp
+    assert roach01_firmware.type == expected_type_firmware
+    assert roach02_firmware.type == expected_type_firmware
+    assert roach01_temp.dim == expected_dim_temp
+    assert roach02_temp.dim == expected_dim_temp
+    assert roach01_firmware.dim == expected_dim_firmware
+    assert roach02_firmware.dim == expected_dim_firmware
+
+
+def test_share_struct(smax_client):
+    expected_temp_value1 = 100
+    expected_temp_value2 = 0
+    expected_firmware_value1 = 2.0
+    expected_firmware_value2 = 2.1
+    expected_type_temp = int
+    expected_dim_temp = 1
+    expected_type_firmware = float
+    expected_dim_firmware = 1
+
+    struct = {"roach2-03": {"temp": expected_temp_value1, "firmware": expected_firmware_value1},
+              "roach2-04": {"temp": expected_temp_value2, "firmware": expected_firmware_value2}}
+
+    smax_client.smax_share("swarm", "dbe", struct)
+    result = smax_client.smax_pull("swarm", "dbe")
+    roach01_temp = result["swarm"]["dbe"]["roach2-03"]["temp"]
+    roach02_temp = result["swarm"]["dbe"]["roach2-04"]["temp"]
+    roach01_firmware = result["swarm"]["dbe"]["roach2-03"]["firmware"]
+    roach02_firmware = result["swarm"]["dbe"]["roach2-04"]["firmware"]
+
+    assert roach01_temp.data == expected_temp_value1
+    assert roach02_temp.data == expected_temp_value2
     assert roach01_firmware.data == expected_firmware_value1
     assert roach02_firmware.data == expected_firmware_value2
     assert roach01_temp.type == expected_type_temp
