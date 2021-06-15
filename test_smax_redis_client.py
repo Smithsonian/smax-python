@@ -258,3 +258,16 @@ def test_share_struct(smax_client):
     assert roach04_temp.dim == expected_dim_temp
     assert roach03_firmware.dim == expected_dim_firmware
     assert roach04_firmware.dim == expected_dim_firmware
+
+
+def test_roundtrip_meta(smax_client):
+    # Do a normal share to generate the automatic metadata.
+    smax_client.smax_share("pytest", "test_roundtrip_meta", "Doesn't Matter")
+
+    # Now change metadata for timestamps to equal "1".
+    expected_value = "1"
+    smax_client.smax_push_meta("timestamps", "pytest:test_roundtrip_meta", expected_value)
+
+    # Now pull just metadata.
+    result = smax_client.smax_pull_meta("pytest:test_roundtrip_meta", "timestamps")
+    assert result == expected_value

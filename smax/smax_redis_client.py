@@ -447,7 +447,7 @@ class SmaxRedisClient(SmaxClient):
 
         Args:
             pattern (str): SMAX table/key pattern to listen on.
-            timeout (int): Value in seconds to wait before raising timeout exception.
+            timeout (float): Value in seconds to wait before raising timeout exception.
             notification_only (bool): If True, only returns the notification from redis.
 
         Returns:
@@ -503,7 +503,7 @@ class SmaxRedisClient(SmaxClient):
         If you use smax_subscribe without a callback, you can use this function
         to block until a message is received from any channel you are subscribed to.
         Args:
-            timeout (int): Value in seconds to wait before raising timeout exception.
+            timeout (float): Value in seconds to wait before raising timeout exception.
             notification_only (bool): If True, only returns the notification from redis.
 
         Returns:
@@ -512,32 +512,36 @@ class SmaxRedisClient(SmaxClient):
         return self._redis_listen(timeout=timeout,
                                   notification_only=notification_only)
 
-    def smax_set_description(self, table, key, description):
+    def smax_set_description(self, table, description):
+        return self.smax_push_meta("description", table, description)
+
+    def smax_get_description(self, table):
+        return self.smax_pull_meta(table, "description")
+
+    def smax_set_units(self, table, unit):
+        return self.smax_push_meta("units", table, unit)
+
+    def smax_get_units(self, table, unit):
+        return self.smax_pull_meta(table, "units")
+
+    def smax_set_coordinate_system(self, table, coordinate_system):
         pass
 
-    def smax_get_description(self, table, key):
-        pass
-
-    def smax_set_units(self, table, key, unit):
-        pass
-
-    def smax_get_units(self, table, key, unit):
-        pass
-
-    def smax_set_coordinate_system(self, table, key, coordinate_system):
-        pass
-
-    def smax_get_coordinate_system(self, table, key):
+    def smax_get_coordinate_system(self, table):
         pass
 
     def smax_create_coordinate_system(self, n_axis):
         pass
 
-    def smax_push_meta(self, meta, table, key, value):
-        pass
+    def smax_push_meta(self, meta, table, value):
+        return self._client.hset(f"<{meta}>", table, value)
 
-    def smax_pull_meta(self, table, key):
-        pass
+    def smax_pull_meta(self, table, meta):
+        result = self._client.hget(f"<{meta}>", table).decode("utf-8")
+        if type(result) == bytes:
+            return result.decode("utf-8")
+        else:
+            return result
 
 
 # Lookup tables for converting python types to smax type names.

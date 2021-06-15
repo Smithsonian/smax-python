@@ -51,27 +51,27 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_set_description(self, table, key, description):
+    def smax_set_description(self, table, description):
         pass
 
     @abstractmethod
-    def smax_get_description(self, table, key):
+    def smax_get_description(self, table):
         pass
 
     @abstractmethod
-    def smax_set_units(self, table, key, unit):
+    def smax_set_units(self, table, unit):
         pass
 
     @abstractmethod
-    def smax_get_units(self, table, key, unit):
+    def smax_get_units(self, table, unit):
         pass
 
     @abstractmethod
-    def smax_set_coordinate_system(self, table, key, coordinate_system):
+    def smax_set_coordinate_system(self, table, coordinate_system):
         pass
 
     @abstractmethod
-    def smax_get_coordinate_system(self, table, key):
+    def smax_get_coordinate_system(self, table):
         pass
 
     @abstractmethod
@@ -79,9 +79,9 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_push_meta(self, meta, table, key, value):
+    def smax_push_meta(self, meta, table, value):
         pass
 
     @abstractmethod
-    def smax_pull_meta(self, table, key):
+    def smax_pull_meta(self, table, meta):
         pass
