@@ -16,11 +16,12 @@ class SmaxRedisClient(SmaxClient):
         Constructor for SmaxRedisClient, automatically establishes connection
         and sets the redis-py connection object to 'self._client'. This magic
         happens in the SmaxClient parent class that is inherited.
-        :param str redis_ip: IP address of redis-server.
-        :param str redis_port: Port of redis-server.
-        :param int redis_db: Database index to connect to.
-        :param str program_name: Optional program name gets appended to hostname.
-        :param str hostname: Optional hostname, obtained automatically otherwise.
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+            program_name (str): Optional program name gets appended to hostname.
+            hostname (str): Optional hostname, obtained automatically otherwise.
         """
 
         # Logging convention for messages to have module names in them.
@@ -51,12 +52,16 @@ class SmaxRedisClient(SmaxClient):
         obtains and stores the LUA scripts in the object (ex self._getSHA). This
         function is called automatically by the SmaxClient parent class, so
         there shouldn't be a need to call this explicitly.
-        :param str redis_ip: IP address of redis-server.
-        :param str redis_port: Port of redis-server.
-        :param int redis_db: Database index to connect to.
-        :return: Redis connection object
-        :rtype: Redis
+
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+
+        Returns:
+            Redis: A Redis client object configured from the given args.
         """
+
         try:
             # Connect to redis-server, and store LUA scripts on the object.
             redis_client = StrictRedis(host=redis_ip,
@@ -84,6 +89,15 @@ class SmaxRedisClient(SmaxClient):
 
     @staticmethod
     def _parse_lua_pull_response(lua_data):
+        """
+        Private method to parse the response from calling the HGetWithMeta LUA
+        script.
+        Args:
+            lua_data (list): value, vtype, dim, timestamp, origin, serial
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+        """
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
@@ -139,10 +153,13 @@ class SmaxRedisClient(SmaxClient):
         dataDimension(s), dataDate, source of the data, and a sequence number.
         If you pulled a struct, you will get a nested dictionary back, with
         each leaf being an SmaxData object.
-        :param str table: SMAX table name
-        :param str key: SMAX key name
-        :return: SmaxData tuple data, type, dimension(s), date, source, sequence
-        :rtype: SmaxData
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+            dict: If a struct is pulled, this returns a nested dictionary.
         """
 
         try:
@@ -209,9 +226,13 @@ class SmaxRedisClient(SmaxClient):
         """
         Private function that converts a given data value to the string format
         that SMAX supports.
-        :param value: Any supported data type, including (nested) dicts.
-        :return: tuple of (data_string, type_name, dim_string)
+        Args:
+            value: Any supported data type, including (nested) dicts.
+
+        Returns:
+            tuple: tuple of (data_string, type_name, dim_string)
         """
+
         # Derive the type according to Python.
         python_type = type(value)
 
@@ -266,10 +287,14 @@ class SmaxRedisClient(SmaxClient):
         the leaf nodes that have actual data values.  Each real data value
         ends up as an SmaxCommand object and gets appended to a list, which is
         returned after the dictionary is searched.
-        :param dictionary: Dict containing keys that exist in SMAX.
-        :param table: Do not use, this is used to build the table name as the function recurses.
-        :return: List of SmaxCommand objects.
+        Args:
+            dictionary (dict): Dict containing keys that exist in SMAX.
+            table: Do not use, this is used to build the table name as the function recurses.
+
+        Returns:
+            list: List of SmaxCommand objects.
         """
+
         commands = []
         for key, value in dictionary.items():
             if isinstance(value, dict):
@@ -290,10 +315,13 @@ class SmaxRedisClient(SmaxClient):
         determined from the data and the source from this computer's name
         plus the program name if given when this class is instantiated.
         Date and sequence number are added by the redis macro.
-        :param str table: SMAX table name
-        :param str key: SMAX key name
-        :param value: data to store, takes supported types, including (nested) dicts.
-        :return: return value from redis-py's evalsha() function.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            value: data to store, takes supported types, including (nested) dicts.
+
+        Returns:
+            return value from redis-py's evalsha() function.
         """
 
         # If this is not a dict, then convert data to smax format and send.
@@ -308,15 +336,19 @@ class SmaxRedisClient(SmaxClient):
     def _evalsha_set(self, table, key, data_string, type_name, size):
         """
         Private function that calls evalsha() using an SMAX LUA script.
-        :param str table: SMAX table name
-        :param str key: SMAX key name
-        :param str data_string: Data converted to proper SMAX string format.
-        :param str type_name: String representation of type
-        :param size: Representation of the dimensions of the data. If one
+        Args:
+            table (str): SMAX table name.
+            key (str): SMAX key name.
+            data_string (str): Data converted to proper SMAX string format.
+            type_name (str): String representation of type.
+            size: (str): Representation of the dimensions of the data. If one
                      dimension, than a single integer.Otherwise will be a string
                      of space delimited dimension values.
-        :return: tuple of (data, type, size) that was sent to redis.
+
+        Returns:
+            return value from redis-py's evalsha() function.
         """
+
         try:
             return self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
                                         data_string, type_name, size)
@@ -325,6 +357,19 @@ class SmaxRedisClient(SmaxClient):
             raise
 
     def _pipeline_evalsha_set(self, table, key, commands):
+        """
+        In order to execute multiple LUA scripts atomically, it has to use the
+        pipeline module in redis-py.  This function takes a list of commands,
+        and issues them as a "pipeline", which uses a MULTI/EXEC block under the
+        covers.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            commands (list): List of SmaxCommand objects.
+
+        Returns:
+            return value from redis-py's pipeline.execute() function.
+        """
         try:
             pipeline = self._client.pipeline()
             for command in commands:
@@ -335,7 +380,7 @@ class SmaxRedisClient(SmaxClient):
                                  command.data,
                                  command.type,
                                  command.dim)
-            pipeline.execute()
+            return pipeline.execute()
         except (ConnectionError, TimeoutError):
             self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
@@ -352,10 +397,13 @@ class SmaxRedisClient(SmaxClient):
         name of the field you'd like to subscribe too, or use a wildcard "*"
         character to specify a pattern. Use a callback for asynchronous
         processing of notifications, or use one of the smax_wait_on functions.
-        :param pattern: Either full name of smax field, or use a wildcard '*' at
-        the end of the pattern to be notified for anything underneath.
-        :param callback: Optional callback function to process notifications.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard '*'
+                           at the end of the pattern to be notified for anything
+                           underneath.
+            callback (func): Function that takes a single argument (Default=None).
         """
+
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
 
@@ -371,6 +419,14 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.subscribe(**{f"smax:{pattern}": callback})
 
     def smax_unsubscribe(self, pattern=None):
+        """
+        Unsubscribe from all subscribed channels, or pass a pattern argument
+        to unsubscribe from specific channels.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard '*'
+                           at the end of the pattern to be notified for anything
+                           underneath.
+        """
         if self._pubsub is not None:
             if pattern is None:
                 self._pubsub.punsubscribe()
@@ -389,11 +445,16 @@ class SmaxRedisClient(SmaxClient):
         value.  The get_message() function doesn't block by default, but when
         a timeout is specified it blocks until the timeout is reached. This function
         will raise a redis Timeout exception when the timeout is reached.
-        :param pattern: SMAX table/key pattern to listen on.
-        :param timeout: Value in seconds to wait before raising timeout exception.
-        :param notification_only: Boolean flag to only return the notification from redis.
-        :return: Either a notification or the actual pulled data.
+
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (int): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
         """
+
         # Throw away any blank messages or of type 'subscribe'
         found_real_message = False
         message = None
@@ -423,12 +484,33 @@ class SmaxRedisClient(SmaxClient):
             key = channel.split(":")[-1]
             return self.smax_pull(table, key)
 
-    def smax_wait_on_subscribed(self, pattern, timeout=None,
-                                notification_only=False):
+    def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
+        """
+        If you use smax_subscribe without a callback, you can use this function
+        to specify with channel to listen to, and block until a message is received.
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (int): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        """
         return self._redis_listen(pattern=pattern, timeout=timeout,
                                   notification_only=notification_only)
 
     def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+        """
+        If you use smax_subscribe without a callback, you can use this function
+        to block until a message is received from any channel you are subscribed to.
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (int): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        """
         return self._redis_listen(timeout=timeout,
                                   notification_only=notification_only)
 
