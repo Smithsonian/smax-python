@@ -246,6 +246,7 @@ def test_share_struct(smax_client):
     roach03_firmware = result["swarm"]["dbe"]["roach2-03"]["firmware"]
     roach04_firmware = result["swarm"]["dbe"]["roach2-04"]["firmware"]
 
+    # Data and type checks.
     assert roach03_temp.data == expected_temp_value1
     assert roach04_temp.data == expected_temp_value2
     assert roach03_firmware.data == expected_firmware_value1
@@ -270,4 +271,30 @@ def test_roundtrip_meta(smax_client):
 
     # Now pull just metadata.
     result = smax_client.smax_pull_meta("pytest:test_roundtrip_meta", "timestamps")
+    assert result == expected_value
+
+
+def test_description_meta(smax_client):
+    # Do a normal share to generate the automatic metadata.
+    smax_client.smax_share("pytest", "test_units_meta", "Doesn't Matter")
+
+    # Now add units metadata.
+    expected_value = "I am a description"
+    smax_client.smax_set_description("pytest:test_description_meta", expected_value)
+
+    # Now pull just metadata.
+    result = smax_client.smax_get_description("pytest:test_description_meta")
+    assert result == expected_value
+
+
+def test_units_meta(smax_client):
+    # Do a normal share to generate the automatic metadata.
+    smax_client.smax_share("pytest", "test_units_meta", "Doesn't Matter")
+
+    # Now add units metadata.
+    expected_value = "feet"
+    smax_client.smax_set_units("pytest:test_units_meta", expected_value)
+
+    # Now pull just metadata.
+    result = smax_client.smax_get_units("pytest:test_units_meta")
     assert result == expected_value

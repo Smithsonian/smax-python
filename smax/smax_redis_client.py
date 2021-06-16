@@ -521,7 +521,7 @@ class SmaxRedisClient(SmaxClient):
     def smax_set_units(self, table, unit):
         return self.smax_push_meta("units", table, unit)
 
-    def smax_get_units(self, table, unit):
+    def smax_get_units(self, table):
         return self.smax_pull_meta(table, "units")
 
     def smax_set_coordinate_system(self, table, coordinate_system):

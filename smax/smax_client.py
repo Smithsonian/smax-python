@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 
 
-# Named tuple for data and metadata returned from smax.
+# Named tuples for smax requests and responses.
 SmaxData = namedtuple("SmaxData", "data type dim date source seq")
 SmaxCommand = namedtuple("SmaxCommand", "table key data type dim")
+
 
 class SmaxClient(ABC):
 
@@ -63,7 +64,7 @@ class SmaxClient(ABC):
         pass
 
     @abstractmethod
-    def smax_get_units(self, table, unit):
+    def smax_get_units(self, table):
         pass
 
     @abstractmethod
