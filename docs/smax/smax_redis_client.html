@@ -1,0 +1,1753 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>smax.smax_redis_client API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>smax.smax_redis_client</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import logging
+import socket
+from fnmatch import fnmatch
+
+import numpy as np
+from redis import StrictRedis, ConnectionError, TimeoutError
+
+from .smax_client import SmaxClient, SmaxData, SmaxCommand
+
+
+class SmaxRedisClient(SmaxClient):
+
+    def __init__(self, redis_ip=&#34;128.171.116.189&#34;, redis_port=6379, redis_db=0,
+                 program_name=None, hostname=None):
+        &#34;&#34;&#34;
+        Constructor for SmaxRedisClient, automatically establishes connection
+        and sets the redis-py connection object to &#39;self._client&#39;. This magic
+        happens in the SmaxClient parent class that is inherited.
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+            program_name (str): Optional program name gets appended to hostname.
+            hostname (str): Optional hostname, obtained automatically otherwise.
+        &#34;&#34;&#34;
+
+        # Logging convention for messages to have module names in them.
+        self.logger = logging.getLogger(__name__)
+
+        # Attributes for package, not exposed to users.
+        self._redis_ip = redis_ip
+        self._redis_port = redis_port
+        self._redis_db = redis_db
+        self._getSHA = None
+        self._setSHA = None
+        self._pubsub = None
+        self._getstructSHA = None
+
+        # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
+        self._hostname = socket.gethostname() if hostname is None else hostname
+
+        # Optionally add a program name into the _hostname.
+        if program_name is not None:
+            self._hostname += &#39;:&#39; + program_name
+
+        # Call parent constructor, which calls smax_connect_to().
+        super().__init__(redis_ip, redis_port, redis_db)
+
+    def smax_connect_to(self, redis_ip, redis_port, redis_db):
+        &#34;&#34;&#34;
+        Uses the redis-py library to establish a connection to redis, then
+        obtains and stores the LUA scripts in the object (ex self._getSHA). This
+        function is called automatically by the SmaxClient parent class, so
+        there shouldn&#39;t be a need to call this explicitly.
+
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+
+        Returns:
+            Redis: A Redis client object configured from the given args.
+        &#34;&#34;&#34;
+
+        try:
+            # Connect to redis-server, and store LUA scripts on the object.
+            redis_client = StrictRedis(host=redis_ip,
+                                       port=redis_port,
+                                       db=redis_db,
+                                       health_check_interval=30)
+            self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
+            self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+            self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
+            self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
+            return redis_client
+        except (ConnectionError, TimeoutError):
+            self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+            raise
+
+    def smax_disconnect(self):
+        &#34;&#34;&#34;
+        Python manages a connection pool automatically, if somehow that fails
+        release the connection, this disconnect function will do it.
+        &#34;&#34;&#34;
+
+        if self._client.connection:
+            self._client.connection.disconnect()
+        self.logger.info(f&#34;Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}&#34;)
+
+    @staticmethod
+    def _parse_lua_pull_response(lua_data):
+        &#34;&#34;&#34;
+        Private method to parse the response from calling the HGetWithMeta LUA
+        script.
+        Args:
+            lua_data (list): value, vtype, dim, timestamp, origin, serial
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+        &#34;&#34;&#34;
+
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode(&#34;utf-8&#34;)
+
+        if type_name in _TYPE_MAP:
+            data_type = _TYPE_MAP[type_name]
+        else:
+            raise TypeError(f&#34;I can&#39;t deal with data of type {type_name}&#34;)
+
+        # Extract data, source and sequence from meta data.
+        data_date = float(lua_data[3])
+        source = lua_data[4].decode(&#34;utf-8&#34;)
+        sequence = int(lua_data[5])
+
+        # Extract dimension information from meta data.
+        data_dim = tuple(int(s) for s in lua_data[2].decode(&#34;utf-8&#34;).split())
+
+        # If only one dimension convert to a single value (rather than list)
+        if len(data_dim) == 1:
+            data_dim = data_dim[0]
+
+        # If there is only a single value, cast to the appropriate type and return.
+        if data_dim == 1:
+            if data_type == str:
+                data = lua_data[0].decode(&#34;utf-8&#34;)
+            else:
+                data = data_type(lua_data[0])
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+        # This is some kind of array.
+        else:
+            data = lua_data[0].decode(&#34;utf-8&#34;).split(&#34; &#34;)
+
+            # If this is a list of strings, just clean up string and return.
+            if data_type == str:
+                # Remove the leading and trailing \&#39; in each string in the list.
+                data = [s.strip(&#34;\&#39;&#34;) for s in data]
+                return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            else:
+                # Use numpy for all other numerical types
+                data = np.array(data, dtype=data_type)
+
+            # If this is a multi-dimensional array, reshape with numpy.
+            if type(data_dim) == tuple:  # n-d array
+                data = data.reshape(data_dim)
+
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+    def smax_pull(self, table, key):
+        &#34;&#34;&#34;
+        Get data which was stored with the smax macro HSetWithMeta along with
+        the associated metadata. The return value will an SmaxData object
+        containing the data, typeName, dataDimension(s), dataDate, source of the
+        data, and a sequence number. If you pulled a struct, you will get a
+        nested dictionary back, with each leaf being an SmaxData object.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+            dict: If a struct is pulled, this returns a nested dictionary.
+        &#34;&#34;&#34;
+
+        try:
+            lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+            raise
+
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode(&#34;utf-8&#34;)
+
+        # If the lua response says its a struct we have to now use another LUA
+        # script to go back to redis and collect the struct.
+        if type_name == &#34;struct&#34;:
+            lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+
+            # The struct will be parsed into a nested python dictionary.
+            tree = {}
+            for struct_name_index, stuct_name in enumerate(lua_struct[0]):
+                t = tree
+                names = stuct_name.decode(&#34;utf-8&#34;).split(&#39;:&#39;)
+
+                for table_name_index, table_name in enumerate(names):
+
+                    # Grow a new hierarchical level with a blank dictionary.
+                    t = t.setdefault(table_name, {})
+
+                    # If this is the last name in the path, add actual data.
+                    if table_name_index == len(names) - 1:
+
+                        # Create offset indices for more readable code.
+                        offset = struct_name_index + struct_name_index + 1
+                        offset2 = struct_name_index + struct_name_index + 2
+
+                        # Process leaf node like it is a normal smax_pull.
+                        for leaf_index, leaf in enumerate(lua_struct[offset]):
+
+                            # If the leaf says its a struct, ignore it.
+                            lua_type = lua_struct[offset2][1][leaf_index]
+                            if lua_type.decode(&#34;utf-8&#34;) == &#34;struct&#34;:
+                                continue
+
+                            # Extract data and metadata to pass into parser.
+                            lua_data = lua_struct[offset2][0][leaf_index]
+                            lua_dim = lua_struct[offset2][2][leaf_index]
+                            lua_date = lua_struct[offset2][3][leaf_index]
+                            lua_hostname = lua_struct[offset2][4][leaf_index]
+                            lua_sequence = lua_struct[offset2][5][leaf_index]
+
+                            # Parser will return an SmaxData object.
+                            smax_data_object = self._parse_lua_pull_response(
+                                [lua_data, lua_type, lua_dim, lua_date,
+                                 lua_hostname, lua_sequence])
+
+                            # Add SmaxData object into the nested dictionary.
+                            t.setdefault(lua_struct[offset][leaf_index].decode(&#34;utf-8&#34;),
+                                         smax_data_object)
+            return tree
+
+        return self._parse_lua_pull_response(lua_data)
+
+    @staticmethod
+    def _to_smax_format(value):
+        &#34;&#34;&#34;
+        Private function that converts a given data value to the string format
+        that SMAX supports.
+        Args:
+            value: Any supported data type, including (nested) dicts.
+
+        Returns:
+            tuple: tuple of (data_string, type_name, dim_string)
+        &#34;&#34;&#34;
+
+        # Derive the type according to Python.
+        python_type = type(value)
+
+        # Single value of a supported type, cast to string and send to redis.
+        if python_type in _REVERSE_TYPE_MAP:
+            type_name = _REVERSE_TYPE_MAP[python_type]
+            return str(value), type_name, 1
+
+        # If this is an SmaxData object, just pass along the data attribute.
+        if python_type == SmaxData:
+            value = value.data
+
+        # Copy the data into a variable that we will manipulate for smax.
+        converted_data = value
+
+        # If type is list or tuple, convert to numpy array for further manipulation.
+        if python_type == list or python_type == tuple:
+            # Convert to numpy array, dtype=&#34;O&#34; preserves the original types.
+            converted_data = np.array(value, dtype=&#34;O&#34;)
+            python_type = np.ndarray
+
+        # Now if its a numpy array, flatten, convert to a string, and return.
+        if python_type == np.ndarray or python_type == np.array:
+
+            # If the shape is a single dimension, set &#39;size&#39; equal to that value.
+            data_shape = converted_data.shape
+            if len(data_shape) == 1:
+                size = data_shape[0]
+            else:
+                # Convert shape tuple to a space delimited list for smax.
+                size = &#34; &#34;.join(str(i) for i in data_shape)
+
+                # Flatten and make a space delimited string of dimensions.
+                converted_data = converted_data.flatten()
+
+            # Check this 1D representation of the data for type uniformity.
+            if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
+                raise TypeError(&#34;All values in list are not the same type.&#34;)
+
+            type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
+
+            # Create a string representation of the data in the array.
+            converted_data = &#39; &#39;.join(str(x) for x in converted_data)
+            return converted_data, type_name, size
+
+        else:
+            raise TypeError(f&#34;Unable to convert {python_type} for SMAX&#34;)
+
+    def _recurse_nested_dict(self, dictionary, table=None, commands=[]):
+        &#34;&#34;&#34;
+        Private function to recursively traverse a nested dictionary, finding
+        the leaf nodes that have actual data values.  Each real data value
+        ends up as an SmaxCommand object and gets appended to a list, which is
+        returned after the dictionary is searched.
+        Args:
+            dictionary (dict): Dict containing keys that exist in SMAX.
+            table: Do not use, this is used to build the table name as the function recurses.
+
+        Returns:
+            list: List of SmaxCommand objects.
+        &#34;&#34;&#34;
+
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                if table is None:
+                    self._recurse_nested_dict(value, key)
+                else:
+                    self._recurse_nested_dict(value, f&#34;{table}:{key}&#34;)
+            else:
+                converted_data, type_name, size = self._to_smax_format(value)
+                commands.append(SmaxCommand(table, key, converted_data, type_name, size))
+        return commands
+
+    def smax_share(self, table, key, value):
+        &#34;&#34;&#34;
+        Send data to redis using the smax macro HSetWithMeta to include
+        metadata.  The metadata is typeName, dataDimension(s), dataDate,
+        source of the data, and a sequence number.  The first two are
+        determined from the data and the source from this computer&#39;s name
+        plus the program name if given when this class is instantiated.
+        Date and sequence number are added by the redis macro.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            value: data to store, takes supported types, including (nested) dicts.
+
+        Returns:
+            return value from redis-py&#39;s evalsha() function.
+        &#34;&#34;&#34;
+
+        # If this is not a dict, then convert data to smax format and send.
+        if not isinstance(value, dict):
+            converted_data, type_name, size = self._to_smax_format(value)
+            return self._evalsha_set(table, key, converted_data, type_name, size)
+        else:
+            # Recursively traverse the (nested) dictionary to generate a set
+            # of values to update atomically.
+            return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))
+
+    def _evalsha_set(self, table, key, data_string, type_name, size):
+        &#34;&#34;&#34;
+        Private function that calls evalsha() using an SMAX LUA script.
+        Args:
+            table (str): SMAX table name.
+            key (str): SMAX key name.
+            data_string (str): Data converted to proper SMAX string format.
+            type_name (str): String representation of type.
+            size: (str): Representation of the dimensions of the data. If one
+                     dimension, than a single integer.Otherwise will be a string
+                     of space delimited dimension values.
+
+        Returns:
+            return value from redis-py&#39;s evalsha() function.
+        &#34;&#34;&#34;
+
+        try:
+            return self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
+                                        data_string, type_name, size)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            raise
+
+    def _pipeline_evalsha_set(self, table, key, commands):
+        &#34;&#34;&#34;
+        In order to execute multiple LUA scripts atomically, it has to use the
+        pipeline module in redis-py.  This function takes a list of commands,
+        and issues them as a &#34;pipeline&#34;, which uses a MULTI/EXEC block under the
+        covers.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            commands (list): List of SmaxCommand objects.
+
+        Returns:
+            return value from redis-py&#39;s pipeline.execute() function.
+        &#34;&#34;&#34;
+        try:
+            pipeline = self._client.pipeline()
+            for command in commands:
+                pipeline.evalsha(self._setSHA, &#39;1&#39;,
+                                 f&#34;{table}:{key}:{command.table}&#34;,
+                                 self._hostname,
+                                 command.key,
+                                 command.data,
+                                 command.type,
+                                 command.dim)
+            return pipeline.execute()
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            raise
+
+    def smax_lazy_pull(self, table, key, value):
+        pass
+
+    def smax_lazy_end(self, table, key):
+        pass
+
+    def smax_subscribe(self, pattern, callback=None):
+        &#34;&#34;&#34;
+        Subscribe to a redis field or group of fields. You can type the full
+        name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
+        character to specify a pattern. Use a callback for asynchronous
+        processing of notifications, or use one of the smax_wait_on functions.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                           at the end of the pattern to be notified for anything
+                           underneath.
+            callback (func): Function that takes a single argument (Default=None).
+        &#34;&#34;&#34;
+
+        if self._pubsub is None:
+            self._pubsub = self._client.pubsub()
+
+        if pattern.endswith(&#34;*&#34;):
+            if callback is None:
+                self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+        else:
+            if callback is None:
+                self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})
+
+    def smax_unsubscribe(self, pattern=None):
+        &#34;&#34;&#34;
+        Unsubscribe from all subscribed channels, or pass a pattern argument
+        to unsubscribe from specific channels.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                           at the end of the pattern to be notified for anything
+                           underneath.
+        &#34;&#34;&#34;
+        if self._pubsub is not None:
+            if pattern is None:
+                self._pubsub.punsubscribe()
+                self._pubsub.unsubscribe()
+            elif pattern.endswith(&#34;*&#34;):
+                self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)
+
+    def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        Private function to help implement the &#34;wait&#34; functions in this API.
+        In the redis-py library, the listen() function is a blocking call, so
+        it gets used if there is no timeout specified.  When there is a timeout,
+        the get_message() function is used, because listen() doesn&#39;t take a timeout
+        value.  The get_message() function doesn&#39;t block by default, but when
+        a timeout is specified it blocks until the timeout is reached. This function
+        will raise a redis Timeout exception when the timeout is reached.
+
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (float): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+
+        # Throw away any blank messages or of type &#39;subscribe&#39;
+        found_real_message = False
+        message = None
+        channel = None
+
+        while not found_real_message:
+            if timeout is None:
+                for message in self._pubsub.listen():
+                    break
+            else:
+                message = self._pubsub.get_message(timeout=timeout)
+
+            if message is None:
+                raise TimeoutError(&#34;Timed out waiting for redis message.&#34;)
+            elif message[&#34;type&#34;] == &#34;message&#34; or message[&#34;type&#34;] == &#34;pmessage&#34;:
+                channel = message[&#34;channel&#34;].decode(&#34;utf-8&#34;)
+                if channel.startswith(&#34;smax:&#34;):
+                    if pattern is None:
+                        found_real_message = True
+                    elif fnmatch(channel[5:], pattern):
+                        found_real_message = True
+
+        if notification_only:
+            return message
+        else:
+            table = channel[5:channel.rfind(&#34;:&#34;)]
+            key = channel.split(&#34;:&#34;)[-1]
+            return self.smax_pull(table, key)
+
+    def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        If you use smax_subscribe without a callback, you can use this function
+        to specify with channel to listen to, and block until a message is received.
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (int): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+        return self._redis_listen(pattern=pattern, timeout=timeout,
+                                  notification_only=notification_only)
+
+    def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        If you use smax_subscribe without a callback, you can use this function
+        to block until a message is received from any channel you are subscribed to.
+        Args:
+            timeout (float): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+        return self._redis_listen(timeout=timeout,
+                                  notification_only=notification_only)
+
+    def smax_set_description(self, table, description):
+        return self.smax_push_meta(&#34;description&#34;, table, description)
+
+    def smax_get_description(self, table):
+        return self.smax_pull_meta(table, &#34;description&#34;)
+
+    def smax_set_units(self, table, unit):
+        return self.smax_push_meta(&#34;units&#34;, table, unit)
+
+    def smax_get_units(self, table):
+        return self.smax_pull_meta(table, &#34;units&#34;)
+
+    def smax_set_coordinate_system(self, table, coordinate_system):
+        pass
+
+    def smax_get_coordinate_system(self, table):
+        pass
+
+    def smax_create_coordinate_system(self, n_axis):
+        pass
+
+    def smax_push_meta(self, meta, table, value):
+        return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+
+    def smax_pull_meta(self, table, meta):
+        result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+        if type(result) == bytes:
+            return result.decode(&#34;utf-8&#34;)
+        else:
+            return result
+
+
+# Lookup tables for converting python types to smax type names.
+_TYPE_MAP = {&#39;integer&#39;: int,
+             &#39;int16&#39;: np.int16,
+             &#39;int32&#39;: np.int32,
+             &#39;int64&#39;: np.int64,
+             &#39;int8&#39;: np.int8,
+             &#39;float&#39;: float,
+             &#39;float32&#39;: np.float32,
+             &#39;float64&#39;: np.float64,
+             &#39;str128&#39;: str,
+             &#39;str160&#39;: str,
+             &#39;str&#39;: str}
+_REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="smax.smax_redis_client.SmaxRedisClient"><code class="flex name class">
+<span>class <span class="ident">SmaxRedisClient</span></span>
+<span>(</span><span>redis_ip='128.171.116.189', redis_port=6379, redis_db=0, program_name=None, hostname=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Helper class that provides a standard way to create an ABC using
+inheritance.</p>
+<p>Constructor for SmaxRedisClient, automatically establishes connection
+and sets the redis-py connection object to 'self._client'. This magic
+happens in the SmaxClient parent class that is inherited.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>redis_ip</code></strong> :&ensp;<code>str</code></dt>
+<dd>IP address of redis-server.</dd>
+<dt><strong><code>redis_port</code></strong> :&ensp;<code>int</code></dt>
+<dd>Port of redis-server.</dd>
+<dt><strong><code>redis_db</code></strong> :&ensp;<code>int</code></dt>
+<dd>Database index to connect to.</dd>
+<dt><strong><code>program_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Optional program name gets appended to hostname.</dd>
+<dt><strong><code>hostname</code></strong> :&ensp;<code>str</code></dt>
+<dd>Optional hostname, obtained automatically otherwise.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SmaxRedisClient(SmaxClient):
+
+    def __init__(self, redis_ip=&#34;128.171.116.189&#34;, redis_port=6379, redis_db=0,
+                 program_name=None, hostname=None):
+        &#34;&#34;&#34;
+        Constructor for SmaxRedisClient, automatically establishes connection
+        and sets the redis-py connection object to &#39;self._client&#39;. This magic
+        happens in the SmaxClient parent class that is inherited.
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+            program_name (str): Optional program name gets appended to hostname.
+            hostname (str): Optional hostname, obtained automatically otherwise.
+        &#34;&#34;&#34;
+
+        # Logging convention for messages to have module names in them.
+        self.logger = logging.getLogger(__name__)
+
+        # Attributes for package, not exposed to users.
+        self._redis_ip = redis_ip
+        self._redis_port = redis_port
+        self._redis_db = redis_db
+        self._getSHA = None
+        self._setSHA = None
+        self._pubsub = None
+        self._getstructSHA = None
+
+        # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
+        self._hostname = socket.gethostname() if hostname is None else hostname
+
+        # Optionally add a program name into the _hostname.
+        if program_name is not None:
+            self._hostname += &#39;:&#39; + program_name
+
+        # Call parent constructor, which calls smax_connect_to().
+        super().__init__(redis_ip, redis_port, redis_db)
+
+    def smax_connect_to(self, redis_ip, redis_port, redis_db):
+        &#34;&#34;&#34;
+        Uses the redis-py library to establish a connection to redis, then
+        obtains and stores the LUA scripts in the object (ex self._getSHA). This
+        function is called automatically by the SmaxClient parent class, so
+        there shouldn&#39;t be a need to call this explicitly.
+
+        Args:
+            redis_ip (str): IP address of redis-server.
+            redis_port (int): Port of redis-server.
+            redis_db (int): Database index to connect to.
+
+        Returns:
+            Redis: A Redis client object configured from the given args.
+        &#34;&#34;&#34;
+
+        try:
+            # Connect to redis-server, and store LUA scripts on the object.
+            redis_client = StrictRedis(host=redis_ip,
+                                       port=redis_port,
+                                       db=redis_db,
+                                       health_check_interval=30)
+            self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
+            self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+            self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
+            self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
+            return redis_client
+        except (ConnectionError, TimeoutError):
+            self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+            raise
+
+    def smax_disconnect(self):
+        &#34;&#34;&#34;
+        Python manages a connection pool automatically, if somehow that fails
+        release the connection, this disconnect function will do it.
+        &#34;&#34;&#34;
+
+        if self._client.connection:
+            self._client.connection.disconnect()
+        self.logger.info(f&#34;Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}&#34;)
+
+    @staticmethod
+    def _parse_lua_pull_response(lua_data):
+        &#34;&#34;&#34;
+        Private method to parse the response from calling the HGetWithMeta LUA
+        script.
+        Args:
+            lua_data (list): value, vtype, dim, timestamp, origin, serial
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+        &#34;&#34;&#34;
+
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode(&#34;utf-8&#34;)
+
+        if type_name in _TYPE_MAP:
+            data_type = _TYPE_MAP[type_name]
+        else:
+            raise TypeError(f&#34;I can&#39;t deal with data of type {type_name}&#34;)
+
+        # Extract data, source and sequence from meta data.
+        data_date = float(lua_data[3])
+        source = lua_data[4].decode(&#34;utf-8&#34;)
+        sequence = int(lua_data[5])
+
+        # Extract dimension information from meta data.
+        data_dim = tuple(int(s) for s in lua_data[2].decode(&#34;utf-8&#34;).split())
+
+        # If only one dimension convert to a single value (rather than list)
+        if len(data_dim) == 1:
+            data_dim = data_dim[0]
+
+        # If there is only a single value, cast to the appropriate type and return.
+        if data_dim == 1:
+            if data_type == str:
+                data = lua_data[0].decode(&#34;utf-8&#34;)
+            else:
+                data = data_type(lua_data[0])
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+        # This is some kind of array.
+        else:
+            data = lua_data[0].decode(&#34;utf-8&#34;).split(&#34; &#34;)
+
+            # If this is a list of strings, just clean up string and return.
+            if data_type == str:
+                # Remove the leading and trailing \&#39; in each string in the list.
+                data = [s.strip(&#34;\&#39;&#34;) for s in data]
+                return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            else:
+                # Use numpy for all other numerical types
+                data = np.array(data, dtype=data_type)
+
+            # If this is a multi-dimensional array, reshape with numpy.
+            if type(data_dim) == tuple:  # n-d array
+                data = data.reshape(data_dim)
+
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+
+    def smax_pull(self, table, key):
+        &#34;&#34;&#34;
+        Get data which was stored with the smax macro HSetWithMeta along with
+        the associated metadata. The return value will an SmaxData object
+        containing the data, typeName, dataDimension(s), dataDate, source of the
+        data, and a sequence number. If you pulled a struct, you will get a
+        nested dictionary back, with each leaf being an SmaxData object.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+
+        Returns:
+            SmaxData: Populated SmaxData NamedTuple object.
+            dict: If a struct is pulled, this returns a nested dictionary.
+        &#34;&#34;&#34;
+
+        try:
+            lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+            raise
+
+        # Extract the type out of the meta data, and map string to real type object.
+        type_name = lua_data[1].decode(&#34;utf-8&#34;)
+
+        # If the lua response says its a struct we have to now use another LUA
+        # script to go back to redis and collect the struct.
+        if type_name == &#34;struct&#34;:
+            lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+
+            # The struct will be parsed into a nested python dictionary.
+            tree = {}
+            for struct_name_index, stuct_name in enumerate(lua_struct[0]):
+                t = tree
+                names = stuct_name.decode(&#34;utf-8&#34;).split(&#39;:&#39;)
+
+                for table_name_index, table_name in enumerate(names):
+
+                    # Grow a new hierarchical level with a blank dictionary.
+                    t = t.setdefault(table_name, {})
+
+                    # If this is the last name in the path, add actual data.
+                    if table_name_index == len(names) - 1:
+
+                        # Create offset indices for more readable code.
+                        offset = struct_name_index + struct_name_index + 1
+                        offset2 = struct_name_index + struct_name_index + 2
+
+                        # Process leaf node like it is a normal smax_pull.
+                        for leaf_index, leaf in enumerate(lua_struct[offset]):
+
+                            # If the leaf says its a struct, ignore it.
+                            lua_type = lua_struct[offset2][1][leaf_index]
+                            if lua_type.decode(&#34;utf-8&#34;) == &#34;struct&#34;:
+                                continue
+
+                            # Extract data and metadata to pass into parser.
+                            lua_data = lua_struct[offset2][0][leaf_index]
+                            lua_dim = lua_struct[offset2][2][leaf_index]
+                            lua_date = lua_struct[offset2][3][leaf_index]
+                            lua_hostname = lua_struct[offset2][4][leaf_index]
+                            lua_sequence = lua_struct[offset2][5][leaf_index]
+
+                            # Parser will return an SmaxData object.
+                            smax_data_object = self._parse_lua_pull_response(
+                                [lua_data, lua_type, lua_dim, lua_date,
+                                 lua_hostname, lua_sequence])
+
+                            # Add SmaxData object into the nested dictionary.
+                            t.setdefault(lua_struct[offset][leaf_index].decode(&#34;utf-8&#34;),
+                                         smax_data_object)
+            return tree
+
+        return self._parse_lua_pull_response(lua_data)
+
+    @staticmethod
+    def _to_smax_format(value):
+        &#34;&#34;&#34;
+        Private function that converts a given data value to the string format
+        that SMAX supports.
+        Args:
+            value: Any supported data type, including (nested) dicts.
+
+        Returns:
+            tuple: tuple of (data_string, type_name, dim_string)
+        &#34;&#34;&#34;
+
+        # Derive the type according to Python.
+        python_type = type(value)
+
+        # Single value of a supported type, cast to string and send to redis.
+        if python_type in _REVERSE_TYPE_MAP:
+            type_name = _REVERSE_TYPE_MAP[python_type]
+            return str(value), type_name, 1
+
+        # If this is an SmaxData object, just pass along the data attribute.
+        if python_type == SmaxData:
+            value = value.data
+
+        # Copy the data into a variable that we will manipulate for smax.
+        converted_data = value
+
+        # If type is list or tuple, convert to numpy array for further manipulation.
+        if python_type == list or python_type == tuple:
+            # Convert to numpy array, dtype=&#34;O&#34; preserves the original types.
+            converted_data = np.array(value, dtype=&#34;O&#34;)
+            python_type = np.ndarray
+
+        # Now if its a numpy array, flatten, convert to a string, and return.
+        if python_type == np.ndarray or python_type == np.array:
+
+            # If the shape is a single dimension, set &#39;size&#39; equal to that value.
+            data_shape = converted_data.shape
+            if len(data_shape) == 1:
+                size = data_shape[0]
+            else:
+                # Convert shape tuple to a space delimited list for smax.
+                size = &#34; &#34;.join(str(i) for i in data_shape)
+
+                # Flatten and make a space delimited string of dimensions.
+                converted_data = converted_data.flatten()
+
+            # Check this 1D representation of the data for type uniformity.
+            if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
+                raise TypeError(&#34;All values in list are not the same type.&#34;)
+
+            type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
+
+            # Create a string representation of the data in the array.
+            converted_data = &#39; &#39;.join(str(x) for x in converted_data)
+            return converted_data, type_name, size
+
+        else:
+            raise TypeError(f&#34;Unable to convert {python_type} for SMAX&#34;)
+
+    def _recurse_nested_dict(self, dictionary, table=None, commands=[]):
+        &#34;&#34;&#34;
+        Private function to recursively traverse a nested dictionary, finding
+        the leaf nodes that have actual data values.  Each real data value
+        ends up as an SmaxCommand object and gets appended to a list, which is
+        returned after the dictionary is searched.
+        Args:
+            dictionary (dict): Dict containing keys that exist in SMAX.
+            table: Do not use, this is used to build the table name as the function recurses.
+
+        Returns:
+            list: List of SmaxCommand objects.
+        &#34;&#34;&#34;
+
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                if table is None:
+                    self._recurse_nested_dict(value, key)
+                else:
+                    self._recurse_nested_dict(value, f&#34;{table}:{key}&#34;)
+            else:
+                converted_data, type_name, size = self._to_smax_format(value)
+                commands.append(SmaxCommand(table, key, converted_data, type_name, size))
+        return commands
+
+    def smax_share(self, table, key, value):
+        &#34;&#34;&#34;
+        Send data to redis using the smax macro HSetWithMeta to include
+        metadata.  The metadata is typeName, dataDimension(s), dataDate,
+        source of the data, and a sequence number.  The first two are
+        determined from the data and the source from this computer&#39;s name
+        plus the program name if given when this class is instantiated.
+        Date and sequence number are added by the redis macro.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            value: data to store, takes supported types, including (nested) dicts.
+
+        Returns:
+            return value from redis-py&#39;s evalsha() function.
+        &#34;&#34;&#34;
+
+        # If this is not a dict, then convert data to smax format and send.
+        if not isinstance(value, dict):
+            converted_data, type_name, size = self._to_smax_format(value)
+            return self._evalsha_set(table, key, converted_data, type_name, size)
+        else:
+            # Recursively traverse the (nested) dictionary to generate a set
+            # of values to update atomically.
+            return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))
+
+    def _evalsha_set(self, table, key, data_string, type_name, size):
+        &#34;&#34;&#34;
+        Private function that calls evalsha() using an SMAX LUA script.
+        Args:
+            table (str): SMAX table name.
+            key (str): SMAX key name.
+            data_string (str): Data converted to proper SMAX string format.
+            type_name (str): String representation of type.
+            size: (str): Representation of the dimensions of the data. If one
+                     dimension, than a single integer.Otherwise will be a string
+                     of space delimited dimension values.
+
+        Returns:
+            return value from redis-py&#39;s evalsha() function.
+        &#34;&#34;&#34;
+
+        try:
+            return self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
+                                        data_string, type_name, size)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            raise
+
+    def _pipeline_evalsha_set(self, table, key, commands):
+        &#34;&#34;&#34;
+        In order to execute multiple LUA scripts atomically, it has to use the
+        pipeline module in redis-py.  This function takes a list of commands,
+        and issues them as a &#34;pipeline&#34;, which uses a MULTI/EXEC block under the
+        covers.
+        Args:
+            table (str): SMAX table name
+            key (str): SMAX key name
+            commands (list): List of SmaxCommand objects.
+
+        Returns:
+            return value from redis-py&#39;s pipeline.execute() function.
+        &#34;&#34;&#34;
+        try:
+            pipeline = self._client.pipeline()
+            for command in commands:
+                pipeline.evalsha(self._setSHA, &#39;1&#39;,
+                                 f&#34;{table}:{key}:{command.table}&#34;,
+                                 self._hostname,
+                                 command.key,
+                                 command.data,
+                                 command.type,
+                                 command.dim)
+            return pipeline.execute()
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            raise
+
+    def smax_lazy_pull(self, table, key, value):
+        pass
+
+    def smax_lazy_end(self, table, key):
+        pass
+
+    def smax_subscribe(self, pattern, callback=None):
+        &#34;&#34;&#34;
+        Subscribe to a redis field or group of fields. You can type the full
+        name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
+        character to specify a pattern. Use a callback for asynchronous
+        processing of notifications, or use one of the smax_wait_on functions.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                           at the end of the pattern to be notified for anything
+                           underneath.
+            callback (func): Function that takes a single argument (Default=None).
+        &#34;&#34;&#34;
+
+        if self._pubsub is None:
+            self._pubsub = self._client.pubsub()
+
+        if pattern.endswith(&#34;*&#34;):
+            if callback is None:
+                self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+        else:
+            if callback is None:
+                self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})
+
+    def smax_unsubscribe(self, pattern=None):
+        &#34;&#34;&#34;
+        Unsubscribe from all subscribed channels, or pass a pattern argument
+        to unsubscribe from specific channels.
+        Args:
+            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                           at the end of the pattern to be notified for anything
+                           underneath.
+        &#34;&#34;&#34;
+        if self._pubsub is not None:
+            if pattern is None:
+                self._pubsub.punsubscribe()
+                self._pubsub.unsubscribe()
+            elif pattern.endswith(&#34;*&#34;):
+                self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+            else:
+                self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)
+
+    def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        Private function to help implement the &#34;wait&#34; functions in this API.
+        In the redis-py library, the listen() function is a blocking call, so
+        it gets used if there is no timeout specified.  When there is a timeout,
+        the get_message() function is used, because listen() doesn&#39;t take a timeout
+        value.  The get_message() function doesn&#39;t block by default, but when
+        a timeout is specified it blocks until the timeout is reached. This function
+        will raise a redis Timeout exception when the timeout is reached.
+
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (float): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+
+        # Throw away any blank messages or of type &#39;subscribe&#39;
+        found_real_message = False
+        message = None
+        channel = None
+
+        while not found_real_message:
+            if timeout is None:
+                for message in self._pubsub.listen():
+                    break
+            else:
+                message = self._pubsub.get_message(timeout=timeout)
+
+            if message is None:
+                raise TimeoutError(&#34;Timed out waiting for redis message.&#34;)
+            elif message[&#34;type&#34;] == &#34;message&#34; or message[&#34;type&#34;] == &#34;pmessage&#34;:
+                channel = message[&#34;channel&#34;].decode(&#34;utf-8&#34;)
+                if channel.startswith(&#34;smax:&#34;):
+                    if pattern is None:
+                        found_real_message = True
+                    elif fnmatch(channel[5:], pattern):
+                        found_real_message = True
+
+        if notification_only:
+            return message
+        else:
+            table = channel[5:channel.rfind(&#34;:&#34;)]
+            key = channel.split(&#34;:&#34;)[-1]
+            return self.smax_pull(table, key)
+
+    def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        If you use smax_subscribe without a callback, you can use this function
+        to specify with channel to listen to, and block until a message is received.
+        Args:
+            pattern (str): SMAX table/key pattern to listen on.
+            timeout (int): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+        return self._redis_listen(pattern=pattern, timeout=timeout,
+                                  notification_only=notification_only)
+
+    def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+        &#34;&#34;&#34;
+        If you use smax_subscribe without a callback, you can use this function
+        to block until a message is received from any channel you are subscribed to.
+        Args:
+            timeout (float): Value in seconds to wait before raising timeout exception.
+            notification_only (bool): If True, only returns the notification from redis.
+
+        Returns:
+            Either a (list) notification, or the actual pulled data.
+        &#34;&#34;&#34;
+        return self._redis_listen(timeout=timeout,
+                                  notification_only=notification_only)
+
+    def smax_set_description(self, table, description):
+        return self.smax_push_meta(&#34;description&#34;, table, description)
+
+    def smax_get_description(self, table):
+        return self.smax_pull_meta(table, &#34;description&#34;)
+
+    def smax_set_units(self, table, unit):
+        return self.smax_push_meta(&#34;units&#34;, table, unit)
+
+    def smax_get_units(self, table):
+        return self.smax_pull_meta(table, &#34;units&#34;)
+
+    def smax_set_coordinate_system(self, table, coordinate_system):
+        pass
+
+    def smax_get_coordinate_system(self, table):
+        pass
+
+    def smax_create_coordinate_system(self, n_axis):
+        pass
+
+    def smax_push_meta(self, meta, table, value):
+        return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+
+    def smax_pull_meta(self, table, meta):
+        result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+        if type(result) == bytes:
+            return result.decode(&#34;utf-8&#34;)
+        else:
+            return result</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>smax.smax_client.SmaxClient</li>
+<li>abc.ABC</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_connect_to"><code class="name flex">
+<span>def <span class="ident">smax_connect_to</span></span>(<span>self, redis_ip, redis_port, redis_db)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Uses the redis-py library to establish a connection to redis, then
+obtains and stores the LUA scripts in the object (ex self._getSHA). This
+function is called automatically by the SmaxClient parent class, so
+there shouldn't be a need to call this explicitly.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>redis_ip</code></strong> :&ensp;<code>str</code></dt>
+<dd>IP address of redis-server.</dd>
+<dt><strong><code>redis_port</code></strong> :&ensp;<code>int</code></dt>
+<dd>Port of redis-server.</dd>
+<dt><strong><code>redis_db</code></strong> :&ensp;<code>int</code></dt>
+<dd>Database index to connect to.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Redis</code></dt>
+<dd>A Redis client object configured from the given args.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_connect_to(self, redis_ip, redis_port, redis_db):
+    &#34;&#34;&#34;
+    Uses the redis-py library to establish a connection to redis, then
+    obtains and stores the LUA scripts in the object (ex self._getSHA). This
+    function is called automatically by the SmaxClient parent class, so
+    there shouldn&#39;t be a need to call this explicitly.
+
+    Args:
+        redis_ip (str): IP address of redis-server.
+        redis_port (int): Port of redis-server.
+        redis_db (int): Database index to connect to.
+
+    Returns:
+        Redis: A Redis client object configured from the given args.
+    &#34;&#34;&#34;
+
+    try:
+        # Connect to redis-server, and store LUA scripts on the object.
+        redis_client = StrictRedis(host=redis_ip,
+                                   port=redis_port,
+                                   db=redis_db,
+                                   health_check_interval=30)
+        self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
+        self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+        self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
+        self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
+        return redis_client
+    except (ConnectionError, TimeoutError):
+        self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+        raise</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system"><code class="name flex">
+<span>def <span class="ident">smax_create_coordinate_system</span></span>(<span>self, n_axis)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_create_coordinate_system(self, n_axis):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_disconnect"><code class="name flex">
+<span>def <span class="ident">smax_disconnect</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Python manages a connection pool automatically, if somehow that fails
+release the connection, this disconnect function will do it.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_disconnect(self):
+    &#34;&#34;&#34;
+    Python manages a connection pool automatically, if somehow that fails
+    release the connection, this disconnect function will do it.
+    &#34;&#34;&#34;
+
+    if self._client.connection:
+        self._client.connection.disconnect()
+    self.logger.info(f&#34;Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system"><code class="name flex">
+<span>def <span class="ident">smax_get_coordinate_system</span></span>(<span>self, table)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_get_coordinate_system(self, table):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_get_description"><code class="name flex">
+<span>def <span class="ident">smax_get_description</span></span>(<span>self, table)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_get_description(self, table):
+    return self.smax_pull_meta(table, &#34;description&#34;)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_get_units"><code class="name flex">
+<span>def <span class="ident">smax_get_units</span></span>(<span>self, table)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_get_units(self, table):
+    return self.smax_pull_meta(table, &#34;units&#34;)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_lazy_end"><code class="name flex">
+<span>def <span class="ident">smax_lazy_end</span></span>(<span>self, table, key)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_lazy_end(self, table, key):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull"><code class="name flex">
+<span>def <span class="ident">smax_lazy_pull</span></span>(<span>self, table, key, value)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_lazy_pull(self, table, key, value):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_pull"><code class="name flex">
+<span>def <span class="ident">smax_pull</span></span>(<span>self, table, key)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get data which was stored with the smax macro HSetWithMeta along with
+the associated metadata. The return value will an SmaxData object
+containing the data, typeName, dataDimension(s), dataDate, source of the
+data, and a sequence number. If you pulled a struct, you will get a
+nested dictionary back, with each leaf being an SmaxData object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>table</code></strong> :&ensp;<code>str</code></dt>
+<dd>SMAX table name</dd>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>SMAX key name</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>SmaxData</code></dt>
+<dd>Populated SmaxData NamedTuple object.</dd>
+<dt><code>dict</code></dt>
+<dd>If a struct is pulled, this returns a nested dictionary.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_pull(self, table, key):
+    &#34;&#34;&#34;
+    Get data which was stored with the smax macro HSetWithMeta along with
+    the associated metadata. The return value will an SmaxData object
+    containing the data, typeName, dataDimension(s), dataDate, source of the
+    data, and a sequence number. If you pulled a struct, you will get a
+    nested dictionary back, with each leaf being an SmaxData object.
+    Args:
+        table (str): SMAX table name
+        key (str): SMAX key name
+
+    Returns:
+        SmaxData: Populated SmaxData NamedTuple object.
+        dict: If a struct is pulled, this returns a nested dictionary.
+    &#34;&#34;&#34;
+
+    try:
+        lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+    except (ConnectionError, TimeoutError):
+        self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+        raise
+
+    # Extract the type out of the meta data, and map string to real type object.
+    type_name = lua_data[1].decode(&#34;utf-8&#34;)
+
+    # If the lua response says its a struct we have to now use another LUA
+    # script to go back to redis and collect the struct.
+    if type_name == &#34;struct&#34;:
+        lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+
+        # The struct will be parsed into a nested python dictionary.
+        tree = {}
+        for struct_name_index, stuct_name in enumerate(lua_struct[0]):
+            t = tree
+            names = stuct_name.decode(&#34;utf-8&#34;).split(&#39;:&#39;)
+
+            for table_name_index, table_name in enumerate(names):
+
+                # Grow a new hierarchical level with a blank dictionary.
+                t = t.setdefault(table_name, {})
+
+                # If this is the last name in the path, add actual data.
+                if table_name_index == len(names) - 1:
+
+                    # Create offset indices for more readable code.
+                    offset = struct_name_index + struct_name_index + 1
+                    offset2 = struct_name_index + struct_name_index + 2
+
+                    # Process leaf node like it is a normal smax_pull.
+                    for leaf_index, leaf in enumerate(lua_struct[offset]):
+
+                        # If the leaf says its a struct, ignore it.
+                        lua_type = lua_struct[offset2][1][leaf_index]
+                        if lua_type.decode(&#34;utf-8&#34;) == &#34;struct&#34;:
+                            continue
+
+                        # Extract data and metadata to pass into parser.
+                        lua_data = lua_struct[offset2][0][leaf_index]
+                        lua_dim = lua_struct[offset2][2][leaf_index]
+                        lua_date = lua_struct[offset2][3][leaf_index]
+                        lua_hostname = lua_struct[offset2][4][leaf_index]
+                        lua_sequence = lua_struct[offset2][5][leaf_index]
+
+                        # Parser will return an SmaxData object.
+                        smax_data_object = self._parse_lua_pull_response(
+                            [lua_data, lua_type, lua_dim, lua_date,
+                             lua_hostname, lua_sequence])
+
+                        # Add SmaxData object into the nested dictionary.
+                        t.setdefault(lua_struct[offset][leaf_index].decode(&#34;utf-8&#34;),
+                                     smax_data_object)
+        return tree
+
+    return self._parse_lua_pull_response(lua_data)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_pull_meta"><code class="name flex">
+<span>def <span class="ident">smax_pull_meta</span></span>(<span>self, table, meta)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_pull_meta(self, table, meta):
+    result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+    if type(result) == bytes:
+        return result.decode(&#34;utf-8&#34;)
+    else:
+        return result</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_push_meta"><code class="name flex">
+<span>def <span class="ident">smax_push_meta</span></span>(<span>self, meta, table, value)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_push_meta(self, meta, table, value):
+    return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system"><code class="name flex">
+<span>def <span class="ident">smax_set_coordinate_system</span></span>(<span>self, table, coordinate_system)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_set_coordinate_system(self, table, coordinate_system):
+    pass</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_set_description"><code class="name flex">
+<span>def <span class="ident">smax_set_description</span></span>(<span>self, table, description)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_set_description(self, table, description):
+    return self.smax_push_meta(&#34;description&#34;, table, description)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_set_units"><code class="name flex">
+<span>def <span class="ident">smax_set_units</span></span>(<span>self, table, unit)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_set_units(self, table, unit):
+    return self.smax_push_meta(&#34;units&#34;, table, unit)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_share"><code class="name flex">
+<span>def <span class="ident">smax_share</span></span>(<span>self, table, key, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send data to redis using the smax macro HSetWithMeta to include
+metadata.
+The metadata is typeName, dataDimension(s), dataDate,
+source of the data, and a sequence number.
+The first two are
+determined from the data and the source from this computer's name
+plus the program name if given when this class is instantiated.
+Date and sequence number are added by the redis macro.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>table</code></strong> :&ensp;<code>str</code></dt>
+<dd>SMAX table name</dd>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>SMAX key name</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>data to store, takes supported types, including (nested) dicts.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>return value from redis-py's evalsha() function.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_share(self, table, key, value):
+    &#34;&#34;&#34;
+    Send data to redis using the smax macro HSetWithMeta to include
+    metadata.  The metadata is typeName, dataDimension(s), dataDate,
+    source of the data, and a sequence number.  The first two are
+    determined from the data and the source from this computer&#39;s name
+    plus the program name if given when this class is instantiated.
+    Date and sequence number are added by the redis macro.
+    Args:
+        table (str): SMAX table name
+        key (str): SMAX key name
+        value: data to store, takes supported types, including (nested) dicts.
+
+    Returns:
+        return value from redis-py&#39;s evalsha() function.
+    &#34;&#34;&#34;
+
+    # If this is not a dict, then convert data to smax format and send.
+    if not isinstance(value, dict):
+        converted_data, type_name, size = self._to_smax_format(value)
+        return self._evalsha_set(table, key, converted_data, type_name, size)
+    else:
+        # Recursively traverse the (nested) dictionary to generate a set
+        # of values to update atomically.
+        return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_subscribe"><code class="name flex">
+<span>def <span class="ident">smax_subscribe</span></span>(<span>self, pattern, callback=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Subscribe to a redis field or group of fields. You can type the full
+name of the field you'd like to subscribe too, or use a wildcard "*"
+character to specify a pattern. Use a callback for asynchronous
+processing of notifications, or use one of the smax_wait_on functions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pattern</code></strong> :&ensp;<code>str</code></dt>
+<dd>Either full name of smax field, or use a wildcard '*'
+at the end of the pattern to be notified for anything
+underneath.</dd>
+<dt><strong><code>callback</code></strong> :&ensp;<code>func</code></dt>
+<dd>Function that takes a single argument (Default=None).</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_subscribe(self, pattern, callback=None):
+    &#34;&#34;&#34;
+    Subscribe to a redis field or group of fields. You can type the full
+    name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
+    character to specify a pattern. Use a callback for asynchronous
+    processing of notifications, or use one of the smax_wait_on functions.
+    Args:
+        pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                       at the end of the pattern to be notified for anything
+                       underneath.
+        callback (func): Function that takes a single argument (Default=None).
+    &#34;&#34;&#34;
+
+    if self._pubsub is None:
+        self._pubsub = self._client.pubsub()
+
+    if pattern.endswith(&#34;*&#34;):
+        if callback is None:
+            self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+        else:
+            self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+    else:
+        if callback is None:
+            self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+        else:
+            self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe"><code class="name flex">
+<span>def <span class="ident">smax_unsubscribe</span></span>(<span>self, pattern=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unsubscribe from all subscribed channels, or pass a pattern argument
+to unsubscribe from specific channels.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pattern</code></strong> :&ensp;<code>str</code></dt>
+<dd>Either full name of smax field, or use a wildcard '*'
+at the end of the pattern to be notified for anything
+underneath.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_unsubscribe(self, pattern=None):
+    &#34;&#34;&#34;
+    Unsubscribe from all subscribed channels, or pass a pattern argument
+    to unsubscribe from specific channels.
+    Args:
+        pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
+                       at the end of the pattern to be notified for anything
+                       underneath.
+    &#34;&#34;&#34;
+    if self._pubsub is not None:
+        if pattern is None:
+            self._pubsub.punsubscribe()
+            self._pubsub.unsubscribe()
+        elif pattern.endswith(&#34;*&#34;):
+            self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+        else:
+            self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed"><code class="name flex">
+<span>def <span class="ident">smax_wait_on_any_subscribed</span></span>(<span>self, timeout=None, notification_only=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>If you use smax_subscribe without a callback, you can use this function
+to block until a message is received from any channel you are subscribed to.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>timeout</code></strong> :&ensp;<code>float</code></dt>
+<dd>Value in seconds to wait before raising timeout exception.</dd>
+<dt><strong><code>notification_only</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, only returns the notification from redis.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Either a (list) notification, or the actual pulled data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_wait_on_any_subscribed(self, timeout=None, notification_only=False):
+    &#34;&#34;&#34;
+    If you use smax_subscribe without a callback, you can use this function
+    to block until a message is received from any channel you are subscribed to.
+    Args:
+        timeout (float): Value in seconds to wait before raising timeout exception.
+        notification_only (bool): If True, only returns the notification from redis.
+
+    Returns:
+        Either a (list) notification, or the actual pulled data.
+    &#34;&#34;&#34;
+    return self._redis_listen(timeout=timeout,
+                              notification_only=notification_only)</code></pre>
+</details>
+</dd>
+<dt id="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed"><code class="name flex">
+<span>def <span class="ident">smax_wait_on_subscribed</span></span>(<span>self, pattern, timeout=None, notification_only=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>If you use smax_subscribe without a callback, you can use this function
+to specify with channel to listen to, and block until a message is received.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pattern</code></strong> :&ensp;<code>str</code></dt>
+<dd>SMAX table/key pattern to listen on.</dd>
+<dt><strong><code>timeout</code></strong> :&ensp;<code>int</code></dt>
+<dd>Value in seconds to wait before raising timeout exception.</dd>
+<dt><strong><code>notification_only</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, only returns the notification from redis.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Either a (list) notification, or the actual pulled data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
+    &#34;&#34;&#34;
+    If you use smax_subscribe without a callback, you can use this function
+    to specify with channel to listen to, and block until a message is received.
+    Args:
+        pattern (str): SMAX table/key pattern to listen on.
+        timeout (int): Value in seconds to wait before raising timeout exception.
+        notification_only (bool): If True, only returns the notification from redis.
+
+    Returns:
+        Either a (list) notification, or the actual pulled data.
+    &#34;&#34;&#34;
+    return self._redis_listen(pattern=pattern, timeout=timeout,
+                              notification_only=notification_only)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="smax.smax_redis_client.SmaxRedisClient" href="#smax.smax_redis_client.SmaxRedisClient">SmaxRedisClient</a></code></h4>
+<ul class="">
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_connect_to" href="#smax.smax_redis_client.SmaxRedisClient.smax_connect_to">smax_connect_to</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system" href="#smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system">smax_create_coordinate_system</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_disconnect" href="#smax.smax_redis_client.SmaxRedisClient.smax_disconnect">smax_disconnect</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system">smax_get_coordinate_system</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_get_description" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_description">smax_get_description</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_get_units" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_units">smax_get_units</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_lazy_end" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_end">smax_lazy_end</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull">smax_lazy_pull</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_pull" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull">smax_pull</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_pull_meta" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull_meta">smax_pull_meta</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_push_meta" href="#smax.smax_redis_client.SmaxRedisClient.smax_push_meta">smax_push_meta</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system">smax_set_coordinate_system</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_set_description" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_description">smax_set_description</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_set_units" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_units">smax_set_units</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_share" href="#smax.smax_redis_client.SmaxRedisClient.smax_share">smax_share</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_subscribe" href="#smax.smax_redis_client.SmaxRedisClient.smax_subscribe">smax_subscribe</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe" href="#smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe">smax_unsubscribe</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed">smax_wait_on_any_subscribed</a></code></li>
+<li><code><a title="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed">smax_wait_on_subscribed</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

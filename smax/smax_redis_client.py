@@ -149,10 +149,10 @@ class SmaxRedisClient(SmaxClient):
     def smax_pull(self, table, key):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
-        the associated metadata. The return will be the data, typeName,
-        dataDimension(s), dataDate, source of the data, and a sequence number.
-        If you pulled a struct, you will get a nested dictionary back, with
-        each leaf being an SmaxData object.
+        the associated metadata. The return value will an SmaxData object
+        containing the data, typeName, dataDimension(s), dataDate, source of the
+        data, and a sequence number. If you pulled a struct, you will get a
+        nested dictionary back, with each leaf being an SmaxData object.
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
