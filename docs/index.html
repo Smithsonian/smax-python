@@ -541,6 +541,12 @@ class SmaxRedisClient(SmaxClient):
                                   notification_only=notification_only)
 
     def smax_set_description(self, table, description):
+        &#34;&#34;&#34;
+        Creates a &lt;description&gt; metadata field for specified table.
+        Args:
+            table (str): Full SMAX table name (with key included).
+            description (str): String for the description of this smax field.
+        &#34;&#34;&#34;
         return self.smax_push_meta(&#34;description&#34;, table, description)
 
     def smax_get_description(self, table):
@@ -1128,6 +1134,12 @@ happens in the SmaxClient parent class that is inherited.</p>
                                   notification_only=notification_only)
 
     def smax_set_description(self, table, description):
+        &#34;&#34;&#34;
+        Creates a &lt;description&gt; metadata field for specified table.
+        Args:
+            table (str): Full SMAX table name (with key included).
+            description (str): String for the description of this smax field.
+        &#34;&#34;&#34;
         return self.smax_push_meta(&#34;description&#34;, table, description)
 
     def smax_get_description(self, table):
@@ -1472,12 +1484,25 @@ nested dictionary back, with each leaf being an SmaxData object.</p>
 <span>def <span class="ident">smax_set_description</span></span>(<span>self, table, description)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Creates a <description> metadata field for specified table.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>table</code></strong> :&ensp;<code>str</code></dt>
+<dd>Full SMAX table name (with key included).</dd>
+<dt><strong><code>description</code></strong> :&ensp;<code>str</code></dt>
+<dd>String for the description of this smax field.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_set_description(self, table, description):
+    &#34;&#34;&#34;
+    Creates a &lt;description&gt; metadata field for specified table.
+    Args:
+        table (str): Full SMAX table name (with key included).
+        description (str): String for the description of this smax field.
+    &#34;&#34;&#34;
     return self.smax_push_meta(&#34;description&#34;, table, description)</code></pre>
 </details>
 </dd>
