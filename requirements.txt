@@ -1,5 +1,0 @@
-numpy
-pytest
-redis-py
-redis
-hiredis
