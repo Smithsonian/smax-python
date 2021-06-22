@@ -513,6 +513,12 @@ class SmaxRedisClient(SmaxClient):
                                   notification_only=notification_only)
 
     def smax_set_description(self, table, description):
+        """
+        Creates a <description> metadata field for specified table.
+        Args:
+            table (str): Full SMAX table name (with key included).
+            description (str): String for the description of this smax field.
+        """
         return self.smax_push_meta("description", table, description)
 
     def smax_get_description(self, table):
