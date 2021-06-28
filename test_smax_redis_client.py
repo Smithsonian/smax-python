@@ -4,6 +4,7 @@ import socket
 
 from smax import SmaxRedisClient
 from redis import TimeoutError
+from time import sleep
 
 
 @pytest.fixture
@@ -182,13 +183,21 @@ def test_pubsub_wait_on_pattern(smax_client):
 
 
 def test_pubsub_callback(smax_client):
-    expected_value = "fpga1value"
+    expected_value = 42
+
+    # Inner functions can't modify outer variables unless they are mutable.
+    actual = {"value": None}
 
     def my_callback(message):
-        assert message.data == expected_value
+        actual["value"] = message["pytest"]["pubsub_callback"]["fpga1"]["temp"].data
 
-    smax_client.smax_subscribe("pytest:test_pubsub*", my_callback)
-    smax_client.smax_share("pytest:test_pubsub:fpga1", "temp", expected_value)
+    smax_client.smax_subscribe("pytest:pubsub_callback*", my_callback)
+    smax_client.smax_share("pytest:pubsub_callback:fpga1", "temp", expected_value)
+
+    # Sleep and then check actual value
+    sleep(.5)
+    smax_client.smax_unsubscribe()
+    assert actual["value"] == expected_value
 
 
 def test_pull_struct(smax_client):
