@@ -63,6 +63,7 @@ class SmaxRedisClient(SmaxClient):
         self._setSHA = None
         self._pubsub = None
         self._getstructSHA = None
+        self._threads = []
 
         # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
         self._hostname = socket.gethostname() if hostname is None else hostname
@@ -430,6 +431,17 @@ class SmaxRedisClient(SmaxClient):
                            underneath.
             callback (func): Function that takes a single argument (Default=None).
         &#34;&#34;&#34;
+        def parent_callback(message):
+            msg_pattern = message[&#34;pattern&#34;]
+            if msg_pattern is not None:
+                path = message[&#34;pattern&#34;].decode(&#34;utf-8&#34;)[:-1]
+            else:
+                path = message[&#34;channel&#34;].decode(&#34;utf-8&#34;)
+
+            table = path[5:path.rfind(&#34;:&#34;)]
+            key = path[path.rfind(&#34;:&#34;) + 1:]
+            data = self.smax_pull(table, key)
+            callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
@@ -438,12 +450,14 @@ class SmaxRedisClient(SmaxClient):
             if callback is None:
                 self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
             else:
-                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
         else:
             if callback is None:
                 self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
             else:
-                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})
+                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
         &#34;&#34;&#34;
@@ -656,6 +670,7 @@ happens in the SmaxClient parent class that is inherited.</p>
         self._setSHA = None
         self._pubsub = None
         self._getstructSHA = None
+        self._threads = []
 
         # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
         self._hostname = socket.gethostname() if hostname is None else hostname
@@ -1023,6 +1038,17 @@ happens in the SmaxClient parent class that is inherited.</p>
                            underneath.
             callback (func): Function that takes a single argument (Default=None).
         &#34;&#34;&#34;
+        def parent_callback(message):
+            msg_pattern = message[&#34;pattern&#34;]
+            if msg_pattern is not None:
+                path = message[&#34;pattern&#34;].decode(&#34;utf-8&#34;)[:-1]
+            else:
+                path = message[&#34;channel&#34;].decode(&#34;utf-8&#34;)
+
+            table = path[5:path.rfind(&#34;:&#34;)]
+            key = path[path.rfind(&#34;:&#34;) + 1:]
+            data = self.smax_pull(table, key)
+            callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
@@ -1031,12 +1057,14 @@ happens in the SmaxClient parent class that is inherited.</p>
             if callback is None:
                 self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
             else:
-                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+                self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
         else:
             if callback is None:
                 self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
             else:
-                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})
+                self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
         &#34;&#34;&#34;
@@ -1606,6 +1634,17 @@ underneath.</dd>
                        underneath.
         callback (func): Function that takes a single argument (Default=None).
     &#34;&#34;&#34;
+    def parent_callback(message):
+        msg_pattern = message[&#34;pattern&#34;]
+        if msg_pattern is not None:
+            path = message[&#34;pattern&#34;].decode(&#34;utf-8&#34;)[:-1]
+        else:
+            path = message[&#34;channel&#34;].decode(&#34;utf-8&#34;)
+
+        table = path[5:path.rfind(&#34;:&#34;)]
+        key = path[path.rfind(&#34;:&#34;) + 1:]
+        data = self.smax_pull(table, key)
+        callback(data)
 
     if self._pubsub is None:
         self._pubsub = self._client.pubsub()
@@ -1614,12 +1653,14 @@ underneath.</dd>
         if callback is None:
             self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
         else:
-            self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: callback})
+            self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+            self._pubsub.run_in_thread(sleep_time=2, daemon=True)
     else:
         if callback is None:
             self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
         else:
-            self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: callback})</code></pre>
+            self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+            self._pubsub.run_in_thread(sleep_time=2, daemon=True)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe"><code class="name flex">
