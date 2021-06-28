@@ -182,7 +182,7 @@ def test_pubsub_wait_on_pattern(smax_client):
     assert result2.data == expected_data2
 
 
-def test_pubsub_callback(smax_client):
+def test_pubsub_pattern_callback(smax_client):
     expected_value = 42
 
     # Inner functions can't modify outer variables unless they are mutable.
@@ -195,7 +195,25 @@ def test_pubsub_callback(smax_client):
     smax_client.smax_share("pytest:pubsub_callback:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
-    sleep(.5)
+    sleep(.1)
+    smax_client.smax_unsubscribe()
+    assert actual["value"] == expected_value
+
+
+def test_pubsub_callback(smax_client):
+    expected_value = 42
+
+    # Inner functions can't modify outer variables unless they are mutable.
+    actual = {"value": None}
+
+    def my_callback(message):
+        actual["value"] = message.data
+
+    smax_client.smax_subscribe("pytest:callback:fpga1:temp", my_callback)
+    smax_client.smax_share("pytest:callback:fpga1", "temp", expected_value)
+
+    # Sleep and then check actual value
+    sleep(.1)
     smax_client.smax_unsubscribe()
     assert actual["value"] == expected_value
 
