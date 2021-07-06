@@ -493,8 +493,15 @@ class SmaxRedisClient(SmaxClient):
         if notification_only:
             return message
         else:
-            table = channel[5:channel.rfind(":")]
-            key = channel.split(":")[-1]
+
+            if pattern is None:
+                # Pull the exact table that sent the notification.
+                table = channel[5:channel.rfind(":")]
+                key = channel.split(":")[-1]
+            else:
+                # Pull the parent struct or "pattern" that was subscribed to.
+                table = pattern[:pattern.rfind(":")]
+                key = pattern.split(":")[-1].strip('*')
             return self.smax_pull(table, key)
 
     def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
