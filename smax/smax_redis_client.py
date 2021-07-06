@@ -34,6 +34,7 @@ class SmaxRedisClient(SmaxClient):
         self._getSHA = None
         self._setSHA = None
         self._pubsub = None
+        self._pipeline = None
         self._getstructSHA = None
         self._threads = []
 
@@ -371,16 +372,17 @@ class SmaxRedisClient(SmaxClient):
             return value from redis-py's pipeline.execute() function.
         """
         try:
-            pipeline = self._client.pipeline()
+            if self._pipeline is None:
+                self._pipeline = self._client.pipeline()
             for command in commands:
-                pipeline.evalsha(self._setSHA, '1',
-                                 f"{table}:{key}:{command.table}",
-                                 self._hostname,
-                                 command.key,
-                                 command.data,
-                                 command.type,
-                                 command.dim)
-            return pipeline.execute()
+                self._pipeline.evalsha(self._setSHA, '1',
+                                       f"{table}:{key}:{command.table}",
+                                       self._hostname,
+                                       command.key,
+                                       command.data,
+                                       command.type,
+                                       command.dim)
+            return self._pipeline.execute()
         except (ConnectionError, TimeoutError):
             self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
