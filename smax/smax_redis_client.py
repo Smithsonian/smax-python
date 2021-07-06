@@ -36,6 +36,7 @@ class SmaxRedisClient(SmaxClient):
         self._pubsub = None
         self._pipeline = None
         self._getstructSHA = None
+        self._multi_setSHA = None
         self._threads = []
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
@@ -72,6 +73,7 @@ class SmaxRedisClient(SmaxClient):
                                        health_check_interval=30)
             self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
             self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
+            self._multi_setSHA = redis_client.hget('scripts', 'HMSetWithMeta')
             self._getstructSHA = redis_client.hget('scripts', 'GetStruct')
             self.logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
@@ -374,14 +376,17 @@ class SmaxRedisClient(SmaxClient):
         try:
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
+            args = []
             for command in commands:
-                self._pipeline.evalsha(self._setSHA, '1',
-                                       f"{table}:{key}:{command.table}",
-                                       self._hostname,
-                                       command.key,
-                                       command.data,
-                                       command.type,
-                                       command.dim)
+                args.append(f"{command.table}:{command.key}")
+                args.append(command.data)
+                args.append(command.type)
+                args.append(command.dim)
+
+            self._pipeline.evalsha(self._multi_setSHA, '1',
+                                   f"{table}:{key}",
+                                   self._hostname,
+                                   *args)
             return self._pipeline.execute()
         except (ConnectionError, TimeoutError):
             self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
