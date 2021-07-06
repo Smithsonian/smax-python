@@ -17,12 +17,13 @@ with open(csv_filename, 'w', newline='') as csvfile:
 tracemalloc.start()
 snapshot = tracemalloc.take_snapshot()
 
-for i in range(20):
+for i in range(100):
     swarm_dict = {}
     for j in range(6):
         for k in range(8):
             roach2_name = f"roach2-{j}{k + 1}"
-            swarm_dict[roach2_name] = {}
+            if roach2_name not in swarm_dict:
+                swarm_dict[roach2_name] = {}
             swarm_dict[roach2_name]["temp"] = i
             swarm_dict[roach2_name]["firmware"] = str(i)
             swarm_dict[roach2_name]["bengine-gains"] = [float(i)] * 3
