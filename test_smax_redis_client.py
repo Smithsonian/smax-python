@@ -218,6 +218,31 @@ def test_pubsub_callback(smax_client):
     assert actual["value"] == expected_value
 
 
+def test_multiple_pubsub_callback(smax_client):
+    expected_value1 = 42
+    expected_value2 = 24
+
+    # Inner functions can't modify outer variables unless they are mutable.
+    actual = {"value1": None, "value2": None}
+
+    def my_callback1(message):
+        actual["value1"] = message.data
+
+    def my_callback2(message):
+        actual["value2"] = message.data
+
+    smax_client.smax_subscribe("pytest:callback:fpga1:temp", my_callback1)
+    smax_client.smax_subscribe("pytest:callback:fpga2:temp", my_callback2)
+    smax_client.smax_share("pytest:callback:fpga1", "temp", expected_value1)
+    smax_client.smax_share("pytest:callback:fpga2", "temp", expected_value2)
+
+    # Sleep and then check actual value
+    sleep(.1)
+    smax_client.smax_unsubscribe()
+    assert actual["value1"] == expected_value1
+    assert actual["value2"] == expected_value2
+
+
 def test_pull_struct(smax_client):
     expected_temp_value1 = np.array([42, 24], dtype=np.int32)
     expected_temp_value2 = np.array([24, 42], dtype=np.int32)
