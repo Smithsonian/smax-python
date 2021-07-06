@@ -171,15 +171,15 @@ def test_pubsub_notification(smax_client):
 
 def test_pubsub_wait_on_pattern(smax_client):
     smax_client.smax_subscribe("pytest:test_pubsub*")
-    expected_data1 = "fpga1value"
-    expected_data2 = "fpga2value"
+    expected_data1 = 666
+    expected_data2 = 33
     smax_client.smax_share("pytest:test_pubsub:nop", "nop", "nopvalue")
-    smax_client.smax_share("pytest:test_pubsub:fpga1", "temp", "fpga1value")
-    smax_client.smax_share("pytest:test_pubsub:fpga2", "temp", "fpga2value")
-    result1 = smax_client.smax_wait_on_subscribed("*temp*")
-    result2 = smax_client.smax_wait_on_subscribed("*temp*")
-    assert result1.data == expected_data1
-    assert result2.data == expected_data2
+    smax_client.smax_share("pytest:test_pubsub:fpga", "temp", expected_data1)
+    smax_client.smax_share("pytest:test_pubsub:fpga", "speed", expected_data2)
+    result1 = smax_client.smax_wait_on_subscribed("pytest:test_pubsub:fpga*")
+    result2 = smax_client.smax_wait_on_subscribed("pytest:test_pubsub:fpga*")
+    assert result1["pytest"]["test_pubsub"]["fpga"]["temp"].data == expected_data1
+    assert result2["pytest"]["test_pubsub"]["fpga"]["speed"].data == expected_data2
 
 
 def test_pubsub_pattern_callback(smax_client):
