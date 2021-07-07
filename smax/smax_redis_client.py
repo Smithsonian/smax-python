@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 import numpy as np
 from redis import StrictRedis, ConnectionError, TimeoutError
 
-from .smax_client import SmaxClient, SmaxData, SmaxCommand
+from .smax_client import SmaxClient, SmaxData
 
 
 class SmaxRedisClient(SmaxClient):
@@ -366,11 +366,13 @@ class SmaxRedisClient(SmaxClient):
         In order to execute multiple LUA scripts atomically, it has to use the
         pipeline module in redis-py.  This function takes a list of commands,
         and issues them as a "pipeline", which uses a MULTI/EXEC block under the
-        covers.
+        covers. The HMSetWithMeta LUA script allows you to update multiple
+        values for a table, although a separate call for each new table is needed.
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
-            commands (dict):
+            commands (dict): Keys for each table to update, and list of commands
+            to pass to HMSetWithMeta LUA script.
 
         Returns:
             return value from redis-py's pipeline.execute() function.
