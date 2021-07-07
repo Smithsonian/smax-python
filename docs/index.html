@@ -62,7 +62,9 @@ class SmaxRedisClient(SmaxClient):
         self._getSHA = None
         self._setSHA = None
         self._pubsub = None
+        self._pipeline = None
         self._getstructSHA = None
+        self._multi_setSHA = None
         self._threads = []
 
         # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
@@ -99,6 +101,7 @@ class SmaxRedisClient(SmaxClient):
                                        health_check_interval=30)
             self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
             self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+            self._multi_setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HMSetWithMeta&#39;)
             self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
             self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
             return redis_client
@@ -310,30 +313,25 @@ class SmaxRedisClient(SmaxClient):
         else:
             raise TypeError(f&#34;Unable to convert {python_type} for SMAX&#34;)
 
-    def _recurse_nested_dict(self, dictionary, table=None, commands=[]):
+    def _recurse_nested_dict(self, dictionary):
         &#34;&#34;&#34;
         Private function to recursively traverse a nested dictionary, finding
         the leaf nodes that have actual data values.  Each real data value
-        ends up as an SmaxCommand object and gets appended to a list, which is
-        returned after the dictionary is searched.
+        is yielded back as it recurses.
         Args:
             dictionary (dict): Dict containing keys that exist in SMAX.
-            table: Do not use, this is used to build the table name as the function recurses.
 
-        Returns:
-            list: List of SmaxCommand objects.
+        Yields:
+            (key, value) for every leaf node in the nested dictionary.
         &#34;&#34;&#34;
 
         for key, value in dictionary.items():
             if isinstance(value, dict):
-                if table is None:
-                    self._recurse_nested_dict(value, key)
-                else:
-                    self._recurse_nested_dict(value, f&#34;{table}:{key}&#34;)
+                # If value is dict then iterate over all its values
+                for pair in self._recurse_nested_dict(value):
+                    yield (key, *pair)
             else:
-                converted_data, type_name, size = self._to_smax_format(value)
-                commands.append(SmaxCommand(table, key, converted_data, type_name, size))
-        return commands
+                yield key, value
 
     def smax_share(self, table, key, value):
         &#34;&#34;&#34;
@@ -359,7 +357,14 @@ class SmaxRedisClient(SmaxClient):
         else:
             # Recursively traverse the (nested) dictionary to generate a set
             # of values to update atomically.
-            return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))
+            tables = {}
+            for pair in self._recurse_nested_dict(value):
+                converted_data, type_name, dim = self._to_smax_format(pair[2])
+                if pair[0] not in tables:
+                    tables[pair[0]] = []
+                tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
+
+            return self._pipeline_evalsha_set(table, key, tables)
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         &#34;&#34;&#34;
@@ -393,24 +398,22 @@ class SmaxRedisClient(SmaxClient):
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
-            commands (list): List of SmaxCommand objects.
+            commands (dict):
 
         Returns:
             return value from redis-py&#39;s pipeline.execute() function.
         &#34;&#34;&#34;
         try:
-            pipeline = self._client.pipeline()
-            for command in commands:
-                pipeline.evalsha(self._setSHA, &#39;1&#39;,
-                                 f&#34;{table}:{key}:{command.table}&#34;,
-                                 self._hostname,
-                                 command.key,
-                                 command.data,
-                                 command.type,
-                                 command.dim)
-            return pipeline.execute()
+            if self._pipeline is None:
+                self._pipeline = self._client.pipeline()
+            for k in commands.keys():
+                self._pipeline.evalsha(self._multi_setSHA, &#39;1&#39;,
+                                       f&#34;{table}:{key}:{k}&#34;,
+                                       self._hostname,
+                                       *commands[k])
+            return self._pipeline.execute()
         except (ConnectionError, TimeoutError):
-            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            self.logger.error(&#34;Unable to call HMSetWithMeta LUA script.&#34;)
             raise
 
     def smax_lazy_pull(self, table, key, value):
@@ -521,8 +524,15 @@ class SmaxRedisClient(SmaxClient):
         if notification_only:
             return message
         else:
-            table = channel[5:channel.rfind(&#34;:&#34;)]
-            key = channel.split(&#34;:&#34;)[-1]
+
+            if pattern is None:
+                # Pull the exact table that sent the notification.
+                table = channel[5:channel.rfind(&#34;:&#34;)]
+                key = channel.split(&#34;:&#34;)[-1]
+            else:
+                # Pull the parent struct or &#34;pattern&#34; that was subscribed to.
+                table = pattern[:pattern.rfind(&#34;:&#34;)]
+                key = pattern.split(&#34;:&#34;)[-1].strip(&#39;*&#39;)
             return self.smax_pull(table, key)
 
     def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
@@ -669,7 +679,9 @@ happens in the SmaxClient parent class that is inherited.</p>
         self._getSHA = None
         self._setSHA = None
         self._pubsub = None
+        self._pipeline = None
         self._getstructSHA = None
+        self._multi_setSHA = None
         self._threads = []
 
         # Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.
@@ -706,6 +718,7 @@ happens in the SmaxClient parent class that is inherited.</p>
                                        health_check_interval=30)
             self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
             self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+            self._multi_setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HMSetWithMeta&#39;)
             self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
             self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
             return redis_client
@@ -917,30 +930,25 @@ happens in the SmaxClient parent class that is inherited.</p>
         else:
             raise TypeError(f&#34;Unable to convert {python_type} for SMAX&#34;)
 
-    def _recurse_nested_dict(self, dictionary, table=None, commands=[]):
+    def _recurse_nested_dict(self, dictionary):
         &#34;&#34;&#34;
         Private function to recursively traverse a nested dictionary, finding
         the leaf nodes that have actual data values.  Each real data value
-        ends up as an SmaxCommand object and gets appended to a list, which is
-        returned after the dictionary is searched.
+        is yielded back as it recurses.
         Args:
             dictionary (dict): Dict containing keys that exist in SMAX.
-            table: Do not use, this is used to build the table name as the function recurses.
 
-        Returns:
-            list: List of SmaxCommand objects.
+        Yields:
+            (key, value) for every leaf node in the nested dictionary.
         &#34;&#34;&#34;
 
         for key, value in dictionary.items():
             if isinstance(value, dict):
-                if table is None:
-                    self._recurse_nested_dict(value, key)
-                else:
-                    self._recurse_nested_dict(value, f&#34;{table}:{key}&#34;)
+                # If value is dict then iterate over all its values
+                for pair in self._recurse_nested_dict(value):
+                    yield (key, *pair)
             else:
-                converted_data, type_name, size = self._to_smax_format(value)
-                commands.append(SmaxCommand(table, key, converted_data, type_name, size))
-        return commands
+                yield key, value
 
     def smax_share(self, table, key, value):
         &#34;&#34;&#34;
@@ -966,7 +974,14 @@ happens in the SmaxClient parent class that is inherited.</p>
         else:
             # Recursively traverse the (nested) dictionary to generate a set
             # of values to update atomically.
-            return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))
+            tables = {}
+            for pair in self._recurse_nested_dict(value):
+                converted_data, type_name, dim = self._to_smax_format(pair[2])
+                if pair[0] not in tables:
+                    tables[pair[0]] = []
+                tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
+
+            return self._pipeline_evalsha_set(table, key, tables)
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         &#34;&#34;&#34;
@@ -1000,24 +1015,22 @@ happens in the SmaxClient parent class that is inherited.</p>
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
-            commands (list): List of SmaxCommand objects.
+            commands (dict):
 
         Returns:
             return value from redis-py&#39;s pipeline.execute() function.
         &#34;&#34;&#34;
         try:
-            pipeline = self._client.pipeline()
-            for command in commands:
-                pipeline.evalsha(self._setSHA, &#39;1&#39;,
-                                 f&#34;{table}:{key}:{command.table}&#34;,
-                                 self._hostname,
-                                 command.key,
-                                 command.data,
-                                 command.type,
-                                 command.dim)
-            return pipeline.execute()
+            if self._pipeline is None:
+                self._pipeline = self._client.pipeline()
+            for k in commands.keys():
+                self._pipeline.evalsha(self._multi_setSHA, &#39;1&#39;,
+                                       f&#34;{table}:{key}:{k}&#34;,
+                                       self._hostname,
+                                       *commands[k])
+            return self._pipeline.execute()
         except (ConnectionError, TimeoutError):
-            self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
+            self.logger.error(&#34;Unable to call HMSetWithMeta LUA script.&#34;)
             raise
 
     def smax_lazy_pull(self, table, key, value):
@@ -1128,8 +1141,15 @@ happens in the SmaxClient parent class that is inherited.</p>
         if notification_only:
             return message
         else:
-            table = channel[5:channel.rfind(&#34;:&#34;)]
-            key = channel.split(&#34;:&#34;)[-1]
+
+            if pattern is None:
+                # Pull the exact table that sent the notification.
+                table = channel[5:channel.rfind(&#34;:&#34;)]
+                key = channel.split(&#34;:&#34;)[-1]
+            else:
+                # Pull the parent struct or &#34;pattern&#34; that was subscribed to.
+                table = pattern[:pattern.rfind(&#34;:&#34;)]
+                key = pattern.split(&#34;:&#34;)[-1].strip(&#39;*&#39;)
             return self.smax_pull(table, key)
 
     def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
@@ -1255,6 +1275,7 @@ there shouldn't be a need to call this explicitly.</p>
                                    health_check_interval=30)
         self._getSHA = redis_client.hget(&#39;scripts&#39;, &#39;HGetWithMeta&#39;)
         self._setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HSetWithMeta&#39;)
+        self._multi_setSHA = redis_client.hget(&#39;scripts&#39;, &#39;HMSetWithMeta&#39;)
         self._getstructSHA = redis_client.hget(&#39;scripts&#39;, &#39;GetStruct&#39;)
         self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
         return redis_client
@@ -1598,7 +1619,14 @@ Date and sequence number are added by the redis macro.</p>
     else:
         # Recursively traverse the (nested) dictionary to generate a set
         # of values to update atomically.
-        return self._pipeline_evalsha_set(table, key, self._recurse_nested_dict(value))</code></pre>
+        tables = {}
+        for pair in self._recurse_nested_dict(value):
+            converted_data, type_name, dim = self._to_smax_format(pair[2])
+            if pair[0] not in tables:
+                tables[pair[0]] = []
+            tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
+
+        return self._pipeline_evalsha_set(table, key, tables)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_subscribe"><code class="name flex">

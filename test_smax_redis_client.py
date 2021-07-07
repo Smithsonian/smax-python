@@ -1,10 +1,11 @@
+import socket
+from time import sleep
+
 import numpy as np
 import pytest
-import socket
+from redis import TimeoutError
 
 from smax import SmaxRedisClient
-from redis import TimeoutError
-from time import sleep
 
 
 @pytest.fixture

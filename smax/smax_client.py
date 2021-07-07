@@ -4,7 +4,7 @@ from collections import namedtuple
 
 # Named tuples for smax requests and responses.
 SmaxData = namedtuple("SmaxData", "data type dim date source seq")
-SmaxCommand = namedtuple("SmaxCommand", "table key data type dim")
+SmaxCommand = namedtuple("SmaxCommand", "key data type dim")
 
 
 class SmaxClient(ABC):

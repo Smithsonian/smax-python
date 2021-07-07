@@ -289,14 +289,12 @@ class SmaxRedisClient(SmaxClient):
         """
         Private function to recursively traverse a nested dictionary, finding
         the leaf nodes that have actual data values.  Each real data value
-        ends up as an SmaxCommand object and gets appended to a list, which is
-        returned after the dictionary is searched.
+        is yielded back as it recurses.
         Args:
             dictionary (dict): Dict containing keys that exist in SMAX.
-            table: Do not use, this is used to build the table name as the function recurses.
 
-        Returns:
-            list: List of SmaxCommand objects.
+        Yields:
+            (key, value) for every leaf node in the nested dictionary.
         """
 
         for key, value in dictionary.items():
@@ -331,15 +329,14 @@ class SmaxRedisClient(SmaxClient):
         else:
             # Recursively traverse the (nested) dictionary to generate a set
             # of values to update atomically.
-            data_list = []
+            tables = {}
             for pair in self._recurse_nested_dict(value):
                 converted_data, type_name, dim = self._to_smax_format(pair[2])
-                data_list.append(f"{pair[0]}:{pair[1]}")
-                data_list.append(converted_data)
-                data_list.append(type_name)
-                data_list.append(dim)
+                if pair[0] not in tables:
+                    tables[pair[0]] = []
+                tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
 
-            return self._pipeline_evalsha_set(table, key, data_list)
+            return self._pipeline_evalsha_set(table, key, tables)
 
     def _evalsha_set(self, table, key, data_string, type_name, size):
         """
@@ -373,7 +370,7 @@ class SmaxRedisClient(SmaxClient):
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
-            commands (list): List of SmaxCommand objects.
+            commands (dict):
 
         Returns:
             return value from redis-py's pipeline.execute() function.
@@ -381,14 +378,14 @@ class SmaxRedisClient(SmaxClient):
         try:
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
-
-            self._pipeline.evalsha(self._multi_setSHA, '1',
-                                   f"{table}:{key}",
-                                   self._hostname,
-                                   *commands)
+            for k in commands.keys():
+                self._pipeline.evalsha(self._multi_setSHA, '1',
+                                       f"{table}:{key}:{k}",
+                                       self._hostname,
+                                       *commands[k])
             return self._pipeline.execute()
         except (ConnectionError, TimeoutError):
-            self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
+            self.logger.error("Unable to call HMSetWithMeta LUA script.")
             raise
 
     def smax_lazy_pull(self, table, key, value):
