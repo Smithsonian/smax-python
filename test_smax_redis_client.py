@@ -196,13 +196,15 @@ def test_pubsub_pattern_callback(smax_client):
     actual = {"value": None}
 
     def my_callback(message):
+        print("Callback reached")
         actual["value"] = message[table][key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
+    sleep(.1)
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
-    sleep(.1)
+    sleep(10)
     smax_client.smax_unsubscribe()
     assert actual["value"] == expected_value
 
@@ -219,6 +221,7 @@ def test_pubsub_callback(smax_client):
     table = "test_pubsub_callback"
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback)
+    sleep(.1)
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
@@ -247,12 +250,14 @@ def test_multiple_pubsub_callback(smax_client):
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback1)
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
+    sleep(.1)
 
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value
-    sleep(.1)
+    sleep(10)
+    smax_client.smax_unsubscribe()
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
 
