@@ -204,7 +204,7 @@ def test_pubsub_pattern_callback(smax_client):
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
-    sleep(10)
+    sleep(.1)
     smax_client.smax_unsubscribe()
     assert actual["value"] == expected_value
 
@@ -256,7 +256,7 @@ def test_multiple_pubsub_callback(smax_client):
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value
-    sleep(10)
+    sleep(.1)
     smax_client.smax_unsubscribe()
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
