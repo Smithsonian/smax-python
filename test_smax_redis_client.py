@@ -250,13 +250,13 @@ def test_multiple_pubsub_callback(smax_client):
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback1)
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
-    sleep(.1)
+    sleep(1)
 
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value
-    sleep(.1)
+    sleep(2)
     smax_client.smax_unsubscribe()
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
