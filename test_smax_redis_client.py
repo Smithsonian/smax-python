@@ -232,13 +232,14 @@ def test_multiple_pubsub_callback(smax_client):
     expected_value2 = 24
 
     # Inner functions can't modify outer variables unless they are mutable.
-    actual = {"value1": None, "value2": None}
+    actual1 = {"value1": None}
+    actual2 = {"value2": None}
 
     def my_callback1(message):
-        actual["value1"] = message.data
+        actual1["value1"] = message.data
 
     def my_callback2(message):
-        actual["value2"] = message.data
+        actual2["value2"] = message.data
 
     table = "test_multiple_pubsub_callback"
     key = "pytest"
@@ -249,9 +250,9 @@ def test_multiple_pubsub_callback(smax_client):
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value
-    sleep(1)
-    assert actual["value1"] == expected_value1
-    assert actual["value2"] == expected_value2
+    sleep(.1)
+    assert actual1["value1"] == expected_value1
+    assert actual2["value2"] == expected_value2
 
 
 def test_pull_struct(smax_client):
