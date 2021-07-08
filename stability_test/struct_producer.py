@@ -20,7 +20,7 @@ with open(csv_filename, 'w', newline='') as csvfile:
 tracemalloc.start()
 snapshot = tracemalloc.take_snapshot()
 
-for i in range(100):
+for i in range(1000):
     swarm_dict = {}
     for j in range(6):
         for k in range(8):
