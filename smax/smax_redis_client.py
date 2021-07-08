@@ -26,7 +26,7 @@ class SmaxRedisClient(SmaxClient):
 
         # Logging convention for messages to have module names in them.
         logging.basicConfig(level=logging.ERROR)
-        self.logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
 
         # Attributes for package, not exposed to users.
         self._redis_ip = redis_ip
@@ -76,10 +76,10 @@ class SmaxRedisClient(SmaxClient):
             self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
             self._multi_setSHA = redis_client.hget('scripts', 'HMSetWithMeta')
             self._getstructSHA = redis_client.hget('scripts', 'GetStruct')
-            self.logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
+            self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
-            self.logger.error("Connecting to redis and getting scripts failed")
+            self._logger.error("Connecting to redis and getting scripts failed")
             raise
 
     def smax_disconnect(self):
@@ -90,7 +90,7 @@ class SmaxRedisClient(SmaxClient):
 
         if self._client.connection:
             self._client.connection.disconnect()
-        self.logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
+        self._logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
     @staticmethod
     def _parse_lua_pull_response(lua_data):
@@ -169,22 +169,22 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-            self.logger.info(f"Successfully pulled {table}:{key}")
+            self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
-            self.logger.error(f"Reading {table}:{key} from Redis failed")
+            self._logger.error(f"Reading {table}:{key} from Redis failed")
             raise
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
-        self.logger.debug(f"Type: {type_name}")
+        self._logger.debug(f"Type: {type_name}")
         # If the lua response says its a struct we have to now use another LUA
         # script to go back to redis and collect the struct.
         if type_name == "struct":
             try:
                 lua_struct = self._client.evalsha(self._getstructSHA, '1', table, key)
-                self.logger.info(f"Successfully pulled struct {table}:{key}")
+                self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
-                self.logger.error(f"Reading {table}:{key} from Redis failed")
+                self._logger.error(f"Reading {table}:{key} from Redis failed")
                 raise
 
             # The struct will be parsed into a nested python dictionary.
@@ -308,7 +308,7 @@ class SmaxRedisClient(SmaxClient):
             if isinstance(value, dict):
                 # If value is dict then iterate over all its values
                 for pair in self._recurse_nested_dict(value):
-                    yield (key, *pair)
+                    yield key, *pair
             else:
                 yield key, value
 
@@ -364,12 +364,13 @@ class SmaxRedisClient(SmaxClient):
         """
 
         try:
-            result = self._client.evalsha(self._setSHA, '1', table, self._hostname, key,
-                                        data_string, type_name, size)
-            self.logger.info(f"Successfully shared to {table}:{key}")
+            result = self._client.evalsha(self._setSHA, '1', table,
+                                          self._hostname, key, data_string,
+                                          type_name, size)
+            self._logger.info(f"Successfully shared to {table}:{key}")
             return result
         except (ConnectionError, TimeoutError):
-            self.logger.error("Redis seems down, unable to call the _setSHA LUA script.")
+            self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
 
     def _pipeline_evalsha_set(self, table, key, commands):
@@ -397,10 +398,10 @@ class SmaxRedisClient(SmaxClient):
                                        self._hostname,
                                        *commands[k])
             result = self._pipeline.execute()
-            self.logger.info(f"Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}")
+            self._logger.info(f"Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}")
             return result
         except (ConnectionError, TimeoutError):
-            self.logger.error("Unable to call HMSetWithMeta LUA script.")
+            self._logger.error("Unable to call HMSetWithMeta LUA script.")
             raise
 
     def smax_lazy_pull(self, table, key, value):
@@ -432,29 +433,29 @@ class SmaxRedisClient(SmaxClient):
 
             table = path[5:path.rfind(":")]
             key = path[path.rfind(":") + 1:]
-            .debug(f"Callback notification received:{message}")
+            self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
             callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
-            self.logger.debug("Created redis pubsub object")
+            self._logger.debug("Created redis pubsub object")
 
         if pattern.endswith("*"):
             if callback is None:
                 self._pubsub.psubscribe(f"smax:{pattern}")
-                self.logger.info(f"Subscribed to {pattern}")
+                self._logger.info(f"Subscribed to {pattern}")
             else:
                 self._pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
-                self.logger.info(f"Subscribed to {pattern} with a callback")
+                self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
                 self._pubsub.subscribe(f"smax:{pattern}")
-                self.logger.info(f"Subscribed to {pattern}")
+                self._logger.info(f"Subscribed to {pattern}")
             else:
                 self._pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
-                self.logger.info(f"Subscribed to {pattern} with a callback")
+                self._logger.info(f"Subscribed to {pattern} with a callback")
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
@@ -470,13 +471,13 @@ class SmaxRedisClient(SmaxClient):
             if pattern is None:
                 self._pubsub.punsubscribe()
                 self._pubsub.unsubscribe()
-                self.logger.info("Unsubscribed from all tables")
+                self._logger.info("Unsubscribed from all tables")
             elif pattern.endswith("*"):
                 self._pubsub.punsubscribe(f"smax:{pattern}")
-                self.logger.info(f"Unsubscribed from {pattern}")
+                self._logger.info(f"Unsubscribed from {pattern}")
             else:
                 self._pubsub.unsubscribe(f"smax:{pattern}")
-                self.logger.info(f"Unsubscribed from {pattern}")
+                self._logger.info(f"Unsubscribed from {pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
         """
@@ -508,7 +509,7 @@ class SmaxRedisClient(SmaxClient):
                     break
             else:
                 message = self._pubsub.get_message(timeout=timeout)
-            self.logger.debug(f"Redis message received:{message}")
+            self._logger.debug(f"Redis message received:{message}")
             if message is None:
                 raise TimeoutError("Timed out waiting for redis message.")
             elif message["type"] == "message" or message["type"] == "pmessage":
@@ -602,10 +603,10 @@ class SmaxRedisClient(SmaxClient):
         """
         try:
             result = self._client.hset(f"<{meta}>", table, value)
-            self.logger.info(f"Successfully shared metadata to {table}")
+            self._logger.info(f"Successfully shared metadata to {table}")
             return result
         except (ConnectionError, TimeoutError):
-            self.logger.error("Redis seems down, unable to call hset.")
+            self._logger.error("Redis seems down, unable to call hset.")
             raise
 
     def smax_pull_meta(self, table, meta):
@@ -620,13 +621,13 @@ class SmaxRedisClient(SmaxClient):
         """
         try:
             result = self._client.hget(f"<{meta}>", table).decode("utf-8")
-            self.logger.info(f"Successfully pulled metadata from {table}")
+            self._logger.info(f"Successfully pulled metadata from {table}")
             if type(result) == bytes:
                 return result.decode("utf-8")
             else:
                 return result
         except (ConnectionError, TimeoutError):
-            self.logger.error("Redis seems down, unable to call hget.")
+            self._logger.error("Redis seems down, unable to call hget.")
             raise
 
 
