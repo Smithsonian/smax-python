@@ -432,29 +432,29 @@ class SmaxRedisClient(SmaxClient):
 
             table = path[5:path.rfind(":")]
             key = path[path.rfind(":") + 1:]
-            logging.debug(f"Callback notification received:{message}")
+            .debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
             callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
-            logging.debug("Created redis pubsub object")
+            self.logger.debug("Created redis pubsub object")
 
         if pattern.endswith("*"):
             if callback is None:
                 self._pubsub.psubscribe(f"smax:{pattern}")
-                logging.info(f"Subscribed to {pattern}")
+                self.logger.info(f"Subscribed to {pattern}")
             else:
                 self._pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
-                logging.info(f"Subscribed to {pattern} with a callback")
+                self.logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
                 self._pubsub.subscribe(f"smax:{pattern}")
-                logging.info(f"Subscribed to {pattern}")
+                self.logger.info(f"Subscribed to {pattern}")
             else:
                 self._pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
-                logging.info(f"Subscribed to {pattern} with a callback")
+                self.logger.info(f"Subscribed to {pattern} with a callback")
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
@@ -470,13 +470,13 @@ class SmaxRedisClient(SmaxClient):
             if pattern is None:
                 self._pubsub.punsubscribe()
                 self._pubsub.unsubscribe()
-                logging.info("Unsubscribed from all tables")
+                self.logger.info("Unsubscribed from all tables")
             elif pattern.endswith("*"):
                 self._pubsub.punsubscribe(f"smax:{pattern}")
-                logging.info(f"Unsubscribed from {pattern}")
+                self.logger.info(f"Unsubscribed from {pattern}")
             else:
                 self._pubsub.unsubscribe(f"smax:{pattern}")
-                logging.info(f"Unsubscribed from {pattern}")
+                self.logger.info(f"Unsubscribed from {pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
         """
@@ -508,7 +508,7 @@ class SmaxRedisClient(SmaxClient):
                     break
             else:
                 message = self._pubsub.get_message(timeout=timeout)
-            logging.debug(f"Redis message received:{message}")
+            self.logger.debug(f"Redis message received:{message}")
             if message is None:
                 raise TimeoutError("Timed out waiting for redis message.")
             elif message["type"] == "message" or message["type"] == "pmessage":
