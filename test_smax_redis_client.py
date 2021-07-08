@@ -247,7 +247,6 @@ def test_multiple_pubsub_callback(smax_client):
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback1)
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
-    sleep(1)
 
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
