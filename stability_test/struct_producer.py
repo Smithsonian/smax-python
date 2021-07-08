@@ -3,7 +3,6 @@ import time
 import os
 import psutil
 import csv
-import tracemalloc
 import logging
 
 logger = logging.getLogger("smax")
@@ -17,10 +16,8 @@ with open(csv_filename, 'w', newline='') as csvfile:
     csv_writer = csv.writer(csvfile)
     csv_writer.writerow(csv_fields)
 
-tracemalloc.start()
-snapshot = tracemalloc.take_snapshot()
 
-for i in range(1000):
+for i in range(10):
     swarm_dict = {}
     for j in range(6):
         for k in range(8):
@@ -42,10 +39,3 @@ for i in range(1000):
         csv_writer.writerow([i, memory_MB, end])
 
 smax_client.smax_disconnect()
-# snapshot2 = tracemalloc.take_snapshot()
-# top_stats = snapshot2.compare_to(snapshot, 'lineno')
-#
-# print("[ Top 10 differences ]")
-# for stat in top_stats[:10]:
-#     print(stat)
-
