@@ -13,13 +13,13 @@ editable flag.
 
 ### Install with pip directly from github
 ```bash
-pip install git+ssh://git@github.com/Smithsonian/sma-python-redis-client.git
+pip install git+ssh://git@github.com/Smithsonian/smax-python.git
 ```
 
 ### Clone repo and install in editable mode
 ```bash
-git clone git@github.com:Smithsonian/sma-python-redis-client.git
-cd sma-python-redis-client
+git clone git@github.com:Smithsonian/smax-python.git
+cd smax-python
 pip install . -e
 ```
 
