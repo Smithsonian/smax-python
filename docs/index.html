@@ -53,6 +53,7 @@ class SmaxRedisClient(SmaxClient):
         &#34;&#34;&#34;
 
         # Logging convention for messages to have module names in them.
+        logging.basicConfig(level=logging.ERROR)
         self.logger = logging.getLogger(__name__)
 
         # Attributes for package, not exposed to users.
@@ -106,7 +107,7 @@ class SmaxRedisClient(SmaxClient):
             self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
             return redis_client
         except (ConnectionError, TimeoutError):
-            self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+            self.logger.error(&#34;Connecting to redis and getting scripts failed&#34;)
             raise
 
     def smax_disconnect(self):
@@ -196,17 +197,23 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+            self.logger.info(f&#34;Successfully pulled {table}:{key}&#34;)
         except (ConnectionError, TimeoutError):
             self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
             raise
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode(&#34;utf-8&#34;)
-
+        self.logger.debug(f&#34;Type: {type_name}&#34;)
         # If the lua response says its a struct we have to now use another LUA
         # script to go back to redis and collect the struct.
         if type_name == &#34;struct&#34;:
-            lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+            try:
+                lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+                self.logger.info(f&#34;Successfully pulled struct {table}:{key}&#34;)
+            except (ConnectionError, TimeoutError):
+                self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+                raise
 
             # The struct will be parsed into a nested python dictionary.
             tree = {}
@@ -356,7 +363,9 @@ class SmaxRedisClient(SmaxClient):
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
             # Recursively traverse the (nested) dictionary to generate a set
-            # of values to update atomically.
+            # of values to update atomically. The recurse_nested_dict function
+            # yields key/value pairs as it finds the leaf nodes of the nested
+            # dict.
             tables = {}
             for pair in self._recurse_nested_dict(value):
                 converted_data, type_name, dim = self._to_smax_format(pair[2])
@@ -383,8 +392,10 @@ class SmaxRedisClient(SmaxClient):
         &#34;&#34;&#34;
 
         try:
-            return self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
+            result = self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
                                         data_string, type_name, size)
+            self.logger.info(f&#34;Successfully shared to {table}:{key}&#34;)
+            return result
         except (ConnectionError, TimeoutError):
             self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
             raise
@@ -413,28 +424,32 @@ class SmaxRedisClient(SmaxClient):
                                        f&#34;{table}:{key}:{k}&#34;,
                                        self._hostname,
                                        *commands[k])
-            return self._pipeline.execute()
+            result = self._pipeline.execute()
+            self.logger.info(f&#34;Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}&#34;)
+            return result
         except (ConnectionError, TimeoutError):
             self.logger.error(&#34;Unable to call HMSetWithMeta LUA script.&#34;)
             raise
 
     def smax_lazy_pull(self, table, key, value):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_lazy_end(self, table, key):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_subscribe(self, pattern, callback=None):
         &#34;&#34;&#34;
         Subscribe to a redis field or group of fields. You can type the full
         name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
-        character to specify a pattern. Use a callback for asynchronous
+        character as a suffix to specify a pattern. Use a callback for asynchronous
         processing of notifications, or use one of the smax_wait_on functions.
         Args:
             pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
                            at the end of the pattern to be notified for anything
                            underneath.
             callback (func): Function that takes a single argument (Default=None).
+                             The message in your callback will be an SmaData
+                             object, or a nested dictionary for a struct.
         &#34;&#34;&#34;
         def parent_callback(message):
             msg_pattern = message[&#34;pattern&#34;]
@@ -445,23 +460,29 @@ class SmaxRedisClient(SmaxClient):
 
             table = path[5:path.rfind(&#34;:&#34;)]
             key = path[path.rfind(&#34;:&#34;) + 1:]
+            logging.debug(f&#34;Callback notification received:{message}&#34;)
             data = self.smax_pull(table, key)
             callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
+            logging.debug(&#34;Created redis pubsub object&#34;)
 
         if pattern.endswith(&#34;*&#34;):
             if callback is None:
                 self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Subscribed to {pattern}&#34;)
             else:
                 self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
+                logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
         else:
             if callback is None:
                 self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Subscribed to {pattern}&#34;)
             else:
                 self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
@@ -477,10 +498,13 @@ class SmaxRedisClient(SmaxClient):
             if pattern is None:
                 self._pubsub.punsubscribe()
                 self._pubsub.unsubscribe()
+                logging.info(&#34;Unsubscribed from all tables&#34;)
             elif pattern.endswith(&#34;*&#34;):
                 self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Unsubscribed from {pattern}&#34;)
             else:
                 self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Unsubscribed from {pattern}&#34;)
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
         &#34;&#34;&#34;
@@ -512,7 +536,7 @@ class SmaxRedisClient(SmaxClient):
                     break
             else:
                 message = self._pubsub.get_message(timeout=timeout)
-
+            logging.debug(f&#34;Redis message received:{message}&#34;)
             if message is None:
                 raise TimeoutError(&#34;Timed out waiting for redis message.&#34;)
             elif message[&#34;type&#34;] == &#34;message&#34; or message[&#34;type&#34;] == &#34;pmessage&#34;:
@@ -526,7 +550,6 @@ class SmaxRedisClient(SmaxClient):
         if notification_only:
             return message
         else:
-
             if pattern is None:
                 # Pull the exact table that sent the notification.
                 table = channel[5:channel.rfind(&#34;:&#34;)]
@@ -585,23 +608,54 @@ class SmaxRedisClient(SmaxClient):
         return self.smax_pull_meta(table, &#34;units&#34;)
 
     def smax_set_coordinate_system(self, table, coordinate_system):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_get_coordinate_system(self, table):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_create_coordinate_system(self, n_axis):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_push_meta(self, meta, table, value):
-        return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+        &#34;&#34;&#34;
+        Sets additional metadata for a given table.
+        Args:
+            meta (str): Key for the metadata field.
+            table (str): Name of the table to set metadata for.
+            value (str or int): Metadata value to store in redis, note this
+                                needs to be a string int.
+
+        Returns:
+            Result of redis-py hset function.
+        &#34;&#34;&#34;
+        try:
+            result = self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+            self.logger.info(f&#34;Successfully shared metadata to {table}&#34;)
+            return result
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call hset.&#34;)
+            raise
 
     def smax_pull_meta(self, table, meta):
-        result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
-        if type(result) == bytes:
-            return result.decode(&#34;utf-8&#34;)
-        else:
-            return result
+        &#34;&#34;&#34;
+        Pulls specified metadata field from a given table.
+        Args:
+            table (str): Name of the table to pull metadata from.
+            meta (str): Metadata field name to pull.
+
+        Returns:
+            Result of redis-py hget function.
+        &#34;&#34;&#34;
+        try:
+            result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+            self.logger.info(f&#34;Successfully pulled metadata from {table}&#34;)
+            if type(result) == bytes:
+                return result.decode(&#34;utf-8&#34;)
+            else:
+                return result
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call hget.&#34;)
+            raise
 
 
 # Lookup tables for converting python types to smax type names.
@@ -672,6 +726,7 @@ happens in the SmaxClient parent class that is inherited.</p>
         &#34;&#34;&#34;
 
         # Logging convention for messages to have module names in them.
+        logging.basicConfig(level=logging.ERROR)
         self.logger = logging.getLogger(__name__)
 
         # Attributes for package, not exposed to users.
@@ -725,7 +780,7 @@ happens in the SmaxClient parent class that is inherited.</p>
             self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
             return redis_client
         except (ConnectionError, TimeoutError):
-            self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+            self.logger.error(&#34;Connecting to redis and getting scripts failed&#34;)
             raise
 
     def smax_disconnect(self):
@@ -815,17 +870,23 @@ happens in the SmaxClient parent class that is inherited.</p>
 
         try:
             lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+            self.logger.info(f&#34;Successfully pulled {table}:{key}&#34;)
         except (ConnectionError, TimeoutError):
             self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
             raise
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode(&#34;utf-8&#34;)
-
+        self.logger.debug(f&#34;Type: {type_name}&#34;)
         # If the lua response says its a struct we have to now use another LUA
         # script to go back to redis and collect the struct.
         if type_name == &#34;struct&#34;:
-            lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+            try:
+                lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+                self.logger.info(f&#34;Successfully pulled struct {table}:{key}&#34;)
+            except (ConnectionError, TimeoutError):
+                self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+                raise
 
             # The struct will be parsed into a nested python dictionary.
             tree = {}
@@ -975,7 +1036,9 @@ happens in the SmaxClient parent class that is inherited.</p>
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
             # Recursively traverse the (nested) dictionary to generate a set
-            # of values to update atomically.
+            # of values to update atomically. The recurse_nested_dict function
+            # yields key/value pairs as it finds the leaf nodes of the nested
+            # dict.
             tables = {}
             for pair in self._recurse_nested_dict(value):
                 converted_data, type_name, dim = self._to_smax_format(pair[2])
@@ -1002,8 +1065,10 @@ happens in the SmaxClient parent class that is inherited.</p>
         &#34;&#34;&#34;
 
         try:
-            return self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
+            result = self._client.evalsha(self._setSHA, &#39;1&#39;, table, self._hostname, key,
                                         data_string, type_name, size)
+            self.logger.info(f&#34;Successfully shared to {table}:{key}&#34;)
+            return result
         except (ConnectionError, TimeoutError):
             self.logger.error(&#34;Redis seems down, unable to call the _setSHA LUA script.&#34;)
             raise
@@ -1032,28 +1097,32 @@ happens in the SmaxClient parent class that is inherited.</p>
                                        f&#34;{table}:{key}:{k}&#34;,
                                        self._hostname,
                                        *commands[k])
-            return self._pipeline.execute()
+            result = self._pipeline.execute()
+            self.logger.info(f&#34;Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}&#34;)
+            return result
         except (ConnectionError, TimeoutError):
             self.logger.error(&#34;Unable to call HMSetWithMeta LUA script.&#34;)
             raise
 
     def smax_lazy_pull(self, table, key, value):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_lazy_end(self, table, key):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_subscribe(self, pattern, callback=None):
         &#34;&#34;&#34;
         Subscribe to a redis field or group of fields. You can type the full
         name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
-        character to specify a pattern. Use a callback for asynchronous
+        character as a suffix to specify a pattern. Use a callback for asynchronous
         processing of notifications, or use one of the smax_wait_on functions.
         Args:
             pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
                            at the end of the pattern to be notified for anything
                            underneath.
             callback (func): Function that takes a single argument (Default=None).
+                             The message in your callback will be an SmaData
+                             object, or a nested dictionary for a struct.
         &#34;&#34;&#34;
         def parent_callback(message):
             msg_pattern = message[&#34;pattern&#34;]
@@ -1064,23 +1133,29 @@ happens in the SmaxClient parent class that is inherited.</p>
 
             table = path[5:path.rfind(&#34;:&#34;)]
             key = path[path.rfind(&#34;:&#34;) + 1:]
+            logging.debug(f&#34;Callback notification received:{message}&#34;)
             data = self.smax_pull(table, key)
             callback(data)
 
         if self._pubsub is None:
             self._pubsub = self._client.pubsub()
+            logging.debug(&#34;Created redis pubsub object&#34;)
 
         if pattern.endswith(&#34;*&#34;):
             if callback is None:
                 self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Subscribed to {pattern}&#34;)
             else:
                 self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
+                logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
         else:
             if callback is None:
                 self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Subscribed to {pattern}&#34;)
             else:
                 self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+                logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
                 self._pubsub.run_in_thread(sleep_time=2, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
@@ -1096,10 +1171,13 @@ happens in the SmaxClient parent class that is inherited.</p>
             if pattern is None:
                 self._pubsub.punsubscribe()
                 self._pubsub.unsubscribe()
+                logging.info(&#34;Unsubscribed from all tables&#34;)
             elif pattern.endswith(&#34;*&#34;):
                 self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Unsubscribed from {pattern}&#34;)
             else:
                 self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)
+                logging.info(f&#34;Unsubscribed from {pattern}&#34;)
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
         &#34;&#34;&#34;
@@ -1131,7 +1209,7 @@ happens in the SmaxClient parent class that is inherited.</p>
                     break
             else:
                 message = self._pubsub.get_message(timeout=timeout)
-
+            logging.debug(f&#34;Redis message received:{message}&#34;)
             if message is None:
                 raise TimeoutError(&#34;Timed out waiting for redis message.&#34;)
             elif message[&#34;type&#34;] == &#34;message&#34; or message[&#34;type&#34;] == &#34;pmessage&#34;:
@@ -1145,7 +1223,6 @@ happens in the SmaxClient parent class that is inherited.</p>
         if notification_only:
             return message
         else:
-
             if pattern is None:
                 # Pull the exact table that sent the notification.
                 table = channel[5:channel.rfind(&#34;:&#34;)]
@@ -1204,23 +1281,54 @@ happens in the SmaxClient parent class that is inherited.</p>
         return self.smax_pull_meta(table, &#34;units&#34;)
 
     def smax_set_coordinate_system(self, table, coordinate_system):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_get_coordinate_system(self, table):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_create_coordinate_system(self, n_axis):
-        pass
+        raise NotImplementedError(&#34;Available in C API, not in python&#34;)
 
     def smax_push_meta(self, meta, table, value):
-        return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+        &#34;&#34;&#34;
+        Sets additional metadata for a given table.
+        Args:
+            meta (str): Key for the metadata field.
+            table (str): Name of the table to set metadata for.
+            value (str or int): Metadata value to store in redis, note this
+                                needs to be a string int.
+
+        Returns:
+            Result of redis-py hset function.
+        &#34;&#34;&#34;
+        try:
+            result = self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+            self.logger.info(f&#34;Successfully shared metadata to {table}&#34;)
+            return result
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call hset.&#34;)
+            raise
 
     def smax_pull_meta(self, table, meta):
-        result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
-        if type(result) == bytes:
-            return result.decode(&#34;utf-8&#34;)
-        else:
-            return result</code></pre>
+        &#34;&#34;&#34;
+        Pulls specified metadata field from a given table.
+        Args:
+            table (str): Name of the table to pull metadata from.
+            meta (str): Metadata field name to pull.
+
+        Returns:
+            Result of redis-py hget function.
+        &#34;&#34;&#34;
+        try:
+            result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+            self.logger.info(f&#34;Successfully pulled metadata from {table}&#34;)
+            if type(result) == bytes:
+                return result.decode(&#34;utf-8&#34;)
+            else:
+                return result
+        except (ConnectionError, TimeoutError):
+            self.logger.error(&#34;Redis seems down, unable to call hget.&#34;)
+            raise</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1284,7 +1392,7 @@ there shouldn't be a need to call this explicitly.</p>
         self.logger.info(f&#34;Connected to redis server {redis_ip}:{redis_port} db={redis_db}&#34;)
         return redis_client
     except (ConnectionError, TimeoutError):
-        self.logger.info(&#34;Connecting to redis and getting scripts failed&#34;)
+        self.logger.error(&#34;Connecting to redis and getting scripts failed&#34;)
         raise</code></pre>
 </details>
 </dd>
@@ -1298,7 +1406,7 @@ there shouldn't be a need to call this explicitly.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_create_coordinate_system(self, n_axis):
-    pass</code></pre>
+    raise NotImplementedError(&#34;Available in C API, not in python&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_disconnect"><code class="name flex">
@@ -1332,7 +1440,7 @@ release the connection, this disconnect function will do it.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_get_coordinate_system(self, table):
-    pass</code></pre>
+    raise NotImplementedError(&#34;Available in C API, not in python&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_get_description"><code class="name flex">
@@ -1371,7 +1479,7 @@ release the connection, this disconnect function will do it.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_lazy_end(self, table, key):
-    pass</code></pre>
+    raise NotImplementedError(&#34;Available in C API, not in python&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull"><code class="name flex">
@@ -1384,7 +1492,7 @@ release the connection, this disconnect function will do it.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_lazy_pull(self, table, key, value):
-    pass</code></pre>
+    raise NotImplementedError(&#34;Available in C API, not in python&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_pull"><code class="name flex">
@@ -1432,17 +1540,23 @@ nested dictionary back, with each leaf being an SmaxData object.</p>
 
     try:
         lua_data = self._client.evalsha(self._getSHA, &#39;1&#39;, table, key)
+        self.logger.info(f&#34;Successfully pulled {table}:{key}&#34;)
     except (ConnectionError, TimeoutError):
         self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
         raise
 
     # Extract the type out of the meta data, and map string to real type object.
     type_name = lua_data[1].decode(&#34;utf-8&#34;)
-
+    self.logger.debug(f&#34;Type: {type_name}&#34;)
     # If the lua response says its a struct we have to now use another LUA
     # script to go back to redis and collect the struct.
     if type_name == &#34;struct&#34;:
-        lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+        try:
+            lua_struct = self._client.evalsha(self._getstructSHA, &#39;1&#39;, table, key)
+            self.logger.info(f&#34;Successfully pulled struct {table}:{key}&#34;)
+        except (ConnectionError, TimeoutError):
+            self.logger.error(f&#34;Reading {table}:{key} from Redis failed&#34;)
+            raise
 
         # The struct will be parsed into a nested python dictionary.
         tree = {}
@@ -1494,30 +1608,82 @@ nested dictionary back, with each leaf being an SmaxData object.</p>
 <span>def <span class="ident">smax_pull_meta</span></span>(<span>self, table, meta)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Pulls specified metadata field from a given table.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>table</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the table to pull metadata from.</dd>
+<dt><strong><code>meta</code></strong> :&ensp;<code>str</code></dt>
+<dd>Metadata field name to pull.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Result of redis-py hget function.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_pull_meta(self, table, meta):
-    result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
-    if type(result) == bytes:
-        return result.decode(&#34;utf-8&#34;)
-    else:
-        return result</code></pre>
+    &#34;&#34;&#34;
+    Pulls specified metadata field from a given table.
+    Args:
+        table (str): Name of the table to pull metadata from.
+        meta (str): Metadata field name to pull.
+
+    Returns:
+        Result of redis-py hget function.
+    &#34;&#34;&#34;
+    try:
+        result = self._client.hget(f&#34;&lt;{meta}&gt;&#34;, table).decode(&#34;utf-8&#34;)
+        self.logger.info(f&#34;Successfully pulled metadata from {table}&#34;)
+        if type(result) == bytes:
+            return result.decode(&#34;utf-8&#34;)
+        else:
+            return result
+    except (ConnectionError, TimeoutError):
+        self.logger.error(&#34;Redis seems down, unable to call hget.&#34;)
+        raise</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_push_meta"><code class="name flex">
 <span>def <span class="ident">smax_push_meta</span></span>(<span>self, meta, table, value)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Sets additional metadata for a given table.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>meta</code></strong> :&ensp;<code>str</code></dt>
+<dd>Key for the metadata field.</dd>
+<dt><strong><code>table</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the table to set metadata for.</dd>
+<dt><strong><code>value</code></strong> :&ensp;<code>str</code> or <code>int</code></dt>
+<dd>Metadata value to store in redis, note this
+needs to be a string int.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Result of redis-py hset function.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_push_meta(self, meta, table, value):
-    return self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)</code></pre>
+    &#34;&#34;&#34;
+    Sets additional metadata for a given table.
+    Args:
+        meta (str): Key for the metadata field.
+        table (str): Name of the table to set metadata for.
+        value (str or int): Metadata value to store in redis, note this
+                            needs to be a string int.
+
+    Returns:
+        Result of redis-py hset function.
+    &#34;&#34;&#34;
+    try:
+        result = self._client.hset(f&#34;&lt;{meta}&gt;&#34;, table, value)
+        self.logger.info(f&#34;Successfully shared metadata to {table}&#34;)
+        return result
+    except (ConnectionError, TimeoutError):
+        self.logger.error(&#34;Redis seems down, unable to call hset.&#34;)
+        raise</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system"><code class="name flex">
@@ -1530,7 +1696,7 @@ nested dictionary back, with each leaf being an SmaxData object.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def smax_set_coordinate_system(self, table, coordinate_system):
-    pass</code></pre>
+    raise NotImplementedError(&#34;Available in C API, not in python&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_set_description"><code class="name flex">
@@ -1622,7 +1788,9 @@ Date and sequence number are added by the redis macro.</p>
         return self._evalsha_set(table, key, converted_data, type_name, size)
     else:
         # Recursively traverse the (nested) dictionary to generate a set
-        # of values to update atomically.
+        # of values to update atomically. The recurse_nested_dict function
+        # yields key/value pairs as it finds the leaf nodes of the nested
+        # dict.
         tables = {}
         for pair in self._recurse_nested_dict(value):
             converted_data, type_name, dim = self._to_smax_format(pair[2])
@@ -1639,7 +1807,7 @@ Date and sequence number are added by the redis macro.</p>
 <dd>
 <div class="desc"><p>Subscribe to a redis field or group of fields. You can type the full
 name of the field you'd like to subscribe too, or use a wildcard "*"
-character to specify a pattern. Use a callback for asynchronous
+character as a suffix to specify a pattern. Use a callback for asynchronous
 processing of notifications, or use one of the smax_wait_on functions.</p>
 <h2 id="args">Args</h2>
 <dl>
@@ -1648,7 +1816,9 @@ processing of notifications, or use one of the smax_wait_on functions.</p>
 at the end of the pattern to be notified for anything
 underneath.</dd>
 <dt><strong><code>callback</code></strong> :&ensp;<code>func</code></dt>
-<dd>Function that takes a single argument (Default=None).</dd>
+<dd>Function that takes a single argument (Default=None).
+The message in your callback will be an SmaData
+object, or a nested dictionary for a struct.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1658,13 +1828,15 @@ underneath.</dd>
     &#34;&#34;&#34;
     Subscribe to a redis field or group of fields. You can type the full
     name of the field you&#39;d like to subscribe too, or use a wildcard &#34;*&#34;
-    character to specify a pattern. Use a callback for asynchronous
+    character as a suffix to specify a pattern. Use a callback for asynchronous
     processing of notifications, or use one of the smax_wait_on functions.
     Args:
         pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;
                        at the end of the pattern to be notified for anything
                        underneath.
         callback (func): Function that takes a single argument (Default=None).
+                         The message in your callback will be an SmaData
+                         object, or a nested dictionary for a struct.
     &#34;&#34;&#34;
     def parent_callback(message):
         msg_pattern = message[&#34;pattern&#34;]
@@ -1675,23 +1847,29 @@ underneath.</dd>
 
         table = path[5:path.rfind(&#34;:&#34;)]
         key = path[path.rfind(&#34;:&#34;) + 1:]
+        logging.debug(f&#34;Callback notification received:{message}&#34;)
         data = self.smax_pull(table, key)
         callback(data)
 
     if self._pubsub is None:
         self._pubsub = self._client.pubsub()
+        logging.debug(&#34;Created redis pubsub object&#34;)
 
     if pattern.endswith(&#34;*&#34;):
         if callback is None:
             self._pubsub.psubscribe(f&#34;smax:{pattern}&#34;)
+            logging.info(f&#34;Subscribed to {pattern}&#34;)
         else:
             self._pubsub.psubscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
             self._pubsub.run_in_thread(sleep_time=2, daemon=True)
+            logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
     else:
         if callback is None:
             self._pubsub.subscribe(f&#34;smax:{pattern}&#34;)
+            logging.info(f&#34;Subscribed to {pattern}&#34;)
         else:
             self._pubsub.subscribe(**{f&#34;smax:{pattern}&#34;: parent_callback})
+            logging.info(f&#34;Subscribed to {pattern} with a callback&#34;)
             self._pubsub.run_in_thread(sleep_time=2, daemon=True)</code></pre>
 </details>
 </dd>
@@ -1725,10 +1903,13 @@ underneath.</dd>
         if pattern is None:
             self._pubsub.punsubscribe()
             self._pubsub.unsubscribe()
+            logging.info(&#34;Unsubscribed from all tables&#34;)
         elif pattern.endswith(&#34;*&#34;):
             self._pubsub.punsubscribe(f&#34;smax:{pattern}&#34;)
+            logging.info(f&#34;Unsubscribed from {pattern}&#34;)
         else:
-            self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)</code></pre>
+            self._pubsub.unsubscribe(f&#34;smax:{pattern}&#34;)
+            logging.info(f&#34;Unsubscribed from {pattern}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed"><code class="name flex">

@@ -4,7 +4,10 @@ import os
 import psutil
 import csv
 import tracemalloc
+import logging
 
+logger = logging.getLogger("smax")
+logger.setLevel(logging.DEBUG)
 
 smax_client = SmaxRedisClient("localhost")
 
@@ -38,6 +41,7 @@ for i in range(100):
         csv_writer = csv.writer(csvfile)
         csv_writer.writerow([i, memory_MB, end])
 
+smax_client.smax_disconnect()
 # snapshot2 = tracemalloc.take_snapshot()
 # top_stats = snapshot2.compare_to(snapshot, 'lineno')
 #

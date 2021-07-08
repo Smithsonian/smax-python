@@ -196,7 +196,6 @@ def test_pubsub_pattern_callback(smax_client):
     actual = {"value": None}
 
     def my_callback(message):
-        print("Callback reached")
         actual["value"] = message[table][key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
@@ -239,11 +238,9 @@ def test_multiple_pubsub_callback(smax_client):
     actual2 = {"value2": None}
 
     def my_callback1(message):
-        print("Callback 1 called")
         actual1["value1"] = message.data
 
     def my_callback2(message):
-        print("Callback 2 called")
         actual2["value2"] = message.data
 
     table = "test_multiple_pubsub_callback"
