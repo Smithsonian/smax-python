@@ -178,9 +178,12 @@ def test_pubsub_wait_on_pattern(smax_client):
     smax_client.smax_subscribe(f"{table}:{key}*")
     expected_data1 = 666
     expected_data2 = 33
-    smax_client.smax_share(f"{table}:{key}:nop", "nop", "nopvalue")
-    smax_client.smax_share(f"{table}:{key}:fpga", "temp", expected_data1)
-    smax_client.smax_share(f"{table}:{key}:fpga", "speed", expected_data2)
+
+    with SmaxRedisClient("localhost") as smax_producer:
+        smax_producer.smax_share(f"{table}:{key}:nop", "nop", "nopvalue")
+        smax_producer.smax_share(f"{table}:{key}:fpga", "temp", expected_data1)
+        smax_producer.smax_share(f"{table}:{key}:fpga", "speed", expected_data2)
+
     result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
     result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
     assert result1[table][key]["fpga"]["temp"].data == expected_data1
@@ -199,12 +202,11 @@ def test_pubsub_pattern_callback(smax_client):
         actual["value"] = message[table][key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
-    sleep(.1)
-    smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
+    with SmaxRedisClient("localhost") as smax_producer:
+        smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
     sleep(.1)
-    smax_client.smax_unsubscribe()
     assert actual["value"] == expected_value
 
 
@@ -220,8 +222,9 @@ def test_pubsub_callback(smax_client):
     table = "test_pubsub_callback"
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback)
-    sleep(.1)
-    smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
+
+    with SmaxRedisClient("localhost") as smax_producer:
+        smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
     sleep(.1)
@@ -248,14 +251,14 @@ def test_multiple_pubsub_callback(smax_client):
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback1)
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
 
-    smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
-    sleep(.1)  # Sleep a little bit in between these.
-    smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
+    with SmaxRedisClient("localhost") as smax_producer:
+        smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
+        sleep(.1)  # Sleep a little bit in between these.
+        smax_producer.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value.
     # The long sleep only seems needs on Windows, mac and linux work with .1s.
-    sleep(3)
-    smax_client.smax_unsubscribe()
+    sleep(.1)
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
 
