@@ -249,6 +249,7 @@ def test_multiple_pubsub_callback(smax_client):
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
 
     smax_client.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
+    sleep(.1)  # Sleep a little bit in between these.
     smax_client.smax_share(f"{table}:{key}:fpga2", "temp", expected_value2)
 
     # Sleep and then check actual value.
