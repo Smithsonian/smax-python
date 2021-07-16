@@ -27,10 +27,12 @@ jobs:
       - name: Pip install SMAX package
         run: pip install .
 
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.2.0
+      - name: Setup redis
+        uses: shogo82148/actions-setup-redis@v1
         with:
           redis-version: ${{ matrix.redis-version }}
+          auto-start: "true"
+          redis-conf: redis_config_files/redis.conf
 
       - name: Load LUA scripts
         run: |
