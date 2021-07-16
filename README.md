@@ -3,7 +3,7 @@
 # SMAX for Python 
 Client side python library for communicating with SMA-X (aka Redis).
 
-[API Documentation](https://vigilant-train-4ffe4e35.pages.github.io/)
+[API Documentation](https://ideal-funicular-124903cd.pages.github.io/)
 
 # Install
 There is a proper python package in this repo named "smax".  You can use pip to install
