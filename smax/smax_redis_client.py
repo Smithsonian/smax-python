@@ -447,7 +447,7 @@ class SmaxRedisClient(SmaxClient):
                 self._logger.info(f"Subscribed to {pattern}")
             else:
                 self._pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
-                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
+                self._pubsub.run_in_thread(sleep_time=None, daemon=True)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
@@ -456,7 +456,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 self._pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
-                self._pubsub.run_in_thread(sleep_time=2, daemon=True)
+                self._pubsub.run_in_thread(sleep_time=None, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
         """
