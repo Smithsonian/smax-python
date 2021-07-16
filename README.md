@@ -23,7 +23,25 @@ cd smax-python
 pip install . -e
 ```
 
-# Examples
+### Set up redis server for local SMAX testing and development
+* Install redis
+  * Using [Conda](https://anaconda.org/binstar/redis-server)
+  * For [Raspberry pi](https://redis.io/topics/ARM)
+  * [From source](https://redis.io/topics/quickstart)
+* Clone this repo locally
+* Start redis-server with redis.conf
+  * The redis.conf file is in the redis_config_files folder of this repo
+```bash
+redis-server redis_config_files/redis.conf
+```
+* Load SMAX LUA Scripts into running redis-server
+  * Make sure the redis command line interface is on the path by typing "redis-cli" into a terminal.  
+  * Run the redis_config_files/initscripts.sh bash script.  
+* That's it, you now have SMAX running locally!
+
+
+
+# Python Examples
 The best place to find example usages is the unit tests (test_smax_redis_client.py), but here are 
 a few simple ones to help get you started.
 
