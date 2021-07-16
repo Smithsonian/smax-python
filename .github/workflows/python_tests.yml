@@ -9,25 +9,28 @@ jobs:
         shell: bash -l {0}
     runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 6
+      max-parallel: 9
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9]
+        redis-version: [5]
 
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          activate-environment: smax
-          environment-file: environment.yml
           python-version: ${{ matrix.python-version }}
-          auto-activate-base: false
+
+      - name: Pip install SMAX package
+        run: pip install .
 
       - name: Start Redis
-        run: redis-server ./redis_config_files/redis.conf &
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
 
       - name: Load LUA scripts
         run: |
