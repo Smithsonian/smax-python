@@ -19,8 +19,8 @@ jobs:
       run: |
         conda env update --file environment.yml --name base
         python -m pip install --upgrade pip
-        pip install pdoc3
-    - name: Generate docs with pdoc==0.9.2
+        pip install pdoc3==0.9.2
+    - name: Generate docs with pdoc
       run: |
         pdoc --html --output-dir docs smax.smax_redis_client
     - name: Compare new html to index.html
