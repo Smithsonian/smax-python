@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9]
-        redis-version: [5]
+        redis-version: [5.0.3]
 
     steps:
       - name: Git checkout
@@ -32,7 +32,6 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
           auto-start: "true"
-          redis-conf: redis_config_files/redis.conf
 
       - name: Load LUA scripts
         run: |
