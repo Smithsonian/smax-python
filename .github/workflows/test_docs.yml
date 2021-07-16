@@ -25,4 +25,5 @@ jobs:
         pdoc --html --output-dir docs smax.smax_redis_client
     - name: Compare new html to index.html
       run: |
-        cmp ./docs/index.html ./docs/smax/smax_redis_client.html
+        # Skip the first 15 lines to avoid pdoc version differences causing this to fail.
+        cmp <(tail -n +16 ./docs/index.html) <(tail -n +16 ./docs/smax/smax_redis_client.html)
