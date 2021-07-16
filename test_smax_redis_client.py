@@ -206,7 +206,7 @@ def test_pubsub_pattern_callback(smax_client):
         smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
-    sleep(.1)
+    sleep(1)
     assert actual["value"] == expected_value
 
 
@@ -227,7 +227,7 @@ def test_pubsub_callback(smax_client):
         smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value)
 
     # Sleep and then check actual value
-    sleep(.1)
+    sleep(1)
     smax_client.smax_unsubscribe()
     assert actual["value"] == expected_value
 
@@ -258,7 +258,7 @@ def test_multiple_pubsub_callback(smax_client):
 
     # Sleep and then check actual value.
     # The long sleep only seems needs on Windows, mac and linux work with .1s.
-    sleep(.1)
+    sleep(1)
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
 
