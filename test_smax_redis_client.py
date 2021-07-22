@@ -1,4 +1,5 @@
 import socket
+import threading
 from time import sleep
 
 import numpy as np
@@ -271,6 +272,44 @@ def test_multiple_pubsub_callback(smax_client):
     sleep(1)
     assert actual1["value1"] == expected_value1
     assert actual2["value2"] == expected_value2
+
+
+def test_mixed_pubsub_callback(smax_client):
+
+    def my_callback1(message):
+        actual1["value1"] = message.data
+
+    def producer():
+        sleep(.1)
+        smax_client.smax_share(table, "nocallback", expected_data)
+
+    expected_data = "just a string"
+    table = "test_mixed_pubsub_callback"
+    expected_value1 = 42
+
+    # Inner functions can't modify outer variables unless they are mutable.
+    actual1 = {"value1": None}
+
+    # Subscribes with callbacks have to be declared first for some reason.
+    smax_client.smax_subscribe(f"{table}:callback:fpga1:temp", callback=my_callback1)
+    smax_client.smax_subscribe(f"{table}:nocallback")
+
+    # This call to smax_share will trigger the callback.
+    smax_client.smax_share(f"{table}:callback:fpga1", "temp", expected_value1)
+
+    # Create a seperate thread that will share a value while the wait is active.
+    delayed_producer = threading.Thread(target=producer)
+    delayed_producer.start()
+
+    # Now wait for the thread to share, and check the result.
+    result = smax_client.smax_wait_on_any_subscribed()
+    delayed_producer.join()
+    assert result.data == expected_data
+
+    # Sleep and then check callback actual value.
+    # The long sleep only seems needs on Windows, mac and linux work with .1s.
+    # sleep(1)
+    assert actual1["value1"] == expected_value1
 
 
 def test_pull_struct(smax_client):
