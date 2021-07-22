@@ -523,6 +523,14 @@ class SmaxRedisClient(SmaxClient):
                         found_real_message = True
 
         if notification_only:
+            # Strip the "smax:" prefix off of the channel.
+            channel = message["channel"].decode("utf-8")
+            prefix = "smax:"
+            if channel.startswith(prefix):
+                message["channel"] = channel[len(prefix):]
+
+            # Decode the other fields.
+            message["data"] = message["data"].decode("utf-8")
             return message
         else:
             if pattern is None:

@@ -175,12 +175,12 @@ def test_pubsub_notification(smax_client):
     table = "test_pubsub_notification"
     key = "pytest"
     expected_data = socket.gethostname()
-    expected_channel = f"smax:{table}:{key}"
+    expected_channel = f"{table}:{key}"
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, "doesn't matter")
     result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
-    assert result["data"].decode("utf-8") == expected_data
-    assert result["channel"].decode("utf-8") == expected_channel
+    assert result["data"] == expected_data
+    assert result["channel"] == expected_channel
 
 
 def test_pubsub_wait_on_pattern(smax_client):
