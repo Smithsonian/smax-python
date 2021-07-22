@@ -93,12 +93,13 @@ class SmaxRedisClient(SmaxClient):
         self._logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
     @staticmethod
-    def _parse_lua_pull_response(lua_data):
+    def _parse_lua_pull_response(lua_data, origin):
         """
         Private method to parse the response from calling the HGetWithMeta LUA
         script.
         Args:
             lua_data (list): value, vtype, dim, timestamp, origin, serial
+            origin (str): Full name of the SMAX table
 
         Returns:
             SmaxData: Populated SmaxData NamedTuple object.
@@ -130,7 +131,7 @@ class SmaxRedisClient(SmaxClient):
                 data = lua_data[0].decode("utf-8")
             else:
                 data = data_type(lua_data[0])
-            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
 
         # This is some kind of array.
         else:
@@ -140,7 +141,7 @@ class SmaxRedisClient(SmaxClient):
             if data_type == str:
                 # Remove the leading and trailing \' in each string in the list.
                 data = [s.strip("\'") for s in data]
-                return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+                return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
             else:
                 # Use numpy for all other numerical types
                 data = np.array(data, dtype=data_type)
@@ -149,7 +150,7 @@ class SmaxRedisClient(SmaxClient):
             if type(data_dim) == tuple:  # n-d array
                 data = data.reshape(data_dim)
 
-            return SmaxData(data, data_type, data_dim, data_date, source, sequence)
+            return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
 
     def smax_pull(self, table, key):
         """
@@ -223,14 +224,14 @@ class SmaxRedisClient(SmaxClient):
                             # Parser will return an SmaxData object.
                             smax_data_object = self._parse_lua_pull_response(
                                 [lua_data, lua_type, lua_dim, lua_date,
-                                 lua_hostname, lua_sequence])
+                                 lua_hostname, lua_sequence], f"{table}:{key}")
 
                             # Add SmaxData object into the nested dictionary.
                             t.setdefault(lua_struct[offset][leaf_index].decode("utf-8"),
                                          smax_data_object)
             return tree
 
-        return self._parse_lua_pull_response(lua_data)
+        return self._parse_lua_pull_response(lua_data, f"{table}:{key}")
 
     @staticmethod
     def _to_smax_format(value):

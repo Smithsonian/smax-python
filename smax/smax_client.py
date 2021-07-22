@@ -3,7 +3,7 @@ from collections import namedtuple
 
 
 # Named tuples for smax requests and responses.
-SmaxData = namedtuple("SmaxData", "data type dim date source seq")
+SmaxData = namedtuple("SmaxData", "data type dim date source seq origin")
 
 
 class SmaxClient(ABC):
