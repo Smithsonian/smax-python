@@ -1,4 +1,4 @@
-name: SMAX Unit Tests (Linux, Mac)
+name: SMAX Unit Tests (Windowsß)
 
 on: [push]
 
@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [windows-latest]
         python-version: [3.7, 3.8, 3.9]
         redis-version: [5.0.3]
 
