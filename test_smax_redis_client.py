@@ -26,6 +26,7 @@ def test_context_manager():
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_string(smax_client):
@@ -39,6 +40,7 @@ def test_roundtrip_string(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_int(smax_client):
@@ -52,6 +54,7 @@ def test_roundtrip_int(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_string_list(smax_client):
@@ -65,6 +68,7 @@ def test_roundtrip_string_list(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_int_list(smax_client):
@@ -79,6 +83,7 @@ def test_roundtrip_int_list(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_float_list(smax_client):
@@ -93,6 +98,7 @@ def test_roundtrip_float_list(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_roundtrip_2d_float_array(smax_client):
@@ -108,6 +114,7 @@ def test_roundtrip_2d_float_array(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_pubsub(smax_client):
@@ -122,6 +129,7 @@ def test_pubsub(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_pubsub_pattern(smax_client):
@@ -136,6 +144,7 @@ def test_pubsub_pattern(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_pubsub_with_timeout(smax_client):
@@ -150,6 +159,7 @@ def test_pubsub_with_timeout(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
+    assert result.origin == f"{table}:{key}"
 
 
 def test_pubsub_with_timeout_exception(smax_client):
@@ -334,7 +344,10 @@ def test_share_struct(smax_client):
     assert roach04_temp.dim == expected_dim_temp
     assert roach03_firmware.dim == expected_dim_firmware
     assert roach04_firmware.dim == expected_dim_firmware
-
+    assert roach03_temp.origin == f"{table}:swarm:dbe:roach2-03:temp"
+    assert roach04_temp.origin == f"{table}:swarm:dbe:roach2-04:temp"
+    assert roach03_firmware.origin == f"{table}:swarm:dbe:roach2-03:firmware"
+    assert roach04_firmware.origin == f"{table}:swarm:dbe:roach2-04:firmware"
 
 def test_roundtrip_meta(smax_client):
     # Do a normal share to generate the automatic metadata.

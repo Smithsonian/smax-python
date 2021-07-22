@@ -222,9 +222,10 @@ class SmaxRedisClient(SmaxClient):
                             lua_sequence = lua_struct[offset2][5][leaf_index]
 
                             # Parser will return an SmaxData object.
+                            origin = ":".join(names) + ":" + leaf.decode("utf-8")
                             smax_data_object = self._parse_lua_pull_response(
                                 [lua_data, lua_type, lua_dim, lua_date,
-                                 lua_hostname, lua_sequence], f"{table}:{key}")
+                                 lua_hostname, lua_sequence], origin)
 
                             # Add SmaxData object into the nested dictionary.
                             t.setdefault(lua_struct[offset][leaf_index].decode("utf-8"),
