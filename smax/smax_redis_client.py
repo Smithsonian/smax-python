@@ -35,6 +35,7 @@ class SmaxRedisClient(SmaxClient):
         self._getSHA = None
         self._setSHA = None
         self._pubsub = None
+        self._callback_pubsub = None
         self._pipeline = None
         self._getstructSHA = None
         self._multi_setSHA = None
@@ -439,7 +440,11 @@ class SmaxRedisClient(SmaxClient):
             data = self.smax_pull(table, key)
             callback(data)
 
-        if self._pubsub is None:
+        if callback is not None and self._callback_pubsub is None:
+            self._callback_pubsub = self._client.pubsub()
+            self._logger.debug("Created redis pubsub object for callbacks")
+
+        elif callback is None and self._pubsub is None:
             self._pubsub = self._client.pubsub()
             self._logger.debug("Created redis pubsub object")
 
@@ -448,17 +453,17 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.psubscribe(f"smax:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
-                self._pubsub.run_in_thread(sleep_time=None, daemon=True)
+                self._callback_pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
                 self._pubsub.subscribe(f"smax:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
-                self._pubsub.run_in_thread(sleep_time=None, daemon=True)
+                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
 
     def smax_unsubscribe(self, pattern=None):
         """
