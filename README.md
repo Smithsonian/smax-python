@@ -15,6 +15,10 @@ editable flag.
 ```bash
 pip install git+ssh://git@github.com/Smithsonian/smax-python.git
 ```
+### Upgrade with pip directly from github
+```bash
+pip install git+ssh://git@github.com/Smithsonian/smax-python.git -U
+```
 
 ### Clone repo and install in editable mode
 ```bash
