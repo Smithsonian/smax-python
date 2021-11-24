@@ -29,7 +29,7 @@ pip install . -e
 
 ### Set up redis server for local SMAX testing and development
 * Install redis
-  * Using [Conda](https://anaconda.org/binstar/redis-server)
+  * Using [Conda](https://anaconda.org/conda-forge/redis-server)
   * For [Raspberry pi](https://redis.io/topics/ARM)
   * [From source](https://redis.io/topics/quickstart)
 * Clone this repo locally
