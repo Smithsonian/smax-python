@@ -112,7 +112,7 @@ class SmaxRedisClient(SmaxClient):
         self._log_reconnections()
         self._get_scripts(client)
 
-    def get_script(self, client):
+    def get_scripts(self, client):
         """
         Get the SHAs of the cached scripts using the Redis.hget methods
         """
