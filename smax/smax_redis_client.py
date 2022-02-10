@@ -3,7 +3,7 @@ import socket
 from fnmatch import fnmatch
 
 import numpy as np
-from redis import StrictRedis, ConnectionError, TimeoutError
+from redis import Redis, ConnectionError, TimeoutError
 
 from .smax_client import SmaxClient, SmaxData
 
@@ -32,13 +32,23 @@ class SmaxRedisClient(SmaxClient):
         self._redis_ip = redis_ip
         self._redis_port = redis_port
         self._redis_db = redis_db
+
         self._getSHA = None
         self._setSHA = None
+        self._multi_getSHA = None
+        self._multi_setSHA = None
+        self._get_structSHA = None
+
+        self._list_zeroesSHA = None
+        self._list_largerSHA = None
+        self._list_newerSHA = None
+        self._purge_volatileSHA = None
+        self._del_structSHA = None
+
         self._pubsub = None
         self._callback_pubsub = None
         self._pipeline = None
-        self._getstructSHA = None
-        self._multi_setSHA = None
+
         self._threads = []
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
@@ -48,8 +58,22 @@ class SmaxRedisClient(SmaxClient):
         if program_name is not None:
             self._hostname += ':' + program_name
 
-        # Call parent constructor, which calls smax_connect_to().
+        # Call parent constructor, which calls smax_connect_to() and sets the
+        # returned client as self._client.
         super().__init__(redis_ip, redis_port, redis_db)
+
+        # load the script SHAs from the server
+        self._get_scripts(self)
+
+        # Register the ._log_reconnections() method with the Redis client,
+        # so that reconnections are logged.
+        self._client.register_connect_callback(self._log_reconnections)
+        # Register the ._get_scripts() method with the Redis client, so
+        # that the SHAs of the scripts are reloaded on reconnection - in
+        # case the redis server has been restarted and/or the scripts were
+        # reloaded and the SHAs changed.
+        self._client.register_connect_callback(self._get_scripts)
+
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
         """
@@ -69,19 +93,41 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             # Connect to redis-server, and store LUA scripts on the object.
-            redis_client = StrictRedis(host=redis_ip,
+            # StrictRedis and Redis are now identical, so let's be explicit
+            redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
                                        health_check_interval=30)
-            self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
-            self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
-            self._multi_setSHA = redis_client.hget('scripts', 'HMSetWithMeta')
-            self._getstructSHA = redis_client.hget('scripts', 'GetStruct')
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
             self._logger.error("Connecting to redis and getting scripts failed")
             raise
+
+    def _get_scripts(self):
+        """
+        Get the SHAs of cached scripts from the server.
+        """
+        self._getSHA = self._client.hget('scripts', 'HGetWithMeta')
+        self._setSHA = self._client.hget('scripts', 'HSetWithMeta')
+        self._multi_getSHA = self._client.hget('scripts', 'HMGetWithMeta')
+        self._multi_setSHA = self._client.hget('scripts', 'HMSetWithMeta')
+        self._get_structSHA = self._client.hget('scripts', 'GetStruct')
+
+        # Chris hadn't implemented these yet - are they present?
+        #self._list_zeroesSHA = self._client.hget('scripts', 'ListZeroes')
+        #self._list_largerSHA = self._client.hget('scripts', 'ListLargerThan')
+        #self._list_newerSHA = self._client.hget('scripts', 'ListNewerThan')
+        #self._purge_volatileSHA = self._client.hget('scripts', 'PurgeVolatile')
+        #self._del_structSHA = self._client.hget('scripts', 'DelStruct')
+
+        self._logger.info("Got SMAX script SHAs from server")
+
+    def _log_reconnections(self):
+        """
+        Callback to log Redis reconnections to the logger.
+        """
+        self._logger.info(f"Reconnecting to Redis server {self._hostname}")
 
     def smax_disconnect(self):
         """
@@ -183,7 +229,7 @@ class SmaxRedisClient(SmaxClient):
         # script to go back to redis and collect the struct.
         if type_name == "struct":
             try:
-                lua_struct = self._client.evalsha(self._getstructSHA, '1', table, key)
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
