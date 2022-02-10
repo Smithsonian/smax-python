@@ -3,7 +3,8 @@ import socket
 from fnmatch import fnmatch
 
 import numpy as np
-from redis import Redis, ConnectionError, TimeoutError, NoScriptError
+from redis import Redis, ConnectionError, TimeoutError
+from redis.exceptions import NoScripError
 
 from .smax_client import SmaxClient, SmaxData
 
