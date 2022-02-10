@@ -63,16 +63,16 @@ class SmaxRedisClient(SmaxClient):
         super().__init__(redis_ip, redis_port, redis_db)
 
         # load the script SHAs from the server
-#        self._get_scripts()
+        self._get_scripts(self._client)
 
         # Register the ._log_reconnections() method with the Redis client,
         # so that reconnections are logged.
-#        self._client.register_connect_callback(self._log_reconnections)
+        self._client.register_connect_callback(self._log_reconnections)
         # Register the ._get_scripts() method with the Redis client, so
         # that the SHAs of the scripts are reloaded on reconnection - in
         # case the redis server has been restarted and/or the scripts were
         # reloaded and the SHAs changed.
-#        self._client.register_connect_callback(self._get_scripts)
+        self._client.register_connect_callback(self._get_scripts)
 
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
@@ -97,8 +97,7 @@ class SmaxRedisClient(SmaxClient):
             redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
-                                       health_check_interval=30,
-                                       redis_connect_func=self._connect_func)
+                                       health_check_interval=30)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
