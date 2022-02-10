@@ -63,16 +63,16 @@ class SmaxRedisClient(SmaxClient):
         super().__init__(redis_ip, redis_port, redis_db)
 
         # load the script SHAs from the server
-        self._get_scripts(self)
+#        self._get_scripts()
 
         # Register the ._log_reconnections() method with the Redis client,
         # so that reconnections are logged.
-        self._client.register_connect_callback(self._log_reconnections)
+#        self._client.register_connect_callback(self._log_reconnections)
         # Register the ._get_scripts() method with the Redis client, so
         # that the SHAs of the scripts are reloaded on reconnection - in
         # case the redis server has been restarted and/or the scripts were
         # reloaded and the SHAs changed.
-        self._client.register_connect_callback(self._get_scripts)
+#        self._client.register_connect_callback(self._get_scripts)
 
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
@@ -97,22 +97,31 @@ class SmaxRedisClient(SmaxClient):
             redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
-                                       health_check_interval=30)
+                                       health_check_interval=30,
+                                       redis_connect_func=self._connect_func)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
             self._logger.error("Connecting to redis and getting scripts failed")
             raise
 
-    def _get_scripts(self):
+    def _connect_func(self, client):
+        """
+            Function to be called on connecting or reconnecting to the Redis server
+        """
+        client.on_connect()
+        self._log_reconnections()
+        self._get_scripts(client)
+
+    def _get_scripts(self, client):
         """
         Get the SHAs of cached scripts from the server.
         """
-        self._getSHA = self._client.hget('scripts', 'HGetWithMeta')
-        self._setSHA = self._client.hget('scripts', 'HSetWithMeta')
-        self._multi_getSHA = self._client.hget('scripts', 'HMGetWithMeta')
-        self._multi_setSHA = self._client.hget('scripts', 'HMSetWithMeta')
-        self._get_structSHA = self._client.hget('scripts', 'GetStruct')
+        self._getSHA = client.hget('scripts', 'HGetWithMeta')
+        self._setSHA = client.hget('scripts', 'HSetWithMeta')
+        self._multi_getSHA = client.hget('scripts', 'HMGetWithMeta')
+        self._multi_setSHA = client.hget('scripts', 'HMSetWithMeta')
+        self._get_structSHA = client.hget('scripts', 'GetStruct')
 
         # Chris hadn't implemented these yet - are they present?
         #self._list_zeroesSHA = self._client.hget('scripts', 'ListZeroes')
