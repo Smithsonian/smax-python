@@ -3,7 +3,7 @@ import socket
 from fnmatch import fnmatch
 
 import numpy as np
-from redis import Redis, ConnectionError, TimeoutError
+from redis import Redis, ConnectionError, TimeoutError, NoScriptError
 
 from .smax_client import SmaxClient, SmaxData
 
@@ -63,16 +63,7 @@ class SmaxRedisClient(SmaxClient):
         super().__init__(redis_ip, redis_port, redis_db)
 
         # load the script SHAs from the server
-        self.get_scripts(self._client)
-
-        # Register the ._log_reconnections() method with the Redis client,
-        # so that reconnections are logged.
-        self._client.register_connect_callback(self._log_reconnections)
-        # Register the ._get_scripts() method with the Redis client, so
-        # that the SHAs of the scripts are reloaded on reconnection - in
-        # case the redis server has been restarted and/or the scripts were
-        # reloaded and the SHAs changed.
-        self._client.register_connect_callback(self._get_scripts)
+        self._get_scripts()
 
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
@@ -112,41 +103,16 @@ class SmaxRedisClient(SmaxClient):
         self._log_reconnections()
         self._get_scripts(client)
 
-    def get_scripts(self, client):
+    def _get_scripts(self, client):
         """
         Get the SHAs of the cached scripts using the Redis.hget methods
         """
+        self._logger.info(f"Pulling script SHAs from server")
         self._getSHA = client.hget('scripts', 'HGetWithMeta')
         self._setSHA = client.hget('scripts', 'HSetWithMeta')
         self._multi_getSHA = client.hget('scripts', 'HMGetWithMeta')
         self._multi_setSHA = client.hget('scripts', 'HMSetWithMeta')
         self._get_structSHA = client.hget('scripts', 'GetStruct')
-
-
-    def _get_scripts(self, client):
-        """
-        Get the SHAs of cached scripts from the server.
-        """
-        self._getSHA = client.send_command('hget', 'scripts', 'HGetWithMeta')
-        self._setSHA = client.send_command('hget', 'scripts', 'HSetWithMeta')
-        self._multi_getSHA = client.send_command('hget', 'scripts', 'HMGetWithMeta')
-        self._multi_setSHA = client.send_command('hget', 'scripts', 'HMSetWithMeta')
-        self._get_structSHA = client.send_command('hget', 'scripts', 'GetStruct')
-
-        # Chris hadn't implemented these yet - are they present?
-        #self._list_zeroesSHA = self._client.hget('scripts', 'ListZeroes')
-        #self._list_largerSHA = self._client.hget('scripts', 'ListLargerThan')
-        #self._list_newerSHA = self._client.hget('scripts', 'ListNewerThan')
-        #self._purge_volatileSHA = self._client.hget('scripts', 'PurgeVolatile')
-        #self._del_structSHA = self._client.hget('scripts', 'DelStruct')
-
-        self._logger.info("Got SMAX script SHAs from server")
-
-    def _log_reconnections(self):
-        """
-        Callback to log Redis reconnections to the logger.
-        """
-        self._logger.info(f"Reconnecting to Redis server {self._hostname}")
 
     def smax_disconnect(self):
         """
@@ -237,6 +203,11 @@ class SmaxRedisClient(SmaxClient):
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
             self._logger.info(f"Successfully pulled {table}:{key}")
+        except NoScriptError:
+            self._get_scripts()
+            try:
+                lua_data = self._client.evalsha(self._getSHA, '1', table, key)
+                self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
             self._logger.error(f"Reading {table}:{key} from Redis failed")
             raise
@@ -250,6 +221,11 @@ class SmaxRedisClient(SmaxClient):
             try:
                 lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
+            except NoScriptError:
+                self._get_scripts()
+                try:
+                    lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
+                    self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
                 raise
@@ -437,6 +413,14 @@ class SmaxRedisClient(SmaxClient):
                                           type_name, size)
             self._logger.info(f"Successfully shared to {table}:{key}")
             return result
+        except NoScriptError:
+            self._get_scripts()
+            try:
+                result = self._client.evalsha(self._setSHA, '1', table,
+                                              self._hostname, key, data_string,
+                                              type_name, size)
+                self._logger.info(f"Successfully shared to {table}:{key}")
+                return result
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
@@ -461,10 +445,18 @@ class SmaxRedisClient(SmaxClient):
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
             for k in commands.keys():
-                self._pipeline.evalsha(self._multi_setSHA, '1',
+                try:
+                    self._pipeline.evalsha(self._multi_setSHA, '1',
                                        f"{table}:{key}:{k}",
                                        self._hostname,
                                        *commands[k])
+                except NoScriptError:
+                    self._get_scripts()
+                    try:
+                        self._pipeline.evalsha(self._multi_setSHA, '1',
+                                           f"{table}:{key}:{k}",
+                                           self._hostname,
+                                           *commands[k])
             result = self._pipeline.execute()
             self._logger.info(f"Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}")
             return result
