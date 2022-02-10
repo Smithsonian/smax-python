@@ -205,9 +205,8 @@ class SmaxRedisClient(SmaxClient):
             self._logger.info(f"Successfully pulled {table}:{key}")
         except NoScriptError:
             self._get_scripts()
-            try:
-                lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-                self._logger.info(f"Successfully pulled {table}:{key}")
+            lua_data = self._client.evalsha(self._getSHA, '1', table, key)
+            self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
             self._logger.error(f"Reading {table}:{key} from Redis failed")
             raise
@@ -223,9 +222,8 @@ class SmaxRedisClient(SmaxClient):
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except NoScriptError:
                 self._get_scripts()
-                try:
-                    lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
-                    self._logger.info(f"Successfully pulled struct {table}:{key}")
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
+                self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
                 raise
@@ -415,12 +413,11 @@ class SmaxRedisClient(SmaxClient):
             return result
         except NoScriptError:
             self._get_scripts()
-            try:
-                result = self._client.evalsha(self._setSHA, '1', table,
+            result = self._client.evalsha(self._setSHA, '1', table,
                                               self._hostname, key, data_string,
                                               type_name, size)
-                self._logger.info(f"Successfully shared to {table}:{key}")
-                return result
+            self._logger.info(f"Successfully shared to {table}:{key}")
+            return result
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
@@ -452,11 +449,10 @@ class SmaxRedisClient(SmaxClient):
                                        *commands[k])
                 except NoScriptError:
                     self._get_scripts()
-                    try:
-                        self._pipeline.evalsha(self._multi_setSHA, '1',
-                                           f"{table}:{key}:{k}",
-                                           self._hostname,
-                                           *commands[k])
+                    self._pipeline.evalsha(self._multi_setSHA, '1',
+                                       f"{table}:{key}:{k}",
+                                       self._hostname,
+                                       *commands[k])
             result = self._pipeline.execute()
             self._logger.info(f"Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}")
             return result
