@@ -117,11 +117,11 @@ class SmaxRedisClient(SmaxClient):
         """
         Get the SHAs of cached scripts from the server.
         """
-        self._getSHA = client.hget('scripts', 'HGetWithMeta')
-        self._setSHA = client.hget('scripts', 'HSetWithMeta')
-        self._multi_getSHA = client.hget('scripts', 'HMGetWithMeta')
-        self._multi_setSHA = client.hget('scripts', 'HMSetWithMeta')
-        self._get_structSHA = client.hget('scripts', 'GetStruct')
+        self._getSHA = client.send_command('hget', 'scripts', 'HGetWithMeta')
+        self._setSHA = client.send_command('hget', 'scripts', 'HSetWithMeta')
+        self._multi_getSHA = client.send_command('hget', 'scripts', 'HMGetWithMeta')
+        self._multi_setSHA = client.send_command('hget', 'scripts', 'HMSetWithMeta')
+        self._get_structSHA = client.send_command('hget', 'scripts', 'GetStruct')
 
         # Chris hadn't implemented these yet - are they present?
         #self._list_zeroesSHA = self._client.hget('scripts', 'ListZeroes')
