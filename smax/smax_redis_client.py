@@ -96,24 +96,17 @@ class SmaxRedisClient(SmaxClient):
             self._logger.error("Connecting to redis and getting scripts failed")
             raise
 
-    def _connect_func(self, client):
-        """
-            Function to be called on connecting or reconnecting to the Redis server
-        """
-        client.on_connect()
-        self._log_reconnections()
-        self._get_scripts(client)
 
-    def _get_scripts(self, client):
+    def _get_scripts(self):
         """
         Get the SHAs of the cached scripts using the Redis.hget methods
         """
         self._logger.info(f"Pulling script SHAs from server")
-        self._getSHA = client.hget('scripts', 'HGetWithMeta')
-        self._setSHA = client.hget('scripts', 'HSetWithMeta')
-        self._multi_getSHA = client.hget('scripts', 'HMGetWithMeta')
-        self._multi_setSHA = client.hget('scripts', 'HMSetWithMeta')
-        self._get_structSHA = client.hget('scripts', 'GetStruct')
+        self._getSHA = self._client.hget('scripts', 'HGetWithMeta')
+        self._setSHA = self._client.hget('scripts', 'HSetWithMeta')
+        self._multi_getSHA = self._client.hget('scripts', 'HMGetWithMeta')
+        self._multi_setSHA = self._client.hget('scripts', 'HMSetWithMeta')
+        self._get_structSHA = self._client.hget('scripts', 'GetStruct')
 
     def smax_disconnect(self):
         """
