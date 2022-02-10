@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 
 import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
-from redis.exceptions import NoScripError
+from redis.exceptions import NoScriptError
 
 from .smax_client import SmaxClient, SmaxData
 
