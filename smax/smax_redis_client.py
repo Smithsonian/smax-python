@@ -63,7 +63,7 @@ class SmaxRedisClient(SmaxClient):
         super().__init__(redis_ip, redis_port, redis_db)
 
         # load the script SHAs from the server
-        self._get_scripts(self._client)
+        self.get_scripts(self._client)
 
         # Register the ._log_reconnections() method with the Redis client,
         # so that reconnections are logged.
@@ -111,6 +111,17 @@ class SmaxRedisClient(SmaxClient):
         client.on_connect()
         self._log_reconnections()
         self._get_scripts(client)
+
+    def get_script(self, client):
+        """
+        Get the SHAs of the cached scripts using the Redis.hget methods
+        """
+        self._getSHA = client.hget('scripts', 'HGetWithMeta')
+        self._setSHA = client.hget('scripts', 'HSetWithMeta')
+        self._multi_getSHA = client.hget('scripts', 'HMGetWithMeta')
+        self._multi_setSHA = client.hget('scripts', 'HMSetWithMeta')
+        self._get_structSHA = client.hget('scripts', 'GetStruct')
+
 
     def _get_scripts(self, client):
         """
