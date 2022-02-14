@@ -3,7 +3,8 @@ import socket
 from fnmatch import fnmatch
 
 import numpy as np
-from redis import StrictRedis, ConnectionError, TimeoutError
+from redis import Redis, ConnectionError, TimeoutError
+from redis.exceptions import NoScriptError
 
 from .smax_client import SmaxClient, SmaxData
 
@@ -32,13 +33,23 @@ class SmaxRedisClient(SmaxClient):
         self._redis_ip = redis_ip
         self._redis_port = redis_port
         self._redis_db = redis_db
+
         self._getSHA = None
         self._setSHA = None
+        self._multi_getSHA = None
+        self._multi_setSHA = None
+        self._get_structSHA = None
+
+        self._list_zeroesSHA = None
+        self._list_largerSHA = None
+        self._list_newerSHA = None
+        self._purge_volatileSHA = None
+        self._del_structSHA = None
+
         self._pubsub = None
         self._callback_pubsub = None
         self._pipeline = None
-        self._getstructSHA = None
-        self._multi_setSHA = None
+
         self._threads = []
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
@@ -48,8 +59,13 @@ class SmaxRedisClient(SmaxClient):
         if program_name is not None:
             self._hostname += ':' + program_name
 
-        # Call parent constructor, which calls smax_connect_to().
+        # Call parent constructor, which calls smax_connect_to() and sets the
+        # returned client as self._client.
         super().__init__(redis_ip, redis_port, redis_db)
+
+        # load the script SHAs from the server
+        self._get_scripts()
+
 
     def smax_connect_to(self, redis_ip, redis_port, redis_db):
         """
@@ -69,19 +85,28 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             # Connect to redis-server, and store LUA scripts on the object.
-            redis_client = StrictRedis(host=redis_ip,
+            # StrictRedis and Redis are now identical, so let's be explicit
+            redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
                                        health_check_interval=30)
-            self._getSHA = redis_client.hget('scripts', 'HGetWithMeta')
-            self._setSHA = redis_client.hget('scripts', 'HSetWithMeta')
-            self._multi_setSHA = redis_client.hget('scripts', 'HMSetWithMeta')
-            self._getstructSHA = redis_client.hget('scripts', 'GetStruct')
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError):
             self._logger.error("Connecting to redis and getting scripts failed")
             raise
+
+
+    def _get_scripts(self):
+        """
+        Get the SHAs of the cached scripts using the Redis.hget methods
+        """
+        self._logger.info(f"Pulling script SHAs from server")
+        self._getSHA = self._client.hget('scripts', 'HGetWithMeta')
+        self._setSHA = self._client.hget('scripts', 'HSetWithMeta')
+        self._multi_getSHA = self._client.hget('scripts', 'HMGetWithMeta')
+        self._multi_setSHA = self._client.hget('scripts', 'HMSetWithMeta')
+        self._get_structSHA = self._client.hget('scripts', 'GetStruct')
 
     def smax_disconnect(self):
         """
@@ -172,6 +197,10 @@ class SmaxRedisClient(SmaxClient):
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
             self._logger.info(f"Successfully pulled {table}:{key}")
+        except NoScriptError:
+            self._get_scripts()
+            lua_data = self._client.evalsha(self._getSHA, '1', table, key)
+            self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
             self._logger.error(f"Reading {table}:{key} from Redis failed")
             raise
@@ -183,7 +212,11 @@ class SmaxRedisClient(SmaxClient):
         # script to go back to redis and collect the struct.
         if type_name == "struct":
             try:
-                lua_struct = self._client.evalsha(self._getstructSHA, '1', table, key)
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
+                self._logger.info(f"Successfully pulled struct {table}:{key}")
+            except NoScriptError:
+                self._get_scripts()
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
@@ -372,6 +405,13 @@ class SmaxRedisClient(SmaxClient):
                                           type_name, size)
             self._logger.info(f"Successfully shared to {table}:{key}")
             return result
+        except NoScriptError:
+            self._get_scripts()
+            result = self._client.evalsha(self._setSHA, '1', table,
+                                              self._hostname, key, data_string,
+                                              type_name, size)
+            self._logger.info(f"Successfully shared to {table}:{key}")
+            return result
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
             raise
@@ -396,7 +436,14 @@ class SmaxRedisClient(SmaxClient):
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
             for k in commands.keys():
-                self._pipeline.evalsha(self._multi_setSHA, '1',
+                try:
+                    self._pipeline.evalsha(self._multi_setSHA, '1',
+                                       f"{table}:{key}:{k}",
+                                       self._hostname,
+                                       *commands[k])
+                except NoScriptError:
+                    self._get_scripts()
+                    self._pipeline.evalsha(self._multi_setSHA, '1',
                                        f"{table}:{key}:{k}",
                                        self._hostname,
                                        *commands[k])
