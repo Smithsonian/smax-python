@@ -443,7 +443,7 @@ class SmaxRedisClient(SmaxClient):
         #
         # Dict keys are (as of Py 3.7) sorted by the order they are added to the dict,
         # so this command should be the last one accessed in the for loop below.
-        commands[commands.keys()[-1]].append('T')
+        commands[list(commands.keys())[-1]].append('T')
 
         try:
             if self._pipeline is None:
