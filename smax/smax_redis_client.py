@@ -423,6 +423,7 @@ class SmaxRedisClient(SmaxClient):
         and issues them as a "pipeline", which uses a MULTI/EXEC block under the
         covers. The HMSetWithMeta LUA script allows you to update multiple
         values for a table, although a separate call for each new table is needed.
+
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
@@ -432,6 +433,18 @@ class SmaxRedisClient(SmaxClient):
         Returns:
             return value from redis-py's pipeline.execute() function.
         """
+        # Append the optional 'T' value to the end of the last entry in the command dict.
+        #
+        # This is only used on the last call to a set of HMSetWithMeta commands
+        # on a nested structure that are supposed to be carried out atomically.
+        # Since the `Pipeline` subclass of `Redis` carries out the set of commands
+        # atomically, this should not be necessary, but is included here for
+        # completeness.
+        #
+        # Dict keys are (as of Py 3.7) sorted by the order they are added to the dict,
+        # so this command should be the last one accessed in the for loop below.
+        commands[list(commands.keys())[-1]].append('T')
+
         try:
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
