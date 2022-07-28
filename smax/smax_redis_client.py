@@ -224,9 +224,9 @@ class SmaxRedisClient(SmaxClient):
 
             # The struct will be parsed into a nested python dictionary.
             tree = {}
-            for struct_name_index, stuct_name in enumerate(lua_struct[0]):
+            for struct_name_index, struct_name in enumerate(lua_struct[0]):
                 t = tree
-                names = stuct_name.decode("utf-8").rsplit(':', 1)
+                names = struct_name.decode("utf-8").replace(f"{table}:", 1).split(':')
 
                 for table_name_index, table_name in enumerate(names):
 
