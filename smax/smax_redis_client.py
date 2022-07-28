@@ -345,7 +345,7 @@ class SmaxRedisClient(SmaxClient):
                 # If value is dict then iterate over all its values
                 for pair in self._recurse_nested_dict(value):
                     key = ":".join([key, pair[0]])
-                    yield (key, pair[1:])
+                    yield (key, *pair[1:])
             else:
                 yield key, value
 
