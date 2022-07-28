@@ -212,11 +212,11 @@ class SmaxRedisClient(SmaxClient):
         # script to go back to redis and collect the struct.
         if type_name == "struct":
             try:
-                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', f"{table}:{key}")
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except NoScriptError:
                 self._get_scripts()
-                lua_struct = self._client.evalsha(self._get_structSHA, '1', table, key)
+                lua_struct = self._client.evalsha(self._get_structSHA, '1', f"{table}:{key}")
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError):
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
