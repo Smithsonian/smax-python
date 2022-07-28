@@ -447,6 +447,8 @@ class SmaxRedisClient(SmaxClient):
         # so this command should be the last one accessed in the for loop below.
         commands[list(commands.keys())[-1]].append('T')
 
+        self._logger.debug(commands)
+
         try:
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
