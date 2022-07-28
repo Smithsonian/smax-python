@@ -344,7 +344,8 @@ class SmaxRedisClient(SmaxClient):
             if isinstance(value, dict):
                 # If value is dict then iterate over all its values
                 for pair in self._recurse_nested_dict(value):
-                    yield (key, *pair)
+                    key = ":".join(key, pair[0])
+                    yield (key, pair[1:])
             else:
                 yield key, value
 
@@ -382,7 +383,7 @@ class SmaxRedisClient(SmaxClient):
                     tables[pair[0]] = []
                 tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
 
-            self._logger.debug("Table from smax_share:\n", tables)
+            self._logger.debug("Table from smax_share:", tables)
 
             return self._pipeline_evalsha_set(table, key, tables)
 
@@ -437,12 +438,6 @@ class SmaxRedisClient(SmaxClient):
             return value from redis-py's pipeline.execute() function.
         """
         # Append the optional 'T' value to the end of the last entry in the command dict.
-        #
-        # This is only used on the last call to a set of HMSetWithMeta commands
-        # on a nested structure that are supposed to be carried out atomically.
-        # Since the `Pipeline` subclass of `Redis` carries out the set of commands
-        # atomically, this should not be necessary, but is included here for
-        # completeness.
         #
         # Dict keys are (as of Py 3.7) sorted by the order they are added to the dict,
         # so this command should be the last one accessed in the for loop below.
