@@ -226,7 +226,7 @@ class SmaxRedisClient(SmaxClient):
             tree = {}
             for struct_name_index, stuct_name in enumerate(lua_struct[0]):
                 t = tree
-                names = stuct_name.decode("utf-8").split(':')
+                names = stuct_name.decode("utf-8").rsplit(':', 1)
 
                 for table_name_index, table_name in enumerate(names):
 
