@@ -381,7 +381,7 @@ class SmaxRedisClient(SmaxClient):
                     tables[pair[0]] = []
                 tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
 
-            logger.debug(tables)
+            self._logger.debug(tables)
 
             return self._pipeline_evalsha_set(table, key, tables)
 
