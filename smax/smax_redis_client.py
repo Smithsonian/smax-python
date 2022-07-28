@@ -376,12 +376,13 @@ class SmaxRedisClient(SmaxClient):
             # dict.
             tables = {}
             for pair in self._recurse_nested_dict(value):
+                self._logger.debug(pair)
                 converted_data, type_name, dim = self._to_smax_format(pair[1])
                 if pair[0] not in tables:
                     tables[pair[0]] = []
                 tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
 
-            self._logger.debug(tables)
+            self._logger.debug("Table from smax_share:\n", tables)
 
             return self._pipeline_evalsha_set(table, key, tables)
 
