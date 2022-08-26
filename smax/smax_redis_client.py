@@ -1,13 +1,14 @@
+import os
 import logging
 import socket
 from fnmatch import fnmatch
 
+import psutil
 import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
 from redis.exceptions import NoScriptError
 
 from .smax_client import SmaxClient, SmaxData
-
 
 class SmaxRedisClient(SmaxClient):
 
@@ -54,10 +55,9 @@ class SmaxRedisClient(SmaxClient):
 
         # Obtain _hostname automatically, unless '_hostname' argument is passed.
         self._hostname = socket.gethostname() if hostname is None else hostname
-
-        # Optionally add a program name into the _hostname.
-        if program_name is not None:
-            self._hostname += ':' + program_name
+        
+        program_name = psutil.Process(os.getpid()).name()
+        self._hostname += ':' + program_name
 
         # Call parent constructor, which calls smax_connect_to() and sets the
         # returned client as self._client.
@@ -119,13 +119,13 @@ class SmaxRedisClient(SmaxClient):
         self._logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
     @staticmethod
-    def _parse_lua_pull_response(lua_data, origin):
+    def _parse_lua_pull_response(lua_data, smaxname):
         """
         Private method to parse the response from calling the HGetWithMeta LUA
         script.
         Args:
             lua_data (list): value, vtype, dim, timestamp, origin, serial
-            origin (str): Full name of the SMAX table
+            smaxname (str): Full name of the SMAX table and key
 
         Returns:
             SmaxData: Populated SmaxData NamedTuple object.
@@ -139,9 +139,9 @@ class SmaxRedisClient(SmaxClient):
         else:
             raise TypeError(f"I can't deal with data of type {type_name}")
 
-        # Extract data, source and sequence from meta data.
+        # Extract data, origin and sequence from meta data.
         data_date = float(lua_data[3])
-        source = lua_data[4].decode("utf-8")
+        origin = lua_data[4].decode("utf-8")
         sequence = int(lua_data[5])
 
         # Extract dimension information from meta data.
@@ -157,7 +157,7 @@ class SmaxRedisClient(SmaxClient):
                 data = lua_data[0].decode("utf-8")
             else:
                 data = data_type(lua_data[0])
-            return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
+            return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
 
         # This is some kind of array.
         else:
@@ -167,7 +167,7 @@ class SmaxRedisClient(SmaxClient):
             if data_type == str:
                 # Remove the leading and trailing \' in each string in the list.
                 data = [s.strip("\'") for s in data]
-                return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
+                return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
             else:
                 # Use numpy for all other numerical types
                 data = np.array(data, dtype=data_type)
@@ -176,7 +176,7 @@ class SmaxRedisClient(SmaxClient):
             if type(data_dim) == tuple:  # n-d array
                 data = data.reshape(data_dim)
 
-            return SmaxData(data, data_type, data_dim, data_date, source, sequence, origin)
+            return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
 
     def smax_pull(self, table, key):
         """
@@ -252,14 +252,15 @@ class SmaxRedisClient(SmaxClient):
                             lua_data = lua_struct[offset2][0][leaf_index]
                             lua_dim = lua_struct[offset2][2][leaf_index]
                             lua_date = lua_struct[offset2][3][leaf_index]
-                            lua_hostname = lua_struct[offset2][4][leaf_index]
+                            lua_origin = lua_struct[offset2][4][leaf_index]
                             lua_sequence = lua_struct[offset2][5][leaf_index]
 
                             # Parser will return an SmaxData object.
-                            origin = ":".join(names) + ":" + leaf.decode("utf-8")
+                            self._logger.debug(f"struct_name: {struct_name.decode('utf-8')}")
+                            smaxname = struct_name.decode("utf-8") + ":" + leaf.decode("utf-8")
                             smax_data_object = self._parse_lua_pull_response(
                                 [lua_data, lua_type, lua_dim, lua_date,
-                                 lua_hostname, lua_sequence], origin)
+                                 lua_origin, lua_sequence], smaxname)
 
                             # Add SmaxData object into the nested dictionary.
                             t.setdefault(lua_struct[offset][leaf_index].decode("utf-8"),
@@ -339,14 +340,73 @@ class SmaxRedisClient(SmaxClient):
         Yields:
             (key, value) for every leaf node in the nested dictionary.
         """
-
         for key, value in dictionary.items():
             if isinstance(value, dict):
                 # If value is dict then iterate over all its values
                 for pair in self._recurse_nested_dict(value):
                     yield (f"{key}:{pair[0]}", *pair[1:])
+                
             else:
                 yield key, value
+                
+    def _get_struct_fields(self, leaves):
+        """
+        Private function to generate the set of all SMA-X fields required to describe the
+        tree structure of a nested dictionary.
+        Args:
+            leaves (list): List of leaf nodes from _recurse_nested_dict()
+
+        Returns:
+            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
+                        type is either "value" for a leaf node, or "struct" for an intermediate node.
+        """
+        outpairs = []
+        for l in leaves:
+            if ":" in l[0]:
+                tiers = l[0].split(":")
+                print(tiers)
+                for t, tier in enumerate(tiers[:-1]):
+                    superstruct = ":".join(tiers[0:t])
+                    pair = (superstruct, tiers[t], ":".join(tiers[0:t+1]), "struct")
+                    if pair not in outpairs:
+                        outpairs.append(pair)
+            tablekey = l[0].rsplit(":", 1)
+            if len(tablekey) == 1:
+                table = ""
+                key = tablekey[0]
+            else:
+                table = tablekey[0]
+                key = tablekey[1]
+            outpairs.append((table, key, l[1], "value"))
+        return outpairs
+            
+    def _get_struct_tables(self, table, key, fields):
+        """
+        Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from
+        fields generated by _get_struct_fields() for a nested SMA-X struct.
+        Args:
+            table (str)   : The top level hash table name for the nested struct.
+            key (str)     : The top level key for the nested struct.
+            fields (list) : List of nested fields from _get_struct_fields()
+
+        Returns:
+            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
+                        type is either "value" for a leaf node, or "struct" for an intermediate node.
+        """
+        tables = {}
+        for field in fields:
+            if field[3] == "struct":
+                converted_data, type_name, dim = (":".join((table, key, field[2])), field[3], 1)
+            else:
+                converted_data, type_name, dim = self._to_smax_format(field[2])
+            if field[0] != "":
+                tab = f"{key}:{field[0]}"
+            else:
+                tab = key
+            if tab not in tables:
+                tables[tab] = []
+            tables[tab].extend([field[1], converted_data, type_name, dim])
+        return tables
 
     def smax_share(self, table, key, value):
         """
@@ -374,15 +434,11 @@ class SmaxRedisClient(SmaxClient):
             # of values to update atomically. The recurse_nested_dict function
             # yields key/value pairs as it finds the leaf nodes of the nested
             # dict.
-            tables = {}
-            for pair in self._recurse_nested_dict(value):
-                self._logger.debug(pair)
-                converted_data, type_name, dim = self._to_smax_format(pair[1])
-                if pair[0] not in tables:
-                    tables[pair[0]] = []
-                tables[pair[0]].extend([pair[1], converted_data, type_name, dim])
+            leaves = self._recurse_nested_dict(value)
+            fields = self._get_struct_fields(leaves)
+            tables = self._get_struct_tables(table, key, fields)
 
-            self._logger.debug("Table from smax_share:", tables)
+            self._logger.debug(f"Table from smax_share: {tables}")
 
             return self._pipeline_evalsha_set(table, key, tables)
 
@@ -448,15 +504,23 @@ class SmaxRedisClient(SmaxClient):
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
             for k in commands.keys():
+                if len(k.split(":")) <= 1:
+                    t = table
+                    ke = k
+                else:
+                    t = ":".join((table, *k.split(":")[:-1]))
+                    ke = k.split(":")[-1]
+                self._logger.debug(f"munged table name {t}\n munged key name {ke}")
                 try:
+                    self._logger.debug(f"evalsha arguments{t}, {ke}, {commands[k]}")
                     self._pipeline.evalsha(self._multi_setSHA, '1',
-                                       f"{table}:{key}:{k}",
+                                       f"{t}:{ke}",
                                        self._hostname,
                                        *commands[k])
                 except NoScriptError:
                     self._get_scripts()
                     self._pipeline.evalsha(self._multi_setSHA, '1',
-                                       f"{table}:{key}:{k}",
+                                       f"{t}:{ke}",
                                        self._hostname,
                                        *commands[k])
             result = self._pipeline.execute()
