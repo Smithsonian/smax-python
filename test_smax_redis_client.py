@@ -3,6 +3,8 @@ import threading
 from time import sleep
 import logging
 
+import psutil
+import os
 import numpy as np
 import pytest
 from redis import TimeoutError
@@ -177,11 +179,16 @@ def test_pubsub_with_timeout_exception(smax_client):
 def test_pubsub_notification(smax_client):
     table = "test_pubsub_notification"
     key = "pytest"
-    expected_data = socket.gethostname()
+    
+    program_name = psutil.Process(os.getpid()).name()
+    
+    expected_data = f"{socket.gethostname()}:{program_name}"
     
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, "doesn't matter")
+    
     result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
+    logger.debug(f"Received result: {result}")
     assert result["data"] == expected_data
 
 
@@ -199,8 +206,11 @@ def test_pubsub_wait_on_pattern(smax_client):
 
     result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
     result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
-    assert result1[key]["fpga"]["temp"].data == expected_data1
-    assert result2[key]["fpga"]["speed"].data == expected_data2
+    logger.debug(f"Received result1: {result1}")
+    logger.debug(f"Received result1: {result2}")
+    
+    assert result1["fpga"]["temp"].data == expected_data1
+    assert result2["fpga"]["speed"].data == expected_data2
 
 
 def test_pubsub_pattern_callback(smax_client):
