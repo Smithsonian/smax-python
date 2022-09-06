@@ -213,6 +213,7 @@ def test_pubsub_pattern_callback(smax_client):
     actual = {"value": None}
 
     def my_callback(message):
+        logger.debug(f"my_callback received message:\n{message}")
         actual["value"] = message[table][key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
