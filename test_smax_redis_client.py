@@ -178,12 +178,11 @@ def test_pubsub_notification(smax_client):
     table = "test_pubsub_notification"
     key = "pytest"
     expected_data = socket.gethostname()
-    expected_channel = f"{table}:{key}"
+    
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, "doesn't matter")
     result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
     assert result["data"] == expected_data
-    assert result["channel"] == expected_channel
 
 
 def test_pubsub_wait_on_pattern(smax_client):
@@ -200,8 +199,8 @@ def test_pubsub_wait_on_pattern(smax_client):
 
     result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
     result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
-    assert result1[table][key]["fpga"]["temp"].data == expected_data1
-    assert result2[table][key]["fpga"]["speed"].data == expected_data2
+    assert result1[key]["fpga"]["temp"].data == expected_data1
+    assert result2[key]["fpga"]["speed"].data == expected_data2
 
 
 def test_pubsub_pattern_callback(smax_client):
@@ -214,7 +213,7 @@ def test_pubsub_pattern_callback(smax_client):
 
     def my_callback(message):
         logger.debug(f"my_callback received message:\n{message}")
-        actual["value"] = message[table][key]["fpga1"]["temp"].data
+        actual["value"] = message[key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
     with SmaxRedisClient("localhost") as smax_producer:
