@@ -1,13 +1,18 @@
 import socket
 import threading
 from time import sleep
+import logging
 
+import psutil
+import os
 import numpy as np
 import pytest
 from redis import TimeoutError
 
 from smax import SmaxRedisClient
 
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 @pytest.fixture
 def smax_client():
@@ -27,7 +32,7 @@ def test_context_manager():
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_string(smax_client):
@@ -41,7 +46,7 @@ def test_roundtrip_string(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_int(smax_client):
@@ -55,7 +60,7 @@ def test_roundtrip_int(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_string_list(smax_client):
@@ -69,7 +74,7 @@ def test_roundtrip_string_list(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_int_list(smax_client):
@@ -84,7 +89,7 @@ def test_roundtrip_int_list(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_float_list(smax_client):
@@ -99,7 +104,7 @@ def test_roundtrip_float_list(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_2d_float_array(smax_client):
@@ -115,7 +120,7 @@ def test_roundtrip_2d_float_array(smax_client):
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_pubsub(smax_client):
@@ -130,7 +135,7 @@ def test_pubsub(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_pubsub_pattern(smax_client):
@@ -145,7 +150,7 @@ def test_pubsub_pattern(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_pubsub_with_timeout(smax_client):
@@ -160,7 +165,7 @@ def test_pubsub_with_timeout(smax_client):
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
-    assert result.origin == f"{table}:{key}"
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_pubsub_with_timeout_exception(smax_client):
@@ -174,13 +179,17 @@ def test_pubsub_with_timeout_exception(smax_client):
 def test_pubsub_notification(smax_client):
     table = "test_pubsub_notification"
     key = "pytest"
-    expected_data = socket.gethostname()
-    expected_channel = f"{table}:{key}"
+    
+    program_name = psutil.Process(os.getpid()).name()
+    
+    expected_data = f"{socket.gethostname()}:{program_name}"
+    
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, "doesn't matter")
+    
     result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
+    logger.debug(f"Received result: {result}")
     assert result["data"] == expected_data
-    assert result["channel"] == expected_channel
 
 
 def test_pubsub_wait_on_pattern(smax_client):
@@ -197,8 +206,11 @@ def test_pubsub_wait_on_pattern(smax_client):
 
     result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
     result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
-    assert result1[table][key]["fpga"]["temp"].data == expected_data1
-    assert result2[table][key]["fpga"]["speed"].data == expected_data2
+    logger.debug(f"Received result1: {result1}")
+    logger.debug(f"Received result1: {result2}")
+    
+    assert result1["fpga"]["temp"].data == expected_data1
+    assert result2["fpga"]["speed"].data == expected_data2
 
 
 def test_pubsub_pattern_callback(smax_client):
@@ -210,7 +222,8 @@ def test_pubsub_pattern_callback(smax_client):
     actual = {"value": None}
 
     def my_callback(message):
-        actual["value"] = message[table][key]["fpga1"]["temp"].data
+        logger.debug(f"my_callback received message:\n{message}")
+        actual["value"] = message[key]["fpga1"]["temp"].data
 
     smax_client.smax_subscribe(f"{table}:{key}*", callback=my_callback)
     with SmaxRedisClient("localhost") as smax_producer:
@@ -329,11 +342,12 @@ def test_pull_struct(smax_client):
     smax_client.smax_share(f"{table}:swarm:dbe:roach2-01", "firmware", expected_firmware_value1)
     smax_client.smax_share(f"{table}:swarm:dbe:roach2-02", "firmware", expected_firmware_value2)
     result = smax_client.smax_pull(f"{table}:swarm", "dbe")
+    logger.debug(f"Pull result with keys: {list(result.keys())}")
 
-    roach01_temp = result[table]["swarm"]["dbe"]["roach2-01"]["temp"]
-    roach02_temp = result[table]["swarm"]["dbe"]["roach2-02"]["temp"]
-    roach01_firmware = result[table]["swarm"]["dbe"]["roach2-01"]["firmware"]
-    roach02_firmware = result[table]["swarm"]["dbe"]["roach2-02"]["firmware"]
+    roach01_temp = result["dbe"]["roach2-01"]["temp"]
+    roach02_temp = result["dbe"]["roach2-02"]["temp"]
+    roach01_firmware = result["dbe"]["roach2-01"]["firmware"]
+    roach02_firmware = result["dbe"]["roach2-02"]["firmware"]
 
     assert (roach01_temp.data == expected_temp_value1).all()
     assert (roach02_temp.data == expected_temp_value2).all()
@@ -365,10 +379,13 @@ def test_share_struct(smax_client):
 
     smax_client.smax_share(f"{table}:swarm", "dbe", struct)
     result = smax_client.smax_pull(f"{table}:swarm", "dbe")
-    roach03_temp = result[table]["swarm"]["dbe"]["roach2-03"]["temp"]
-    roach04_temp = result[table]["swarm"]["dbe"]["roach2-04"]["temp"]
-    roach03_firmware = result[table]["swarm"]["dbe"]["roach2-03"]["firmware"]
-    roach04_firmware = result[table]["swarm"]["dbe"]["roach2-04"]["firmware"]
+    
+    logger.debug(f"pulled dbe struct keys: {list(result['dbe'].keys())}")
+
+    roach03_temp = result["dbe"]["roach2-03"]["temp"]
+    roach04_temp = result["dbe"]["roach2-04"]["temp"]
+    roach03_firmware = result["dbe"]["roach2-03"]["firmware"]
+    roach04_firmware = result["dbe"]["roach2-04"]["firmware"]
 
     # Data and type checks.
     assert roach03_temp.data == expected_temp_value1
@@ -383,10 +400,10 @@ def test_share_struct(smax_client):
     assert roach04_temp.dim == expected_dim_temp
     assert roach03_firmware.dim == expected_dim_firmware
     assert roach04_firmware.dim == expected_dim_firmware
-    assert roach03_temp.origin == f"{table}:swarm:dbe:roach2-03:temp"
-    assert roach04_temp.origin == f"{table}:swarm:dbe:roach2-04:temp"
-    assert roach03_firmware.origin == f"{table}:swarm:dbe:roach2-03:firmware"
-    assert roach04_firmware.origin == f"{table}:swarm:dbe:roach2-04:firmware"
+    assert roach03_temp.smaxname == f"{table}:swarm:dbe:roach2-03:temp"
+    assert roach04_temp.smaxname == f"{table}:swarm:dbe:roach2-04:temp"
+    assert roach03_firmware.smaxname == f"{table}:swarm:dbe:roach2-03:firmware"
+    assert roach04_firmware.smaxname == f"{table}:swarm:dbe:roach2-04:firmware"
 
 def test_roundtrip_meta(smax_client):
     # Do a normal share to generate the automatic metadata.
