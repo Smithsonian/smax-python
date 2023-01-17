@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 
 from smax.sendToRedis import *
-key = "ScanningSpectrometers:t"
+key = "example_smax_daemon:logging_action:random_base"
 
-sr = SendToRedis("192.168.0.1")
+sr = SendToRedis("127.0.0.1")

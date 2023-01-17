@@ -5,8 +5,10 @@ import numpy as np
 from redis import StrictRedis
 from threading import Thread, Semaphore
 
+default_server = "127.0.0.1"
+
 class RedisInterface:
-  def __init__(self, server="128.171.116.189"):
+  def __init__(self, server=default_server):
     self.db = StrictRedis(host=server, port=6379, db=0)
     try:
       self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta');
@@ -31,7 +33,7 @@ class RedisInterface:
       if self.setSHA  == '':
         if wait >= 0:
           try:
-            self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta') 
+            self.setSHA = self.db.hget('persistent:scripts', 'HSetWithMeta')
           except:
             wait = -50
             if notifyWait >= 0:
