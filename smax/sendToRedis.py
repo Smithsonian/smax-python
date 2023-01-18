@@ -8,7 +8,7 @@ import numpy as np
 from redis import StrictRedis
 
 class SendToRedis:
-  def __init__(self, server="128.171.116.189", progName = ""):
+  def __init__(self, server="localhost", progName = ""):
     self.db = StrictRedis(host=server, port=6379, db=0)
     try:
 #      self.setSHA = self.db.hget('scripts', 'HSetWithMeta', timeout = 50);

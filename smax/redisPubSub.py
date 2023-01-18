@@ -7,7 +7,7 @@ import atexit
 from redis import StrictRedis
 
 class RedisPubSubGet:
-  def __init__(self, channel = 'test1', server="128.171.116.189"):
+  def __init__(self, channel = 'test1', server="localhost"):
     self.redis = StrictRedis(host=server, port = 6379)
     self.channel = channel
     self.ps = self.redis.pubsub()
