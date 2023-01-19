@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import textwrap
 
 from .smax_redis_client import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
 
@@ -12,36 +11,44 @@ default_server = "localhost"
 default_port = 6379
 default_db = 0
 
-def print_tree(d, verbose):
+def print_tree(d, verbose, indent=0):
     """Walk through a tree of SMA-X values, printing the leaf nodes"""
+    if indent != 0:
+        indent_str = " "*(indent)
+    else:
+        indent_str = ""
     for k, i in d.items():
         if type(i) is dict:
-            print(k)
-            print_tree(i, verbose)
+            print(indent_str, k)
+            print_tree(i, verbose, indent + 4)
         else:
-            print_smax(i, verbose)
+            print_smax(i, verbose, indent)
             
-def print_smax(smax_value, verbose):
+def print_smax(smax_value, verbose, indent=0):
     """Print a SMA-X value"""
-    print(f"SMA-X value {smax_value.smaxname}:")
+    if indent != 0:
+        indent_str = " "*(indent)
+    else:
+        indent_str = ""
+    print(indent_str, f"SMA-X value {smax_value.smaxname}:")
     prefix = "    data   :"
     if smax_value.type == str:
         if smax_value.dim == 1:
-            print(prefix, smax_value.data)
+            print(indent_str, prefix, smax_value.data)
         else:
             for l in smax_value.data:
-                print(prefix, l)
+                print(indent_str, prefix, l)
                 prefix = " "*len(prefix)
     else:
         for l in str(smax_value.data).splitlines():
-            print(prefix, l)
+            print(indent_str, prefix, l)
             prefix = " "*len(prefix)
     if verbose:
-        print(f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}")
-        print(f"    dim    : {smax_value.dim}")
-        print(f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}")
-        print(f"    origin : {smax_value.origin}")
-        print(f"    seq    : {smax_value.seq}")
+        print(indent_str, f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}")
+        print(indent_str, f"    dim    : {smax_value.dim}")
+        print(indent_str, f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}")
+        print(indent_str, f"    origin : {smax_value.origin}")
+        print(indent_str, f"    seq    : {smax_value.seq}")
     
 
 def main():
