@@ -38,13 +38,16 @@ def main():
     parser.add_argument("--redis_ip", "-i", help="Host name or IP of SMA-X Redis host", default=default_server)
     parser.add_argument("--port", "-p", help="Port number of the SMA-X Redis server", default=default_port)
     parser.add_argument("--db", "-d", help="Database number of the SMA-X Redis database", default=default_db)
-    
-    parser.add_argument("--table", "-t", help="SMA-X table to address", required=True)
-    parser.add_argument("--key", "-k", help="SMA-X key to address", required=True)
+
+    parser.add_argument("--table", "-t", help="SMA-X table to address")
+    parser.add_argument("--key", "-k", help="SMA-X key to address")
     
     parser.add_argument("--type", "-T", help="Type for the value to be set.", choices=list(_TYPE_MAP.keys()))
     
     parser.add_argument("--set", "-s", help="SMA-X value to set", default=None)
+    
+    parser.add_argument("--search", "-S", help="Search for SMA-X keys in Redis, and return matching keys", default=None)
+    parser.add_argument("--list", action='store_true', default=False, help="List all SMA-X keys in the Redis database")
     
     parser.add_argument("--verbose", "-v", action='store_true', help="Show all SMA-X metadata associated with the key", default=False)
     
@@ -52,8 +55,27 @@ def main():
     
     with SmaxRedisClient(redis_ip=args.redis_ip, redis_port=args.port, redis_db=args.db, program_name="smax-cli") as smax_client:
 
+        # If search is set, search for the string
+        if args.search is not None:
+            # Get all the keys matching the string
+            search_str = f"*{args.search}*"
+            keys = smax_client._client.execute_command(f"keys {search_str}")
+            for k in keys:
+                key = k.decode("UTF-8")
+                if key[0] == "<" or key == "scripts":
+                    continue
+                else:
+                    print(key)
+        elif args.list:
+            keys = smax_client._client.execute_command(f"keys *")
+            for k in keys:
+                key = k.decode("UTF-8")
+                if key[0] == "<" or key == "scripts":
+                    continue
+                else:
+                    print(key)
         # If set is set, set the value
-        if args.set is not None:
+        elif args.set is not None:
             if args.type is None:
                 # Try to convert set value to the current type of the SMA-X variable
                 try:
