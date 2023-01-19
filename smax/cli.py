@@ -1,7 +1,7 @@
 import argparse
 import datetime
 
-from .smax_redis_client import SmaxRedisClient, _TYPE_MAP
+from .smax_redis_client import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
 
 desc = """
 A simple Python command line utility to share or push SMA-X values.
@@ -12,6 +12,7 @@ default_port = 6379
 default_db = 0
 
 def print_tree(d, verbose):
+    """Walk through a tree of SMA-X values, printing the leaf nodes"""
     for k, i in d.items():
         if type(i) is dict:
             print(k)
@@ -20,16 +21,15 @@ def print_tree(d, verbose):
             print_smax(i, verbose)
             
 def print_smax(smax_value, verbose):
+    """Print a SMA-X value"""
+    print(f"SMA-X value {smax_value.smaxname}:")
+    print(f"    data   :", smax_value.data)
     if verbose:
-        print(f"SMA-X value {smax_value.origin}:")
-        print(f"    data   : {smax_value.data}")
-        print(f"    type   : {smax_value.type}")
+        print(f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}")
         print(f"    dim    : {smax_value.dim}")
         print(f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}")
-        print(f"    source : {smax_value.source}")
+        print(f"    origin : {smax_value.origin}")
         print(f"    seq    : {smax_value.seq}")
-    else:
-        print(f"SMA-X value {smax_value.origin} : {smax_value.data}")
     
 
 def main():
@@ -55,8 +55,15 @@ def main():
         # If set is set, set the value
         if args.set is not None:
             if args.type is None:
-                # Try to convert set vale to the current type of the SMA-X variable
-                smax_type = smax_client.smax_pull(args.table, args.key).type
+                # Try to convert set value to the current type of the SMA-X variable
+                try:
+                    smax_type = smax_client.smax_pull(args.table, args.key).type
+                except RuntimeError:
+                    # Value isn't in Redis yet
+                    print(f"Type not given and {args.table}:{args.key} not yet in Redis. Assuming string for type")
+                    smax_type = str
+                except (TimeoutError, ConnectionError):
+                    print("Could not connect to Redis")
             else:
                 smax_type = _TYPE_MAP[args.type]
             try:
@@ -66,13 +73,21 @@ def main():
             smax_client.smax_share(args.table, args.key, val)
         # Set not given, so return value
         else:
-            result = smax_client.smax_pull(args.table, args.key)
-            
-            if type(result) is dict:
-                # We have a struct of SMA-X values and need to walk through the values
-                print_tree(result, args.verbose)
+            try:
+                result = smax_client.smax_pull(args.table, args.key)
+            except RuntimeError:
+                result = None
+            except (TimeoutError, ConnectionError):
+                print("Could not connect to Redis")
+        
+            if result is None:
+                print(f"Can't find {args.table}:{args.key} in Redis")
             else:
-                print_smax(result, args.verbose)
+                if type(result) is dict:
+                    # We have a struct of SMA-X values and need to walk through the values
+                    print_tree(result, args.verbose)
+                else:
+                    print_smax(result, args.verbose)
         smax_client.smax_disconnect()
         
 if __name__ == "__main__":

@@ -205,6 +205,11 @@ class SmaxRedisClient(SmaxClient):
             self._logger.error(f"Reading {table}:{key} from Redis failed")
             raise
 
+        # Check that we got a valid response
+        if lua_data[0] is None:
+            self._logger.error(f"Could not find {table}:{key} in Redis")
+            raise RuntimeError(f"Could not find {table}:{key} in Redis")
+
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
         self._logger.debug(f"Type: {type_name}")
