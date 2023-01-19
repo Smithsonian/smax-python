@@ -75,41 +75,44 @@ def main():
                 else:
                     print(key)
         # If set is set, set the value
-        elif args.set is not None:
-            if args.type is None:
-                # Try to convert set value to the current type of the SMA-X variable
+        elif args.table is not None and args.key is not None:
+            if args.set is not None:
+                if args.type is None:
+                    # Try to convert set value to the current type of the SMA-X variable
+                    try:
+                        smax_type = smax_client.smax_pull(args.table, args.key).type
+                    except RuntimeError:
+                        # Value isn't in Redis yet
+                        print(f"Type not given and {args.table}:{args.key} not yet in Redis. Assuming string for type")
+                        smax_type = str
+                    except (TimeoutError, ConnectionError):
+                        print("Could not connect to Redis")
+                else:
+                    smax_type = _TYPE_MAP[args.type]
                 try:
-                    smax_type = smax_client.smax_pull(args.table, args.key).type
+                        val = smax_type(args.set)
+                except ValueError:
+                    val = args.set
+                smax_client.smax_share(args.table, args.key, val)
+            # Set not given, so return value
+            else:
+                try:
+                    result = smax_client.smax_pull(args.table, args.key)
                 except RuntimeError:
-                    # Value isn't in Redis yet
-                    print(f"Type not given and {args.table}:{args.key} not yet in Redis. Assuming string for type")
-                    smax_type = str
+                    result = None
                 except (TimeoutError, ConnectionError):
                     print("Could not connect to Redis")
-            else:
-                smax_type = _TYPE_MAP[args.type]
-            try:
-                    val = smax_type(args.set)
-            except ValueError:
-                val = args.set
-            smax_client.smax_share(args.table, args.key, val)
-        # Set not given, so return value
-        else:
-            try:
-                result = smax_client.smax_pull(args.table, args.key)
-            except RuntimeError:
-                result = None
-            except (TimeoutError, ConnectionError):
-                print("Could not connect to Redis")
-        
-            if result is None:
-                print(f"Can't find {args.table}:{args.key} in Redis")
-            else:
-                if type(result) is dict:
-                    # We have a struct of SMA-X values and need to walk through the values
-                    print_tree(result, args.verbose)
+            
+                if result is None:
+                    print(f"Can't find {args.table}:{args.key} in Redis")
                 else:
-                    print_smax(result, args.verbose)
+                    if type(result) is dict:
+                        # We have a struct of SMA-X values and need to walk through the values
+                        print_tree(result, args.verbose)
+                    else:
+                        print_smax(result, args.verbose)
+        else:
+            parser.print_help()
         smax_client.smax_disconnect()
         
 if __name__ == "__main__":
