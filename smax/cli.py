@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import textwrap
 
 from .smax_redis_client import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
 
@@ -23,7 +24,18 @@ def print_tree(d, verbose):
 def print_smax(smax_value, verbose):
     """Print a SMA-X value"""
     print(f"SMA-X value {smax_value.smaxname}:")
-    print(f"    data   :", smax_value.data)
+    prefix = "    data   :"
+    if smax_value.type == str:
+        if smax_value.dim == 1:
+            print(prefix, smax_value.data)
+        else:
+            for l in smax_value.data:
+                print(prefix, l)
+                prefix = " "*len(prefix)
+    else:
+        for l in str(smax_value.data).splitlines():
+            print(prefix, l)
+            prefix = " "*len(prefix)
     if verbose:
         print(f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}")
         print(f"    dim    : {smax_value.dim}")
