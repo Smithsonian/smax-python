@@ -64,7 +64,7 @@ def main():
     parser.add_argument("--table", "-t", help="SMA-X table to address")
     parser.add_argument("--key", "-k", help="SMA-X key to address")
     
-    parser.add_argument("--type", "-T", help="Type for the value to be set.", choices=list(_TYPE_MAP.keys()))
+    parser.add_argument("--type", "-T", help="Type for the value to be set.", choices=list(_TYPE_MAP.keys()), default=None)
     
     parser.add_argument("--set", "-s", help="SMA-X value to set", default=None)
     
@@ -102,19 +102,40 @@ def main():
                 if args.type is None:
                     # Try to convert set value to the current type of the SMA-X variable
                     try:
-                        smax_type = smax_client.smax_pull(args.table, args.key).type
+                        smax_type = _REVERSE_TYPE_MAP[smax_client.smax_pull(args.table, args.key).type]
                     except RuntimeError:
-                        # Value isn't in Redis yet
-                        print(f"Type not given and {args.table}:{args.key} not yet in Redis. Assuming string for type")
-                        smax_type = str
+                        smax_type = None
                     except (TimeoutError, ConnectionError):
+                        smax_type = None
                         print("Could not connect to Redis")
+                    
+                    if smax_type is None:
+                        # Value isn't in Redis yet
+                        print(f"Type not given and {args.table}:{args.key} not yet in Redis. Trying to determine best type from int, float, str")
+                        try:
+                            v = float(args.set)
+                            smax_type = "float"
+                            if v.is_integer():
+                                smax_type = "integer"
+                        except ValueError:
+                            smax_type = "str"
+                            
+                        print(f"Using type {smax_type}")
                 else:
-                    smax_type = _TYPE_MAP[args.type]
+                    smax_type = args.type      
+                
+                python_type = _TYPE_MAP[smax_type]
+                
                 try:
-                        val = smax_type(args.set)
+                    val = python_type(args.set)
                 except ValueError:
-                    val = args.set
+                    try:
+                        # Python can't convert a float type string representing an integer to an int.
+                        val = python_type(float(args.set))
+                    except ValueError:
+                        val = args.set
+                        print(f"Could not convert {args.set} to {smax_type}, falling back to str.")
+                    
                 smax_client.smax_share(args.table, args.key, val)
             # Set not given, so return value
             else:
