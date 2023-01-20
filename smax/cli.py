@@ -68,10 +68,16 @@ def main():
     
     parser.add_argument("--set", "-s", help="SMA-X value to set", default=None)
     
-    parser.add_argument("--search", "-S", help="Search for SMA-X keys in Redis, and return matching keys", default=None)
-    parser.add_argument("--list", action='store_true', default=False, help="List all SMA-X keys in the Redis database")
+    parser.add_argument("--search", "-S", 
+                        help="Search a string in SMA-X keys in Redis, and return matching keys. Wildcards can be included within the string, and are automatically prepended and appended", default=None)
     
-    parser.add_argument("--verbose", "-v", action='store_true', help="Show all SMA-X metadata associated with the key", default=False)
+    parser.add_argument("--purge", action='store_true', 
+                        help='Purge the specified key from table, or an entire table if no key is given. Wildcards can be included. This is a dangerous operation.')
+    parser.add_argument("--purge-volatile", action='store_true', help='Purge everything except the "persistent" branch.  An _EXTREMELY_ dangerous option')
+    parser.add_argument("--list", action='store_true', help="List all SMA-X keys in the Redis database. This is an expensive operation.")
+    
+    
+    parser.add_argument("--verbose", "-v", action='store_true', help="Show all SMA-X metadata associated with the key")
     
     args = parser.parse_args()
     
@@ -96,6 +102,26 @@ def main():
                     continue
                 else:
                     print(key)
+        elif args.purge:
+            if args.key is None:
+                pattern = args.table
+            else:
+                pattern = f"{args.table}:{args.key}"
+            confirm = input(f"Really purge everything matching {pattern} [yes/NO] ")
+            if confirm.lower() == "yes":
+                if pattern is not None:
+                    fields_del = smax_client.smax_purge(f"{args.table}:{args.key}")
+                    print(f'{fields_del} keys deleted.')   
+                else:
+                    print("Table or pattern to delete must be specified")
+            else:
+                print('Not confirmed - exiting.')    
+        elif args.purge_volatile:
+            confirm = input("Really purge everything except the 'persistent' branch? [yes/NO] ")
+            if confirm.lower() == "yes":
+                smax_client.smax_purge_volatile()
+            else:
+                print('Not confirmed - exiting.')
         # If set is set, set the value
         elif args.table is not None and args.key is not None:
             if args.set is not None:
