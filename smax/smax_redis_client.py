@@ -208,14 +208,17 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-            self._logger.info(f"Successfully pulled {table}:{key}")
         except NoScriptError:
             self._get_scripts()
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-            self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
-            self._logger.error(f"Reading {table}:{key} from Redis failed")
+            self._logger.error(f"Reading {table}:{key} from Redis {self._client} failed")
             raise
+        
+        if lua_data is not None:
+            self._logger.info(f"Successfully pulled {table}:{key}")
+        else:
+            self._logger.warning(f"Failed to pull valid data for {table}:{key} from {self._client}")
 
         # Check that we got a valid response
         if lua_data[0] is None:
