@@ -11,6 +11,8 @@ from redis import TimeoutError
 
 from smax import SmaxRedisClient
 
+smax_redis_ip = "127.0.0.1"
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
@@ -19,7 +21,7 @@ logger.debug("In test_smax_redis_client.py")
 @pytest.fixture
 def smax_client():
     logger.debug("In test_smax_redis_client.py:smax_client test fixture")
-    return SmaxRedisClient("localhost")
+    return SmaxRedisClient(smax_redis_ip)
 
 
 def test_context_manager():
@@ -28,7 +30,7 @@ def test_context_manager():
     expected_dim = 1
     table = "test_context_manager"
     key = "pytest"
-    with SmaxRedisClient("localhost") as s:
+    with SmaxRedisClient(smax_redis_ip) as s:
         s.smax_share(table, key, expected_data)
         result = s.smax_pull(table, key)
 
