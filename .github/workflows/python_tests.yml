@@ -32,7 +32,10 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
           auto-start: "true"
-          redis-conf: "bind 127.0.0.1"
+          redis-conf: |
+            bind 127.0.0.1
+            protected-mode no
+
 
       - name: Load LUA scripts
         run: |
