@@ -32,6 +32,7 @@ def test_context_manager():
     key = "pytest"
     with SmaxRedisClient(smax_redis_ip) as s:
         s.smax_share(table, key, expected_data)
+        logger.debug(f"Got HGetWithMeta SHA: {s._getSHA}")
         result = s.smax_pull(table, key)
 
     assert result.data == expected_data
