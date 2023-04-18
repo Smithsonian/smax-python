@@ -18,13 +18,9 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
-
-      - name: Git checkout submodule
-        uses: actions/checkout@v2
         with:
-          repository: 'Smithsonian/smax-server'
           token: '{{ secrets.CHECKOUT_PAT }}'
-          path: redis_config_files
+          submodule: true
 
       - name: Set up Python
         uses: actions/setup-python@v2
