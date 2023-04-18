@@ -40,7 +40,7 @@ jobs:
       - name: Load LUA scripts
         run: |
           cd redis_config_files
-          ./install.sh
+          sudo ./install.sh
           ./smax-init.sh
 
       - name: Test with pytest
