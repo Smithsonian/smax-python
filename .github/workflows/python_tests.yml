@@ -22,7 +22,7 @@ jobs:
       - name: Git checkout server submodule
         uses: actions/checkout@v2
         with:
-          repository: Smitsonian/smax-server
+          repository: Smithsonian/smax-server
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
           path: redis_config_files
         
