@@ -215,7 +215,7 @@ class SmaxRedisClient(SmaxClient):
             self._logger.error(f"Reading {table}:{key} from Redis {self._client} failed")
             raise
     
-        self._logger.debug(f"Receive response: {lua_data}")
+        self._logger.debug(f"Received response: {lua_data}")
         
         if lua_data is not None:
             self._logger.info(f"Successfully pulled {table}:{key}")
