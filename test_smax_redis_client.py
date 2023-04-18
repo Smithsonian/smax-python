@@ -5,6 +5,7 @@ import logging
 
 import psutil
 import os
+import subprocess
 import numpy as np
 import pytest
 from redis import TimeoutError
@@ -23,7 +24,17 @@ def smax_client():
     logger.debug("In test_smax_redis_client.py:smax_client test fixture")
     return SmaxRedisClient(smax_redis_ip)
 
-
+def test_redis_connection():
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} PING".split(" "), capture_output=True)
+    assert ps.stdout == b'PONG\n'
+    
+    
+def test_redis_scripts():
+    ps = subprocess.run(f"redis-cli h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
+    keys = ps.stdout.split(b'\n')
+    assert b'scripts' in keys
+    
+    
 def test_context_manager():
     expected_data = "just a context manager string"
     expected_type = str
@@ -32,6 +43,8 @@ def test_context_manager():
     key = "pytest"
     with SmaxRedisClient(smax_redis_ip) as s:
         s.smax_share(table, key, expected_data)
+        # Run a raw test of redis values
+        os.run
         logger.debug(f"Got HGetWithMeta SHA: {s._getSHA}")
         result = s.smax_pull(table, key)
 
