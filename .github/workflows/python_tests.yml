@@ -32,6 +32,7 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
           auto-start: "true"
+          redis-conf: "redis_config_files/redis.conf"
 
       - name: Load LUA scripts
         run: |
