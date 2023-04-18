@@ -19,6 +19,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
         with:
+          token: '{{ secrets.CHECKOUT_PAT }}'
           submodules: recursive
 
       - name: Set up Python
