@@ -11,11 +11,14 @@ from redis import TimeoutError
 
 from smax import SmaxRedisClient
 
+print("In test_smax_redis_client.py")
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 @pytest.fixture
 def smax_client():
+    print("In test_smax_redis_client.py:smax_client test fixture")
     return SmaxRedisClient("localhost")
 
 
