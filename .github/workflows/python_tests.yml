@@ -19,7 +19,8 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
         with:
-          submodules: true
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
+          submodules: 'recursive'
 
       - name: Set up Python
         uses: actions/setup-python@v2
