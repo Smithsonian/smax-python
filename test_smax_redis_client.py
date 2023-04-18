@@ -32,6 +32,7 @@ def test_redis_connection():
 def test_redis_scripts():
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
     keys = ps.stdout.split(b'\n')
+    logger.debug(keys)
     assert b'scripts' in keys
     
 
@@ -41,6 +42,8 @@ def test_redis_HGetWithMeta():
     hget_sha = ps.stdout.decode().strip()
     rets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hget_sha} 1 scripts HGetWithMeta".split(" "), capture_output=True)
     logger.debug(rets.stdout)
+    keys = subprocess.run(f"redis-cli -h {smax_redis_ip} KEYS *".split(" "), capture_output=True).stdout.split(b'\n')
+    logger.debug(keys)
     assert rets.stdout.decode().strip() == hget_sha
     
     
