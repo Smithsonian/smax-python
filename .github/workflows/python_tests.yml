@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           ssh-key: ${{ secrets.SUBMODULE_CONTENT_PULL_KEY }}
-          submodule: true
+          submodules: true
 
       - name: Set up Python
         uses: actions/setup-python@v2
