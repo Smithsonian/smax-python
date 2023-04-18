@@ -36,7 +36,7 @@ def test_redis_scripts():
     
 
 def test_redis_HGetWithMeta():
-    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" ", capture_output=True))
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" "), capture_output=True)
     hget_sha = ps.stdout.decode().strip()
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hget_sha} 1 scripts HGetWithMeta".split(" "), capture_output=True)
     assert ps.stdout.decode().strip() == hget_sha
@@ -51,7 +51,6 @@ def test_context_manager():
     with SmaxRedisClient(smax_redis_ip) as s:
         s.smax_share(table, key, expected_data)
         # Run a raw test of redis values
-        os.run
         logger.debug(f"Got HGetWithMeta SHA: {s._getSHA}")
         result = s.smax_pull(table, key)
 
