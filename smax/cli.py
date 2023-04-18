@@ -4,7 +4,7 @@ import datetime
 from .smax_redis_client import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
 
 desc = """
-A simple Python command line utility to share or push SMA-X values.
+A simple Python command line utility to pull or push SMA-X values.
 """
 
 default_server = "localhost"
@@ -61,8 +61,8 @@ def main():
     parser.add_argument("--port", "-p", help="Port number of the SMA-X Redis server", default=default_port)
     parser.add_argument("--db", "-d", help="Database number of the SMA-X Redis database", default=default_db)
 
-    parser.add_argument("--table", "-t", help="SMA-X table to address")
-    parser.add_argument("--key", "-k", help="SMA-X key to address")
+    parser.add_argument("--table", "-t", help="SMA-X table to pull or push from")
+    parser.add_argument("--key", "-k", help="SMA-X key to pull or push")
     
     parser.add_argument("--type", "-T", help="Type for the value to be set.", choices=list(_TYPE_MAP.keys()), default=None)
     
