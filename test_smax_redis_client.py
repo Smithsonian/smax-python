@@ -30,7 +30,7 @@ def test_redis_connection():
     
     
 def test_redis_scripts():
-    ps = subprocess.run(f"redis-cli h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
     keys = ps.stdout.split(b'\n')
     assert b'scripts' in keys
     
