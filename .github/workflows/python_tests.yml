@@ -11,9 +11,9 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9]
-        redis-version: [5.0.3, latest]
+        os: [ubuntu-latest]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        redis-version: [latest]
 
     steps:
       - name: Git checkout
@@ -32,13 +32,18 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
           auto-start: "true"
+          redis-conf: |
+            bind 127.0.0.1
+            protected-mode no
+
 
       - name: Load LUA scripts
         run: |
           cd redis_config_files
-          ./initscripts.sh
+          sudo ./install.sh
+          ./smax-init.sh
 
       - name: Test with pytest
         run: |
           cd ..
-          pytest
+          pytest -v -x --log-level=DEBUG

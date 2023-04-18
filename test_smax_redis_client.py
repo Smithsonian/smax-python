@@ -5,27 +5,54 @@ import logging
 
 import psutil
 import os
+import subprocess
 import numpy as np
 import pytest
 from redis import TimeoutError
 
 from smax import SmaxRedisClient
 
+smax_redis_ip = "127.0.0.1"
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+logger.debug("In test_smax_redis_client.py")
+
 @pytest.fixture
 def smax_client():
-    return SmaxRedisClient("localhost")
+    logger.debug("In test_smax_redis_client.py:smax_client test fixture")
+    return SmaxRedisClient(smax_redis_ip)
 
+def test_redis_connection():
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} PING".split(" "), capture_output=True)
+    assert ps.stdout == b'PONG\n'
+    
+    
+def test_redis_scripts():
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
+    keys = ps.stdout.split(b'\n')
+    logger.debug(keys)
+    assert b'scripts' in keys
+    
 
+def test_redis_HGetWithMeta():
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" "), capture_output=True)
+    logger.debug(ps.stdout)
+    hget_sha = ps.stdout.decode().strip()
+    logger.debug(hget_sha)
+    rets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hget_sha} 1 scripts HGetWithMeta".split(" "), capture_output=True)
+    logger.debug(rets)
+    assert rets.stdout.decode().strip() == hget_sha
+    
+    
 def test_context_manager():
     expected_data = "just a context manager string"
     expected_type = str
     expected_dim = 1
     table = "test_context_manager"
     key = "pytest"
-    with SmaxRedisClient("localhost") as s:
+    with SmaxRedisClient(smax_redis_ip) as s:
         s.smax_share(table, key, expected_data)
         result = s.smax_pull(table, key)
 

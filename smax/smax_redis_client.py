@@ -1,6 +1,7 @@
 import os
 import logging
 import socket
+import datetime
 from fnmatch import fnmatch
 
 import psutil
@@ -11,7 +12,6 @@ from redis.exceptions import NoScriptError
 from .smax_client import SmaxClient, SmaxData
 
 class SmaxRedisClient(SmaxClient):
-
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
                  program_name=None, hostname=None):
         """
@@ -42,8 +42,12 @@ class SmaxRedisClient(SmaxClient):
         self._get_structSHA = None
 
         self._list_zeroesSHA = None
-        self._list_largerSHA = None
-        self._list_newerSHA = None
+        self._list_higher_thanSHA = None
+        self._list_newer_thanSHA = None
+        
+        self._dsm_get_tableSHA = None
+        
+        self._purgeSHA = None
         self._purge_volatileSHA = None
         self._del_structSHA = None
 
@@ -102,11 +106,19 @@ class SmaxRedisClient(SmaxClient):
         Get the SHAs of the cached scripts using the Redis.hget methods
         """
         self._logger.info(f"Pulling script SHAs from server")
+        
         self._getSHA = self._client.hget('scripts', 'HGetWithMeta')
         self._setSHA = self._client.hget('scripts', 'HSetWithMeta')
         self._multi_getSHA = self._client.hget('scripts', 'HMGetWithMeta')
         self._multi_setSHA = self._client.hget('scripts', 'HMSetWithMeta')
         self._get_structSHA = self._client.hget('scripts', 'GetStruct')
+        self._purgeSHA = self._client.hget('scripts', 'Purge')
+        self._purge_volatileSHA = self._client.hget('scripts', 'PurgeVolatile')
+        self._list_newer_thanSHA = self._client.hget('scripts', 'ListNewerThan')
+        self._list_newer_thanSHA = self._client.hget('scripts', 'ListOlderThan')
+        self._list_higher_thanSHA = self._client.hget('scripts', 'ListHigherThan')
+        self._list_zeroesSHA = self._client.hget('scripts', 'ListZeroes')
+        self._dsm_get_tableSHA = self._client.hget('scripts', 'DSMGetTable')
 
     def smax_disconnect(self):
         """
@@ -196,14 +208,24 @@ class SmaxRedisClient(SmaxClient):
 
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-            self._logger.info(f"Successfully pulled {table}:{key}")
         except NoScriptError:
             self._get_scripts()
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-            self._logger.info(f"Successfully pulled {table}:{key}")
         except (ConnectionError, TimeoutError):
-            self._logger.error(f"Reading {table}:{key} from Redis failed")
+            self._logger.error(f"Reading {table}:{key} from Redis {self._client} failed")
             raise
+    
+        self._logger.debug(f"Received response: {lua_data}")
+        
+        if lua_data is not None:
+            self._logger.info(f"Successfully pulled {table}:{key}")
+        else:
+            self._logger.warning(f"Failed to pull valid data for {table}:{key} from {self._client}")
+
+        # Check that we got a valid response
+        if lua_data[0] is None:
+            self._logger.error(f"Could not find {table}:{key} in Redis")
+            raise RuntimeError(f"Could not find {table}:{key} in Redis")
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
@@ -699,6 +721,126 @@ class SmaxRedisClient(SmaxClient):
         """
         return self._redis_listen(timeout=timeout,
                                   notification_only=notification_only)
+
+    def smax_purge(self, table, key=None):
+        """Purges a table or key from Redis.  Use with ultimate caution.
+
+        Args:
+            table (str): SMA-X table to purge. Can include wild cards to purge by pattern matching.
+            key (str, optional): Specific SMA-X key in table to purge. Defaults to None.
+            
+        Returns:
+            int: number of SMA-X keys purged from Redis
+        """
+        if table is None:
+            pattern = "*"
+        else:
+            pattern = table
+
+        if key is not None:
+            pattern = f"{pattern}:{key}"
+            
+        self._logger.warning(f"Purging all keys matching {pattern}")
+            
+        return self._client.evalsha(self._purgeSHA, '0', pattern)
+    
+    def smax_purge_volatile(self):
+        """Purges all volatile tables and keys from Redis.  Use with ultimate caution.
+        """
+        self._logger.warning(f"Purging all volatile keys")
+        self._client.evalsha(self._purge_volatileSHA)
+        
+    def smax_dsm_get_table(self, target, key, host=None):
+        """Get the SMA-X name that maps to a DSM target, key, and (optionally) host.
+
+        Args:
+            target (str): DSM target or caller
+            key (str): DSM key
+            host (str, optional): DSM host (caller). If not set, defaults to target.
+            
+        Returns:
+            str : SMA-X table where the key can be found.
+        """
+        if host is None:
+            host = target
+        return self._client.evalsha(self._dsm_get_tableSHA, host, target, key)
+    
+    def smax_list_newer_than(self, dt):
+        """List all SMA-X keys newer than the datetime object.
+
+        Args:
+            dt (datetime.datetime): cutoff time.
+            
+        Returns:
+            list[(str, smax.SmaxData)]: list of pairs of SMA-X keys and values newer than dt
+        """
+        # If tzinfo is not given in the datetime object, assume it is UTC
+        if dt.tzinfo is None:
+            dt.replace(tzinfo=datetime.timezone.utc)
+            
+        timestamp = dt.timestamp()
+        
+        keypairs = self._client.evalsha(self._list_newer_thanSHA, timestamp)
+    
+        result  = []
+        for kp in keypairs:
+            smax_value = self.smax_pull(kp[0])
+            result.append((kp[0], smax_value))
+            
+        return result
+
+    def smax_list_older_than(self, dt):
+        """List all SMA-X keys older than the datetime object.
+
+        Args:
+            dt (datetime.datetime): cutoff time.
+            
+        Returns:
+            list[(str, smax.SmaxData)]: list of pairs of SMA-X keys and values older than dt
+        """
+        # If tzinfo is not given in the datetime object, assume it is UTC
+        if dt.tzinfo is None:
+            dt.replace(tzinfo=datetime.timezone.utc)
+            
+        timestamp = dt.timestamp()
+        
+        keypairs = self._client.evalsha(self._list_older_thanSHA, timestamp)
+    
+        result  = []
+        for kp in keypairs:
+            smax_value = self.smax_pull(kp[0])
+            result.append((kp[0], smax_value))
+            
+        return result
+    
+    def smax_list_higher_than(self, table, value):
+        """List all SMA-X fields in table with values higher than the value.
+
+        Args:
+            table (str): table, struct or meta name
+            value (int or float): cutoff value.
+            
+        Returns:
+            list[(str, smax.SmaxData)]: list of pairs of SMA-X fields and values higher than value
+        """
+        fields = self._client.evalsha(self._list_higher_thanSHA, table, value)
+    
+        result  = []
+        for f in fields:
+            smax_value = self.smax_pull(table, f)
+            result.append((f, smax_value))
+            
+        return result
+    
+    def smax_list_zeroes(self, key):
+        """List all fields in key equal to zero.
+        
+        Args:
+            key (str): Redis key to test.
+        
+        Returns:
+            list(str): list of all fields equal to zero."""
+        return self._client.evalsha(self._list_zeroesSHA, key)
 
     def smax_set_description(self, table, description):
         """
