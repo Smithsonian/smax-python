@@ -18,10 +18,14 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
+        
+      - name: Git checkout server submodule
+        uses: actions/checkout@v2
         with:
+          repository: Smitsonian/smax-server
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
-          submodules: 'recursive'
-
+          path: redis_config_files
+        
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
