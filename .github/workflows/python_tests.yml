@@ -19,7 +19,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
         with:
-          token: '{{ secrets.CHECKOUT_PAT }}'
+          ssh-key: ${{ secrets.SUBMODULE_CONTENT_PULL_KEY }}
           submodule: true
 
       - name: Set up Python
