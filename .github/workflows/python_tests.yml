@@ -47,7 +47,7 @@ jobs:
       - name: Load LUA scripts
         run: |
           cd redis_config_files
-          chmod 755 smax-init
+          chmod 755 smax-init.sh
           ./smax-init.sh
 
       - name: Test with pytest
