@@ -45,7 +45,7 @@ def test_redis_HGetWithMeta():
     logger.debug(hset_sha)
     test_value = "test_value"
     sets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hset_sha} 1 test_redis test_key {test_value}".split(" "), capture_output=True)
-    logger.debug(set)
+    logger.debug(sets)
     rets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hget_sha} 1 test_redis test_key".split(" "), capture_output=True)
     logger.debug(rets)
     
