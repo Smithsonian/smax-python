@@ -39,7 +39,7 @@ def test_redis_scripts():
 def test_redis_HGetWithMeta():
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" "), capture_output=True)
     hget_sha = ps.stdout.decode().strip()
-    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HSet".split(" "), capture_output=True)
+    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts *".split(" "), capture_output=True)
     hset_sha = ps.stdout.decode().strip()
     logger.debug(hget_sha)
     logger.debug(hset_sha)
