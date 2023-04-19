@@ -43,10 +43,9 @@ def test_redis_HGetWithMeta():
     hset_sha = ts.stdout.decode().strip()
     logger.debug(hget_sha)
     logger.debug(hset_sha)
-    test_value = "test_value"
     sets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hset_sha} 1 HGetWithMeta scripts HSetWithMeta".split(" "), capture_output=True)
     logger.debug(sets.stdout.decode())
-    assert sets.stdout.decode().strip() == test_value
+    assert sets.stdout.decode().strip() == hset_sha
     
     
 def test_context_manager():
