@@ -39,19 +39,14 @@ def test_redis_scripts():
 def test_redis_HGetWithMeta():
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" "), capture_output=True)
     hget_sha = ps.stdout.decode().strip()
-    ts = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HSET".split(" "), capture_output=True)
+    ts = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HSetWithMeta".split(" "), capture_output=True)
     hset_sha = ts.stdout.decode().strip()
     logger.debug(hget_sha)
     logger.debug(hset_sha)
     test_value = "test_value"
-    sets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hset_sha} 1 test_redis test_key {test_value}".split(" "), capture_output=True)
-    logger.debug(sets)
-    rets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hget_sha} 1 test_redis test_key".split(" "), capture_output=True)
-    logger.debug(rets)
-    
-    ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET test_redis test_key".split(" "), capture_output=True)
-    logger.debug(ps)
-    assert rets.stdout.decode().strip() == test_value
+    sets = subprocess.run(f"redis-cli -h {smax_redis_ip} EVALSHA {hset_sha} 1 HGetWithMeta scripts HSetWithMeta".split(" "), capture_output=True)
+    logger.debug(sets.stdout.decode())
+    assert sets.stdout.decode().strip() == test_value
     
     
 def test_context_manager():
