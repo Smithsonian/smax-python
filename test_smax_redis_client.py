@@ -25,11 +25,13 @@ def smax_client():
     return SmaxRedisClient(smax_redis_ip)
 
 def test_redis_connection():
+    # A test of raw redis commands. This could be moved to an smax-server unit test
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} PING".split(" "), capture_output=True)
     assert ps.stdout == b'PONG\n'
     
     
 def test_redis_scripts():
+    # A test of raw redis commands. This could be moved to an smax-server unit test
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} KEYS *".split(" "), capture_output=True)
     keys = ps.stdout.split(b'\n')
     logger.debug(keys)
@@ -37,6 +39,7 @@ def test_redis_scripts():
     
 
 def test_redis_HGetWithMeta():
+    # A test of raw redis commands. This could be moved to an smax-server unit test
     ps = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HGetWithMeta".split(" "), capture_output=True)
     hget_sha = ps.stdout.decode().strip()
     ts = subprocess.run(f"redis-cli -h {smax_redis_ip} HGET scripts HSetWithMeta".split(" "), capture_output=True)
