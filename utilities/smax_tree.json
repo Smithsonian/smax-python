@@ -77,7 +77,12 @@
                 "air" : {},
                 "chiller" : {},
                 "chopper" : {},
-                "comment" : "Not a real antenna",
+                "comment" : {
+                    "data" : "Not a real antenna",
+                    "dim" : 1,
+                    "type" : "str",
+                    "description" : "User comment on telescope state or current designated usage. E.g.: “cooling”, “testing”, engineer name, or empty string."
+                },
                 "deice"   : {},
                 "drive"   : {},
                 "if"      : {}
