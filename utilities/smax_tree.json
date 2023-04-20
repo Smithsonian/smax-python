@@ -4,70 +4,70 @@
             "1" : {
                 "astrometric" : {
                     "az" : { 
-                        "value" : 1.7, 
+                        "data" : 1.7, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Astrometric azimuth of antenna"
                         },
                     "dec" : { 
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Topocentric apparent declination of antenna"
                         },
                     "dec_icrs" : {
-                        "value" : 0.234, 
+                        "data" : 0.234, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Astrometric declination of antenna in ICRS"
                         }, 
                     "el" : {
-                        "value" : 0.6, 
+                        "data" : 0.6, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Astrometric elevation of antenna"
                         },
                     "epoch" : {
-                        "value" : 2000.0, 
+                        "data" : 2000.0, 
                         "dim"   : 1,
                         "type"  : "float",
                         "units" : "yr",
                         "description" : "Apparent coordinate epoch"
                         },
                     "lst" : {
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Local sidereal time angle for antenna"
                         },
                     "mjd" : {
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "day",
                         "description" : "Modified Julian date for when coordinates are valid"
                         },
                     "ra" : {
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Topocentric apparent RA angle of antenna"
                         },
                     "ra_icrs" : {
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "rad",
                         "description" : "Astrometric RA angle of antenna in ICRS"
                         },
                     "utc" : { 
-                        "value" : 0.15, 
+                        "data" : 0.15, 
                         "dim"   : 1,
                         "type"  : "float64",
                         "units" : "s",

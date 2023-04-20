@@ -19,9 +19,9 @@ def recurse_json_to_struct(node):
     Returns:
         dict : dictionary of Python values ready to be loaded to SMAX"""
     if type(node) is dict:
-        # Detect if this is a leaf SMAX value
-        if "value" in node.keys() and "dim" in node.keys() and "type" in node.keys():
-            return node["value"]
+        # Detect if this is a leaf SMAX node
+        if "data" in node.keys() and "dim" in node.keys() and "type" in node.keys():
+            return node["data"]
         else:
             ret_dict = {}
             for key in node:
@@ -34,7 +34,7 @@ def recurse_json_to_struct(node):
             ret_list.append(recurse_json_to_struct(l))
         return ret_list
     else:
-        # Shouldn't get here unless someone screwed up.
+        # Shouldn't get here.
         return node
     
 
