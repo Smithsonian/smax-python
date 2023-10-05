@@ -34,7 +34,7 @@ def print_smax(smax_value, verbose, indent=0):
         print(indent_str, f"SMA-X value {smax_value.smaxname} :", sep="")
         prefix = "    data   : "
     else:
-        prefix = f"{smax_value.smaxname} : "
+        prefix = f"{smax_value.smaxname.split(':')[-1]} : "
     if smax_value.type == str:
         if smax_value.dim == 1:
             print(indent_str, prefix, smax_value.data, sep="")

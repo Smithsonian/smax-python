@@ -18,7 +18,14 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
-
+        
+      - name: Git checkout server submodule
+        uses: actions/checkout@v2
+        with:
+          repository: Smithsonian/smax-server
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
+          path: redis_config_files
+        
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -40,7 +47,7 @@ jobs:
       - name: Load LUA scripts
         run: |
           cd redis_config_files
-          sudo ./install.sh
+          chmod 755 smax-init.sh
           ./smax-init.sh
 
       - name: Test with pytest

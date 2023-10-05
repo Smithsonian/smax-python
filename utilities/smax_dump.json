@@ -1,0 +1,109 @@
+{
+    "SMAX": {
+        "antenna": {
+            "1": {
+                "comment": {
+                    "data": "Not a real antenna",
+                    "type": "<class 'str'>",
+                    "dim": 1,
+                    "date": 1682008591.875677,
+                    "origin": "ebirah:python",
+                    "seq": 2,
+                    "smaxname": "_testing_:SMAX:antenna:1:comment"
+                },
+                "astrometric": {
+                    "az": {
+                        "data": 1.7,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:az"
+                    },
+                    "dec": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:dec"
+                    },
+                    "dec_icrs": {
+                        "data": 0.234,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:dec_icrs"
+                    },
+                    "el": {
+                        "data": 0.6,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:el"
+                    },
+                    "epoch": {
+                        "data": 2000.0,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:epoch"
+                    },
+                    "lst": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:lst"
+                    },
+                    "mjd": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:mjd"
+                    },
+                    "ra": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:ra"
+                    },
+                    "ra_icrs": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:ra_icrs"
+                    },
+                    "utc": {
+                        "data": 0.15,
+                        "type": "<class 'float'>",
+                        "dim": 1,
+                        "date": 1682008591.875703,
+                        "origin": "ebirah:python",
+                        "seq": 2,
+                        "smaxname": "_testing_:SMAX:antenna:1:astrometric:utc"
+                    }
+                }
+            }
+        }
+    }
+}

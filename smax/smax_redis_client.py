@@ -748,7 +748,7 @@ class SmaxRedisClient(SmaxClient):
         """Purges all volatile tables and keys from Redis.  Use with ultimate caution.
         """
         self._logger.warning(f"Purging all volatile keys")
-        self._client.evalsha(self._purge_volatileSHA)
+        self._client.evalsha(self._purge_volatileSHA, '0')
         
     def smax_dsm_get_table(self, target, key, host=None):
         """Get the SMA-X name that maps to a DSM target, key, and (optionally) host.
