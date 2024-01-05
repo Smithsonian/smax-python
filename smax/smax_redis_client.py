@@ -318,10 +318,19 @@ class SmaxRedisClient(SmaxClient):
         # Copy the data into a variable that we will manipulate for smax.
         converted_data = value
 
+        if python_type == bool:
+            python_type = int
+            type_name = 'integer'
+            converted_data = int(value)
+
         # If type is list or tuple, convert to numpy array for further manipulation.
         if python_type == list or python_type == tuple:
             # Convert to numpy array, dtype="O" preserves the original types.
             converted_data = np.array(value, dtype="O")
+            # Converted boolean arrays to int
+            if converted_data.dtype is bool or converted_data.dtype is np.bool_:
+                converted_data = np.array(value, dtype="np.int")
+            
             python_type = np.ndarray
 
         # Now if its a numpy array, flatten, convert to a string, and return.
@@ -882,8 +891,8 @@ class SmaxRedisClient(SmaxClient):
             Result of redis-py hset function.
         """
         try:
-            result = self._client.hset(f"<{meta}>", table, value)
-            self._logger.info(f"Successfully shared metadata to {table}")
+            result = self._client.hset(f"<{meta}>", table, str(value))
+            self._logger.info(f"Successfully shared metadata {value} to {table}")
             return result
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call hset.")
@@ -922,5 +931,6 @@ _TYPE_MAP = {'integer': int,
              'float64': np.float64,
              'str128': str,
              'str160': str,
-             'str': str}
+             'str': str,
+             'bool': bool}
 _REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
