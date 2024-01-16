@@ -932,5 +932,6 @@ _TYPE_MAP = {'integer': int,
              'str128': str,
              'str160': str,
              'str': str,
-             'bool': bool}
+             'string': str
+             }
 _REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
