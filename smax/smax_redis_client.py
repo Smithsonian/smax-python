@@ -929,8 +929,6 @@ _TYPE_MAP = {'integer': int,
              'float': float,
              'float32': np.float32,
              'float64': np.float64,
-             'str128': str,
-             'str160': str,
              'str': str,
              'string': str
              }
