@@ -148,8 +148,20 @@ class SmaxRedisClient(SmaxClient):
 
         if type_name in _TYPE_MAP:
             data_type = _TYPE_MAP[type_name]
+            if type_name.starts_wtih("int"):
+                # Check if integer is a boolean
+                try:
+                    unit = self.smax_pull_meta(smaxname, 'units')
+                    if unit == "boolean":
+                        data_type = bool
+                except:
+                    pass
         else:
-            raise TypeError(f"I can't deal with data of type {type_name}")
+            # Compatibility for any old deployments of smax-python that include bool
+            if type_name == "bool":
+                data_type = bool
+            else:
+                raise TypeError(f"I can't deal with data of type {type_name}")
 
         # Extract data, origin and sequence from meta data.
         data_date = float(lua_data[3])
@@ -921,7 +933,9 @@ class SmaxRedisClient(SmaxClient):
 
 
 # Lookup tables for converting python types to smax type names.
-_TYPE_MAP = {'integer': int,
+_TYPE_MAP = {
+             'integer': int,
+             'int': int,
              'int16': np.int16,
              'int32': np.int32,
              'int64': np.int64,
