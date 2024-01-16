@@ -148,11 +148,11 @@ class SmaxRedisClient(SmaxClient):
 
         if type_name in _TYPE_MAP:
             data_type = _TYPE_MAP[type_name]
-            if type_name.starts_wtih("int"):
+            if type_name.startswith("int"):
                 # Check if integer is a boolean
                 try:
                     unit = self.smax_pull_meta(smaxname, 'units')
-                    if unit == "boolean":
+                    if unit.startswith("bool"):
                         data_type = bool
                 except:
                     pass
