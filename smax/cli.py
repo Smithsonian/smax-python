@@ -110,7 +110,7 @@ def main():
             confirm = input(f"Really purge everything matching {pattern} [yes/NO] ")
             if confirm.lower() == "yes":
                 if pattern is not None:
-                    fields_del = smax_client.smax_purge(f"{args.table}:{args.key}")
+                    fields_del = smax_client.smax_purge(args.table, args.key)
                     print(f'{fields_del} keys deleted.')   
                 else:
                     print("Table or pattern to delete must be specified")
