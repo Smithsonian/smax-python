@@ -9,7 +9,7 @@ include = ["smax"]  # ["*"] by default
 exclude = ["redis_config_files*"]  # empty by default
 
 [project]
-name = "smax"
+name = "smax-python"
 description = "Python code for interfacing to SMA-X"
 readme = "README.md"
 requires-python = ">=3.7"
