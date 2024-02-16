@@ -9,7 +9,7 @@ import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
 from redis.exceptions import NoScriptError
 
-from .smax_client import SmaxClient, SmaxData
+from .smax_client import SmaxClient, SmaxData, join, normalize_pair
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,

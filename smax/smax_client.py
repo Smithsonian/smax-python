@@ -5,7 +5,6 @@ from collections import namedtuple
 # Named tuples for smax requests and responses.
 SmaxData = namedtuple("SmaxData", "data type dim date origin seq smaxname")
 
-
 class SmaxClient(ABC):
 
     def __init__(self, *args, **kwargs):
@@ -85,3 +84,20 @@ class SmaxClient(ABC):
     @abstractmethod
     def smax_pull_meta(self, table, meta):
         pass
+
+def join(*args):
+    """Join SMA-X tables and keys.
+    
+    params:
+        *args : SMA-X key elements to join
+    """
+    return ":".join(args)
+
+def normalize_pair(*args):
+    """Return a SMA-X table, key pair with exactly one level in the key
+    
+    params:
+        *args : SMA-X key elements to join and split
+    """
+    full_key = join(*args)
+    return full_key.rsplit(":", maxsplit=1)
