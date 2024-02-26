@@ -1,3 +1,4 @@
+import os
 import argparse
 import datetime
 
@@ -55,11 +56,26 @@ def print_smax(smax_value, verbose, indent=0):
     
 
 def main():
+    if "SMAX_SERVER" in os.environ:
+        smax_server = os.environ["SMAX_SERVER"]
+    else:
+        smax_server = default_server
+        
+    if "SMAX_PORT" in os.environ:
+        smax_port = os.environ["SMAX_PORT"]
+    else:
+        smax_port = default_port
+        
+    if "SMAX_DB" in os.environ:
+        smax_db = os.environ["SMAX_DB"]
+    else:
+        smax_db = default_db
+    
     parser = argparse.ArgumentParser(description=desc)
     
-    parser.add_argument("--redis_ip", "-i", help="Host name or IP of SMA-X Redis host", default=default_server)
-    parser.add_argument("--port", "-p", help="Port number of the SMA-X Redis server", default=default_port)
-    parser.add_argument("--db", "-d", help="Database number of the SMA-X Redis database", default=default_db)
+    parser.add_argument("--redis_ip", "-i", help="Host name or IP of SMA-X Redis host", default=smax_server)
+    parser.add_argument("--port", "-p", help="Port number of the SMA-X Redis server", default=smax_port)
+    parser.add_argument("--db", "-d", help="Database number of the SMA-X Redis database", default=smax_db)
 
     parser.add_argument("--table", "-t", help="SMA-X table to pull or push from")
     parser.add_argument("--key", "-k", help="SMA-X key to pull or push")
