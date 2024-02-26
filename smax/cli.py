@@ -2,7 +2,8 @@ import os
 import argparse
 import datetime
 
-from .smax_redis_client import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
+from .smax_redis_client import SmaxRedisClient, join, normalize_pair, print_tree, print_smax, \
+                                _TYPE_MAP, _REVERSE_TYPE_MAP, ConnectionError, TimeoutError
 
 desc = """
 A simple Python command line utility to pull or push SMA-X values.
@@ -11,49 +12,6 @@ A simple Python command line utility to pull or push SMA-X values.
 default_server = "localhost"
 default_port = 6379
 default_db = 0
-
-def print_tree(d, verbose, indent=0):
-    """Walk through a tree of SMA-X values, printing the leaf nodes"""
-    if indent != 0:
-        indent_str = " "*(indent)
-    else:
-        indent_str = ""
-    for k, i in d.items():
-        if type(i) is dict:
-            print(indent_str, k, sep="")
-            print_tree(i, verbose, indent + 4)
-        else:
-            print_smax(i, verbose, indent)
-            
-def print_smax(smax_value, verbose, indent=0):
-    """Print a SMA-X value"""
-    if indent != 0:
-        indent_str = " "*(indent)
-    else:
-        indent_str = ""
-    if verbose:
-        print(indent_str, f"SMA-X value {smax_value.smaxname} :", sep="")
-        prefix = "    data   : "
-    else:
-        prefix = f"{smax_value.smaxname.split(':')[-1]} : "
-    if smax_value.type == str:
-        if smax_value.dim == 1:
-            print(indent_str, prefix, smax_value.data, sep="")
-        else:
-            for l in smax_value.data:
-                print(indent_str, prefix, l, sep="")
-                prefix = " "*len(prefix)
-    else:
-        for l in str(smax_value.data).splitlines():
-            print(indent_str, prefix, l, sep="")
-            prefix = " "*len(prefix)
-    if verbose:
-        print(indent_str, f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}", sep="")
-        print(indent_str, f"    dim    : {smax_value.dim}", sep="")
-        print(indent_str, f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}", sep="")
-        print(indent_str, f"    origin : {smax_value.origin}", sep="")
-        print(indent_str, f"    seq    : {smax_value.seq}", sep="")
-    
 
 def main():
     if "SMAX_SERVER" in os.environ:
@@ -119,19 +77,18 @@ def main():
                 else:
                     print(key)
         elif args.purge:
-            if args.key is None:
-                pattern = args.table
-            else:
-                pattern = f"{args.table}:{args.key}"
-            confirm = input(f"Really purge everything matching {pattern} [yes/NO] ")
-            if confirm.lower() == "yes":
-                if pattern is not None:
+            if args.table is not None or args.key is not None:
+                table, key = normalize_pair(args.table, args.key)
+                pattern = join(table, key)
+                confirm = input(f"Really purge everything matching {pattern} [yes/NO] ")
+                if confirm.lower() == "yes":
                     fields_del = smax_client.smax_purge(args.table, args.key)
-                    print(f'{fields_del} keys deleted.')   
+                    print(f'{fields_del} keys deleted.')
                 else:
-                    print("Table or pattern to delete must be specified")
+                    print('Not confirmed - exiting.')    
             else:
-                print('Not confirmed - exiting.')    
+                print("Table or pattern to delete must be specified")
+            
         elif args.purge_volatile:
             confirm = input("Really purge everything except the 'persistent' branch? [yes/NO] ")
             if confirm.lower() == "yes":
@@ -139,12 +96,13 @@ def main():
             else:
                 print('Not confirmed - exiting.')
         # If set is set, set the value
-        elif args.table is not None and args.key is not None:
+        elif args.table is not None or args.key is not None:
+            table, key = normalize_pair(args.table, args.key)
             if args.set is not None:
                 if args.type is None:
                     # Try to convert set value to the current type of the SMA-X variable
                     try:
-                        smax_type = _REVERSE_TYPE_MAP[smax_client.smax_pull(args.table, args.key).type]
+                        smax_type = _REVERSE_TYPE_MAP[smax_client.smax_pull(table, key).type]
                     except RuntimeError:
                         smax_type = None
                     except (TimeoutError, ConnectionError):
@@ -153,7 +111,7 @@ def main():
                     
                     if smax_type is None:
                         # Value isn't in Redis yet
-                        print(f"Type not given and {args.table}:{args.key} not yet in Redis. Trying to determine best type from int, float, str")
+                        print(f"Type not given and {table}:{key} not yet in Redis. Trying to determine best type from int, float, str")
                         try:
                             v = float(args.set)
                             smax_type = "float"
@@ -178,18 +136,18 @@ def main():
                         val = args.set
                         print(f"Could not convert {args.set} to {smax_type}, falling back to str.")
                     
-                smax_client.smax_share(args.table, args.key, val)
+                smax_client.smax_share(table, key, val)
             # Set not given, so return value
             else:
                 try:
-                    result = smax_client.smax_pull(args.table, args.key)
+                    result = smax_client.smax_pull(table, key)
                 except RuntimeError:
                     result = None
                 except (TimeoutError, ConnectionError):
                     print("Could not connect to Redis")
             
                 if result is None:
-                    print(f"Can't find {args.table}:{args.key} in Redis")
+                    print(f"Can't find {table}:{key} in Redis")
                 else:
                     if type(result) is dict:
                         # We have a struct of SMA-X values and need to walk through the values
