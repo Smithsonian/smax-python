@@ -9,7 +9,7 @@ import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
 from redis.exceptions import NoScriptError
 
-from .smax_client import SmaxClient, SmaxData, join, normalize_pair
+from .smax_client import SmaxClient, SmaxData, join, normalize_pair, _TYPE_MAP, _REVERSE_TYPE_MAP
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -932,18 +932,3 @@ class SmaxRedisClient(SmaxClient):
             raise
 
 
-# Lookup tables for converting python types to smax type names.
-_TYPE_MAP = {
-             'integer': int,
-             'int': int,
-             'int16': np.int16,
-             'int32': np.int32,
-             'int64': np.int64,
-             'int8': np.int8,
-             'float': float,
-             'float32': np.float32,
-             'float64': np.float64,
-             'str': str,
-             'string': str
-             }
-_REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
