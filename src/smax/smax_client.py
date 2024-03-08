@@ -1,9 +1,12 @@
+import datetime
 from abc import ABC, abstractmethod
-from collections import namedtuple
+import numpy as np
 
 
-# Named tuples for smax requests and responses.
-SmaxData = namedtuple("SmaxData", "data type dim date origin seq smaxname")
+from .smax_data_types import SmaxData, \
+    SmaxInt, SmaxFloat, SmaxBool, SmaxStr, SmaxStrArray, SmaxArray, SmaxStruct, \
+    SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, \
+    _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP
 
 class SmaxClient(ABC):
 
@@ -85,6 +88,7 @@ class SmaxClient(ABC):
     def smax_pull_meta(self, table, meta):
         pass
 
+
 def join(*args):
     """Join SMA-X tables and keys.
     
@@ -92,6 +96,7 @@ def join(*args):
         *args : SMA-X key elements to join
     """
     return ":".join(args)
+
 
 def normalize_pair(*args):
     """Return a SMA-X table, key pair with exactly one level in the key
@@ -101,6 +106,7 @@ def normalize_pair(*args):
     """
     full_key = join(*args)
     return full_key.rsplit(":", maxsplit=1)
+
 
 def print_tree(d, verbose, indent=0):
     """Walk through a tree of SMA-X values, printing the leaf nodes"""
@@ -114,7 +120,8 @@ def print_tree(d, verbose, indent=0):
             print_tree(i, verbose, indent + 4)
         else:
             print_smax(i, verbose, indent)
-            
+
+
 def print_smax(smax_value, verbose, indent=0):
     """Print a SMA-X value"""
     if indent != 0:
@@ -143,19 +150,4 @@ def print_smax(smax_value, verbose, indent=0):
         print(indent_str, f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}", sep="")
         print(indent_str, f"    origin : {smax_value.origin}", sep="")
         print(indent_str, f"    seq    : {smax_value.seq}", sep="")
-        
-# Lookup tables for converting python types to smax type names.
-_TYPE_MAP = {
-             'integer': int,
-             'int': int,
-             'int16': np.int16,
-             'int32': np.int32,
-             'int64': np.int64,
-             'int8': np.int8,
-             'float': float,
-             'float32': np.float32,
-             'float64': np.float64,
-             'str': str,
-             'string': str
-             }
-_REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
+
