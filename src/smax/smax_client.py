@@ -6,7 +6,8 @@ import numpy as np
 from .smax_data_types import SmaxData, \
     SmaxInt, SmaxFloat, SmaxBool, SmaxStr, SmaxStrArray, SmaxArray, SmaxStruct, \
     SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, \
-    _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP
+    _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
+    optional_metadata
 
 class SmaxClient(ABC):
 
@@ -150,4 +151,10 @@ def print_smax(smax_value, verbose, indent=0):
         print(indent_str, f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}", sep="")
         print(indent_str, f"    origin : {smax_value.origin}", sep="")
         print(indent_str, f"    seq    : {smax_value.seq}", sep="")
+        for meta in optional_metadata:
+            if hasattr(smax_value, meta):
+                if getattr(smax_value, meta) is not None:
+                    print(indent_str, f"    {meta} : {getattr(smax_value, meta)}", sep="")
+                    
+        
 

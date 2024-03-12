@@ -1,7 +1,7 @@
 import os
 import logging
 import socket
-from datetime import datetime
+import datetime
 from fnmatch import fnmatch
 
 import psutil
@@ -9,10 +9,7 @@ import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
 from redis.exceptions import NoScriptError
 
-from .smax_client import SmaxClient, SmaxFloat, SmaxInt, SmaxStr, SmaxStrArray, \
-                         SmaxStruct, SmaxArray, SmaxInt16, SmaxInt32, SmaxInt64, SmaxInt8, \
-                         SmaxFloat32, SmaxFloat64, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
-                         _TYPE_MAP, _REVERSE_TYPE_MAP, optional_metadata
+from .smax_client import SmaxClient, SmaxData, join, normalize_pair, _TYPE_MAP, _REVERSE_TYPE_MAP
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -133,7 +130,8 @@ class SmaxRedisClient(SmaxClient):
             self._client.connection.disconnect()
         self._logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
-    def _parse_lua_pull_response(self, lua_data, smaxname, pull_meta=False):
+    @staticmethod
+    def _parse_lua_pull_response(lua_data, smaxname):
         """
         Private method to parse the response from calling the HGetWithMeta LUA
         script.
@@ -142,73 +140,69 @@ class SmaxRedisClient(SmaxClient):
             smaxname (str): Full name of the SMAX table and key
 
         Returns:
-            Smax<var>: Populated Smax<var> dataclass object.
+            SmaxData: Populated SmaxData NamedTuple object.
         """
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
-        self._logger.debug(f"_parse_lua_pull_response() got type {type_name}")
 
-        if type_name in _SMAX_TYPE_MAP:
-            data_type = _SMAX_TYPE_MAP[type_name]
-            self._logger.debug(f"{type_name} maps to type {data_type.__name__}")
+        if type_name in _TYPE_MAP:
+            data_type = _TYPE_MAP[type_name]
+            if type_name.startswith("int"):
+                # Check if integer is a boolean
+                try:
+                    unit = self.smax_pull_meta(smaxname, 'units')
+                    if unit.startswith("bool"):
+                        data_type = bool
+                except:
+                    pass
         else:
-            self._logger.debug(f"I can't deal with data of type {type_name}, defaulting to 'string'")
-            type_name = "string"
-            data_type = SmaxStr
+            # Compatibility for any old deployments of smax-python that include bool
+            if type_name == "bool":
+                data_type = bool
+            else:
+                raise TypeError(f"I can't deal with data of type {type_name}")
 
         # Extract data, origin and sequence from meta data.
-        data_date = datetime.utcfromtimestamp(float(lua_data[3]))
+        data_date = float(lua_data[3])
         origin = lua_data[4].decode("utf-8")
         sequence = int(lua_data[5])
-        
 
         # Extract dimension information from meta data.
         data_dim = tuple(int(s) for s in lua_data[2].decode("utf-8").split())
-        self._logger.debug(f"_parse_lua_pull_response() got data_dim {data_dim}")
+
         # If only one dimension convert to a single value (rather than list)
         if len(data_dim) == 1:
-            self._logger.debug(f"_parse_lua_pull_response() truncating data_dim to single value {data_dim[0]}")
             data_dim = data_dim[0]
-
+        
         # If there is only a single value, cast to the appropriate type and return.
         if data_dim == 1:
-            if type_name == 'string':
-                strdata = lua_data[0].decode("utf-8")
-                data = data_type(strdata, type=type_name, dim=data_dim, timestamp=data_date, \
-                                origin=origin, seq=sequence, smaxname=smaxname)
+            if data_type == str:
+                data = lua_data[0].decode("utf-8")
             else:
-                # Use the builtin base type's conversion from string to that type
-                data = data_type(lua_data[0], type=type_name, dim=data_dim, timestamp=data_date, origin=origin, seq=sequence, smaxname=smaxname)
+                data = data_type(lua_data[0])
+            return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
 
         # This is some kind of array.
         else:
+            data = lua_data[0].decode("utf-8").split(" ")
+
             # If this is a list of strings, just clean up string and return.
-            if type_name == 'string':
-                data = lua_data[0].decode("utf-8").split("\r")
+            if data_type == str:
                 # Remove the leading and trailing \' in each string in the list.
                 data = [s.strip("\'") for s in data]
-                return SmaxStrArray(data, type=type_name, dim=data_dim, timestamp=data_date, \
-                        origin=origin, seq=sequence, smaxname=smaxname)
+                return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
             else:
-                data = lua_data[0].decode("utf-8").split(" ")
                 # Use numpy for all other numerical types
-                data = SmaxArray(data, type=type_name, dim=data_dim, \
-                        timestamp=data_date, origin=origin, seq=sequence, smaxname=smaxname)
+                data = np.array(data, dtype=data_type)
 
-        # Get additional meta data.
-        if pull_meta:
-            for meta in optional_metadata:
-                try:
-                    m = self.smax_pull_meta(meta, smaxname)
-                except:
-                    continue
-                if m is not None:
-                    setattr(data, meta, m)
+            # If this is a multi-dimensional array, reshape with numpy.
+            if type(data_dim) == tuple:  # n-d array
+                data = data.reshape(data_dim)
 
-        return data
+            return SmaxData(data, data_type, data_dim, data_date, origin, sequence, smaxname)
 
-    def smax_pull(self, table, key, pull_meta=False):
+    def smax_pull(self, table, key):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
         the associated metadata. The return value will an SmaxData object
@@ -218,10 +212,10 @@ class SmaxRedisClient(SmaxClient):
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
-            pull_meta (bool): Flag whether to pull optional metadata
 
         Returns:
-            Smax<type>: Populated Smax<type> dataclass object.
+            SmaxData: Populated SmaxData NamedTuple object.
+            dict: If a struct is pulled, this returns a nested dictionary.
         """
 
         try:
@@ -251,16 +245,6 @@ class SmaxRedisClient(SmaxClient):
         # If the lua response says its a struct we have to now use another LUA
         # script to go back to redis and collect the struct.
         if type_name == "struct":
-            lua_dim = int(lua_data[2])  # assuming that structs can't be multidimensional arrays
-            lua_date = datetime.utcfromtimestamp(float(lua_data[3]))
-            if lua_data[4]:
-                lua_origin = lua_data[4].decode("utf-8")
-            else:
-                lua_origin = ""
-            if lua_data[5]:
-                lua_sequence = int(lua_data[5])
-            else:
-                lua_sequence = -1
             try:
                 lua_struct = self._client.evalsha(self._get_structSHA, '1', f"{table}:{key}")
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
@@ -273,33 +257,21 @@ class SmaxRedisClient(SmaxClient):
                 raise
 
             # The struct will be parsed into a nested python dictionary.
-            tree = SmaxStruct({}, dim=lua_dim, timestamp=lua_date, origin=lua_origin, seq=lua_sequence, smaxname=f"{table}:{key}")
-            
-            if pull_meta:
-                for meta in optional_metadata:
-                    try:
-                        m = self.smax_pull_meta(meta, smaxname)
-                    except:
-                        continue
-                    if m is not None:
-                        setattr(tree, meta, m)
-            
+            tree = {}
             for struct_name_index, struct_name in enumerate(lua_struct[0]):
                 t = tree
                 names = struct_name.decode("utf-8").replace(f"{table}:", "", 1).split(':')
 
                 for table_name_index, table_name in enumerate(names):
-                    offset = struct_name_index + struct_name_index + 1
-                    smaxname = struct_name.decode("utf-8") + ":" + table_name
-                            
+
                     # Grow a new hierarchical level with a blank dictionary.
-                    t = t.setdefault(table_name, SmaxStruct({}, dim=lua_dim, timestamp=lua_date, \
-                        origin=lua_origin, seq=lua_sequence, smaxname=smaxname))
+                    t = t.setdefault(table_name, {})
 
                     # If this is the last name in the path, add actual data.
                     if table_name_index == len(names) - 1:
 
                         # Create offset indices for more readable code.
+                        offset = struct_name_index + struct_name_index + 1
                         offset2 = struct_name_index + struct_name_index + 2
 
                         # Process leaf node like it is a normal smax_pull.
@@ -322,17 +294,17 @@ class SmaxRedisClient(SmaxClient):
                             smaxname = struct_name.decode("utf-8") + ":" + leaf.decode("utf-8")
                             smax_data_object = self._parse_lua_pull_response(
                                 [lua_data, lua_type, lua_dim, lua_date,
-                                 lua_origin, lua_sequence], smaxname, pull_meta)
+                                 lua_origin, lua_sequence], smaxname)
 
                             # Add SmaxData object into the nested dictionary.
                             t.setdefault(lua_struct[offset][leaf_index].decode("utf-8"),
                                          smax_data_object)
-            
             return tree
 
         return self._parse_lua_pull_response(lua_data, f"{table}:{key}")
 
-    def _to_smax_format(self, value):
+    @staticmethod
+    def _to_smax_format(value):
         """
         Private function that converts a given data value to the string format
         that SMAX supports.
@@ -349,35 +321,32 @@ class SmaxRedisClient(SmaxClient):
         # Single value of a supported type, cast to string and send to redis.
         if python_type in _REVERSE_TYPE_MAP:
             type_name = _REVERSE_TYPE_MAP[python_type]
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
             return str(value), type_name, 1
-        
-        if python_type in _REVERSE_SMAX_TYPE_MAP:
-            type_name = _REVERSE_SMAX_TYPE_MAP[python_type]
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
-            return str(value), type_name, 1
+
+        # If this is an SmaxData object, just pass along the data attribute.
+        if python_type == SmaxData:
+            value = value.data
 
         # Copy the data into a variable that we will manipulate for smax.
         converted_data = value
 
+        if python_type == bool:
+            python_type = int
+            type_name = 'integer'
+            converted_data = int(value)
+
         # If type is list or tuple, convert to numpy array for further manipulation.
-        if python_type == list or python_type == tuple or python_type == SmaxStrArray:
-            ppython_type = type(value[0]).__name__
-            self._logger.debug(f"_to_smax_format working on a list of type {str(ppython_type)}")
-            size = len(value)
-            if ppython_type == "str":
-                # We have a string array.  This needs to be concatenated with '\r' and uploaded as a string
-                converted_data = "\r".join(value)
-                type_name = "string"
-                self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-                return converted_data, type_name, size
-            else:
-                # Convert to numpy array, dtype="O" preserves the original types.
-                converted_data = np.array(value, dtype="O")
+        if python_type == list or python_type == tuple:
+            # Convert to numpy array, dtype="O" preserves the original types.
+            converted_data = np.array(value, dtype="O")
+            # Converted boolean arrays to int
+            if converted_data.dtype is bool or converted_data.dtype is np.bool_:
+                converted_data = np.array(value, dtype="np.int")
+            
             python_type = np.ndarray
 
         # Now if its a numpy array, flatten, convert to a string, and return.
-        if python_type == np.ndarray or python_type == np.array or python_type == SmaxArray:
+        if python_type == np.ndarray or python_type == np.array:
 
             # If the shape is a single dimension, set 'size' equal to that value.
             data_shape = converted_data.shape
@@ -389,26 +358,18 @@ class SmaxRedisClient(SmaxClient):
 
                 # Flatten and make a space delimited string of dimensions.
                 converted_data = converted_data.flatten()
-        
+
             # Check this 1D representation of the data for type uniformity.
             if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
                 raise TypeError("All values in list are not the same type.")
 
-            if type(converted_data[0]) in _REVERSE_TYPE_MAP:
-                type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
-            elif type(converted_data[0]) in _REVERSE_SMAX_TYPE_MAP:
-                type_name = _REVERSE_SMAX_TYPE_MAP[type(converted_data[0])]
-            else:
-                self._logger.warning(f"Did not recognize type {python_type}, storing as string.")
-                type_name = "string"
-                
+            type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
+
             # Create a string representation of the data in the array.
             converted_data = ' '.join(str(x) for x in converted_data)
-            self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
             return converted_data, type_name, size
 
         else:
-            self._logger.error(f"Unable to convert {python_type} for SMAX.")
             raise TypeError(f"Unable to convert {python_type} for SMAX")
 
     def _recurse_nested_dict(self, dictionary):
@@ -490,7 +451,7 @@ class SmaxRedisClient(SmaxClient):
             tables[tab].extend([field[1], converted_data, type_name, dim])
         return tables
 
-    def smax_share(self, table, key, value, push_meta=False):
+    def smax_share(self, table, key, value):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -502,19 +463,13 @@ class SmaxRedisClient(SmaxClient):
             table (str): SMAX table name
             key (str): SMAX key name
             value: data to store, takes supported types, including (nested) dicts.
-            push_meta (bool): Push optional metadata if present in object 
-                            (does not work for SmaxStructs and is not atomic).
 
         Returns:
             return value from redis-py's evalsha() function.
         """
+
         # If this is not a dict, then convert data to smax format and send.
         if not isinstance(value, dict):
-            if push_meta:
-                if type(value) in _REVERSE_SMAX_TYPE_MAP:
-                    for meta in optional_metadata:
-                        if hasattr(value, meta):
-                            self.smax_push_meta(meta, table, getattr(value, meta))
             converted_data, type_name, size = self._to_smax_format(value)
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
@@ -918,19 +873,19 @@ class SmaxRedisClient(SmaxClient):
         return self.smax_push_meta("description", table, description)
 
     def smax_get_description(self, table):
-        return self.smax_pull_meta("description", table)
+        return self.smax_pull_meta(table, "description")
 
     def smax_set_units(self, table, unit):
         return self.smax_push_meta("units", table, unit)
 
     def smax_get_units(self, table):
-        return self.smax_pull_meta("units", table)
+        return self.smax_pull_meta(table, "units")
 
     def smax_set_coordinate_system(self, table, coordinate_system):
-        self.smax_push_meta("coords", table, coordinate_system)
+        raise NotImplementedError("Available in C API, not in python")
 
     def smax_get_coordinate_system(self, table):
-        self.smax_pull_meta("coords", table)
+        raise NotImplementedError("Available in C API, not in python")
 
     def smax_create_coordinate_system(self, n_axis):
         raise NotImplementedError("Available in C API, not in python")
@@ -948,14 +903,14 @@ class SmaxRedisClient(SmaxClient):
             Result of redis-py hset function.
         """
         try:
-            result = self._client.hset(f"<{meta}>", table, value)
-            self._logger.info(f"Successfully shared metadata to {table}")
+            result = self._client.hset(f"<{meta}>", table, str(value))
+            self._logger.info(f"Successfully shared metadata {value} to {table}")
             return result
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call hset.")
             raise
 
-    def smax_pull_meta(self, meta, table):
+    def smax_pull_meta(self, table, meta):
         """
         Pulls specified metadata field from a given table.
         Args:
@@ -975,4 +930,5 @@ class SmaxRedisClient(SmaxClient):
         except (ConnectionError, TimeoutError):
             self._logger.error("Redis seems down, unable to call hget.")
             raise
+
 

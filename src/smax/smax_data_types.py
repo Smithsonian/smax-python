@@ -58,6 +58,12 @@ SmaxData = namedtuple("SmaxData", "data type dim date origin seq smaxname")
 # A .data property is included for backwards compatibility with the SmaxData
 # named tuple above.
 
+optional_metadata = [
+    "description",
+    "unit",
+    "coords"
+]
+
 @dataclass
 class SmaxVarBase(object):
     """Class defining the metadata for SMA-X data types.
@@ -266,7 +272,10 @@ class SmaxArray(UserArray, SmaxVarBase):
         except AttributeError:
             pass
         
-        self.dim = self.shape
+        if len(self.shape) == 1:
+            self.dim = self.shape[0]
+        else:
+            self.dim = self.shape
         self.type = _REVERSE_TYPE_MAP[self.dtype.type]
             
     def __repr__(self):

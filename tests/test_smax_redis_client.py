@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from redis import TimeoutError
 
-from smax import SmaxRedisClient
+from smax import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP
 
 smax_redis_ip = "127.0.0.1"
 
@@ -53,7 +53,7 @@ def smax_client():
     
 def test_context_manager():
     expected_data = "just a context manager string"
-    expected_type = str
+    expected_type = "string"
     expected_dim = 1
     table = "test_context_manager"
     key = "pytest"
@@ -61,6 +61,7 @@ def test_context_manager():
         s.smax_share(table, key, expected_data)
         result = s.smax_pull(table, key)
 
+    assert result == expected_data
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -69,12 +70,13 @@ def test_context_manager():
 
 def test_roundtrip_string(smax_client):
     expected_data = "just a roundtrip string"
-    expected_type = str
+    expected_type = "string"
     expected_dim = 1
     table = "test_roundtrip_string"
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
+    assert result == expected_data
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -83,12 +85,13 @@ def test_roundtrip_string(smax_client):
 
 def test_roundtrip_int(smax_client):
     expected_data = 123456789
-    expected_type = int
+    expected_type = "integer"
     expected_dim = 1
     table = "test_roundtrip_int"
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
+    assert result == expected_data
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -97,12 +100,13 @@ def test_roundtrip_int(smax_client):
 
 def test_roundtrip_string_list(smax_client):
     expected_data = ["i", "am", "list"]
-    expected_type = str
-    expected_dim = 3
+    expected_type = "string"
+    expected_dim = len(expected_data)
     table = "test_roundtrip_string_list"
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
+    assert result == expected_data
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -112,7 +116,7 @@ def test_roundtrip_string_list(smax_client):
 def test_roundtrip_int_list(smax_client):
     data = [0, 1, -1, 100000]
     expected_data = np.array(data)
-    expected_type = type(data[0])
+    expected_type = _REVERSE_TYPE_MAP[expected_data.dtype.type]
     expected_dim = len(data)
     table = "test_roundtrip_int_list"
     key = "pytest"
@@ -127,12 +131,13 @@ def test_roundtrip_int_list(smax_client):
 def test_roundtrip_float_list(smax_client):
     data = [0.0, 1.12345, -1.54321, 100000.12345]
     expected_data = np.array(data)
-    expected_type = expected_data.dtype
+    expected_type = _REVERSE_TYPE_MAP[expected_data.dtype.type]
     expected_dim = len(data)
     table = "test_roundtrip_float_list"
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
+    assert np.array_equal(result, expected_data)
     assert np.array_equal(result.data, expected_data.data)
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -143,13 +148,14 @@ def test_roundtrip_2d_float_array(smax_client):
     expected_data = np.array([[0.0, 1.1],
                               [1.12345, 2.123456],
                               [-1.654321, -1.54321]])
-    expected_type = expected_data.dtype
+    expected_type = _REVERSE_TYPE_MAP[expected_data.dtype.type]
     expected_dim = expected_data.shape
     table = "test_roundtrip_2d_float_array"
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
-    assert np.array_equal(result.data, expected_data.data)
+    assert np.array_equal(result, expected_data)
+    assert np.array_equal(result.data, expected_data)
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
@@ -157,7 +163,7 @@ def test_roundtrip_2d_float_array(smax_client):
 
 def test_pubsub(smax_client):
     expected_data = "just a string"
-    expected_type = str
+    expected_type = 'string'
     expected_dim = 1
     table = "test_pubsub"
     key = "pytest"
@@ -172,7 +178,7 @@ def test_pubsub(smax_client):
 
 def test_pubsub_pattern(smax_client):
     expected_data = "just a string"
-    expected_type = str
+    expected_type = 'string'
     expected_dim = 1
     table = "test_pubsub_pattern"
     key = "pytest"
@@ -187,7 +193,7 @@ def test_pubsub_pattern(smax_client):
 
 def test_pubsub_with_timeout(smax_client):
     expected_data = "just a timeout string"
-    expected_type = str
+    expected_type = 'string'
     expected_dim = 1
     table = "test_pubsub_with_timeout"
     key = "pytest"
@@ -362,9 +368,8 @@ def test_pull_struct(smax_client):
     expected_temp_value2 = np.array([24, 42], dtype=np.int32)
     expected_firmware_value1 = 1.0
     expected_firmware_value2 = 1.1
-    expected_type_temp = np.int32
     expected_dim_temp = 2
-    expected_type_firmware = float
+    expected_type_firmware = 'float'
     expected_dim_firmware = 1
 
     table = "test_pull_struct"
@@ -385,8 +390,8 @@ def test_pull_struct(smax_client):
     assert (roach02_temp.data == expected_temp_value2).all()
     assert roach01_firmware.data == expected_firmware_value1
     assert roach02_firmware.data == expected_firmware_value2
-    assert roach01_temp.type == expected_type_temp
-    assert roach02_temp.type == expected_type_temp
+    assert roach01_temp.type == _REVERSE_TYPE_MAP[expected_temp_value1.dtype.type]
+    assert roach02_temp.type == _REVERSE_TYPE_MAP[expected_temp_value2.dtype.type]
     assert roach01_firmware.type == expected_type_firmware
     assert roach02_firmware.type == expected_type_firmware
     assert roach01_temp.dim == expected_dim_temp
@@ -401,9 +406,9 @@ def test_share_struct(smax_client):
     expected_temp_value2 = 0
     expected_firmware_value1 = 2.0
     expected_firmware_value2 = 2.1
-    expected_type_temp = int
+    expected_type_temp = 'integer'
     expected_dim_temp = 1
-    expected_type_firmware = float
+    expected_type_firmware = 'float'
     expected_dim_firmware = 1
 
     struct = {"roach2-03": {"temp": expected_temp_value1, "firmware": expected_firmware_value1},
@@ -448,7 +453,7 @@ def test_roundtrip_meta(smax_client):
     smax_client.smax_push_meta("timestamps", f"{table}:{key}", expected_value)
 
     # Now pull just metadata.
-    result = smax_client.smax_pull_meta(f"{table}:{key}", "timestamps")
+    result = smax_client.smax_pull_meta("timestamps", f"{table}:{key}")
     assert result == expected_value
 
 
