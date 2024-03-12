@@ -521,8 +521,10 @@ class TestSmaxFloatArray:
         shape = (5, 4)
         pi = 3.141259
         
-        a = np.full(shape, pi, dtype=float)
+        a = np.full(shape, pi, dtype=np.float64)
+        print(a)
         b = SmaxArray(a)
+        print(b)
         
         assert a == pytest.approx(b)
         
@@ -530,7 +532,7 @@ class TestSmaxFloatArray:
         shape = (5, 4)
         pi = 3.141259
         
-        a = np.full(shape, pi, dtype=float)
+        a = np.full(shape, pi, dtype=np.float64)
         timestamp = datetime.datetime.fromtimestamp(100000000)
         origin = "pytest"
         seq = 2
@@ -538,7 +540,7 @@ class TestSmaxFloatArray:
         desc = "A test SmaxFloat"
         unit = "V"
         
-        b = SmaxArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, type='float', description=desc, unit=unit)
+        b = SmaxArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, type='float64', description=desc, unit=unit)
         
         assert a == pytest.approx(b)
         assert a == pytest.approx(b.data)
@@ -546,7 +548,7 @@ class TestSmaxFloatArray:
         assert origin == b.origin
         assert seq == b.seq
         assert smaxname == b.smaxname
-        assert "float" == b.type
+        assert "float64" == b.type
         # b.dim should be automatically created if not supplied
         assert shape == b.dim
         assert desc == b.description
@@ -565,13 +567,14 @@ class TestSmaxFloatArray:
         
         assert c.shape == shape
         assert c.dim == shape
+        assert type(c) == SmaxArray
         
     def test_addition(self):
         shape = (5, 4)
         pi = 3.141259
         
-        a = np.arange(1*pi, 20*pi, pi)
-        c = np.arange(1/pi, 20*1/pi, 1/pi)
+        a = np.arange(0, 20*pi, pi)
+        c = np.arange(0, 20*1/pi, 1/pi)
         timestamp = datetime.datetime.fromtimestamp(100000000)
         origin = "pytest"
         seq = 2

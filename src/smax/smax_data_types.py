@@ -67,7 +67,7 @@ class SmaxVarBase(object):
     origin: str | None  = field(kw_only=True, default = None)
     seq: int = field(kw_only=True, default = 1)
     smaxname: str | None = field(kw_only=True, default=None)
-    dim: int = field(kw_only=True, default=1)
+    dim: int | tuple = field(kw_only=True, default=1)
     description: str | None = field(kw_only=True, default=None)
     unit: str | None = field(kw_only=True, default=None)
     coords: Any | None = field(kw_only=True, default=None)
@@ -234,21 +234,23 @@ class UserArray(np.ndarray):
         
         if 'dim' in kwargs.keys():
             shape = kwargs['dim']
+        elif hasattr(args[0], 'shape'):
+            shape = args[0].shape
         else:
             shape = None
-        
+            
         if 'type' in kwargs.keys():
             datatype = kwargs['type']
             dtype = _TYPE_MAP[datatype]
         else:
-            dtype = None
-            
-        x = np.array(args[0], dtype=dtype, subok=True).view(cls)
+            dtype = args[0].dtype
+        
+        x = np.array(args[0], dtype=dtype).view(cls).copy()
+        
         if shape:
             x.resize(shape)
         
         return x
-
 
 @dataclass
 class SmaxArray(UserArray, SmaxVarBase):
@@ -256,22 +258,20 @@ class SmaxArray(UserArray, SmaxVarBase):
     data: InitVar[np.ndarray | list]
     type: str | None = field(kw_only=True, default=None)
         
-    def __repr__(self):
-        return super().__repr__()
-    
-    def __array_finalize__(self, obj):
-        print("In array_finalize")
+    def __post_init__(self, *args, **kwargs):
         try:
-            for f in obj.__dataclass_fields__.keys():
+            for f in self.__dataclass_fields__.keys():
                 if f != 'data':
-                    setattr(self, f, getattr(obj, f))
+                    setattr(self, f, getattr(self, f))
         except AttributeError:
             pass
         
         self.dim = self.shape
         self.type = _REVERSE_TYPE_MAP[self.dtype.type]
-        
-        
+            
+    def __repr__(self):
+        return super().__repr__()
+    
     @property
     def data(self):
         return self
