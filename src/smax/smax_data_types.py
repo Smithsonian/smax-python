@@ -262,6 +262,9 @@ class UserArray(np.ndarray):
 class SmaxArray(UserArray, SmaxVarBase):
     """Class for holding SMA-X array objects, with their metadata"""
     data: InitVar[np.ndarray | list]
+    # Don't set type during __post_init__, as Python floats will get
+    # converted to np.float64 for array storage.
+    # Instead, maintain the SMA-X type.
     type: str | None = field(kw_only=True, default=None)
         
     def __post_init__(self, *args, **kwargs):
@@ -276,8 +279,7 @@ class SmaxArray(UserArray, SmaxVarBase):
             self.dim = self.shape[0]
         else:
             self.dim = self.shape
-        self.type = _REVERSE_TYPE_MAP[self.dtype.type]
-            
+        
     def __repr__(self):
         return super().__repr__()
     

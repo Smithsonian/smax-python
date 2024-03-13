@@ -1,7 +1,8 @@
 import os
+from collections.abc import Container
 import logging
 import socket
-from datetime import datetime
+from datetime import datetime, timezone
 from fnmatch import fnmatch
 
 import psutil
@@ -158,7 +159,7 @@ class SmaxRedisClient(SmaxClient):
             data_type = SmaxStr
 
         # Extract data, origin and sequence from meta data.
-        data_date = datetime.utcfromtimestamp(float(lua_data[3]))
+        data_date = datetime.fromtimestamp(float(lua_data[3]), timezone.utc)
         origin = lua_data[4].decode("utf-8")
         sequence = int(lua_data[5])
         
@@ -252,7 +253,7 @@ class SmaxRedisClient(SmaxClient):
         # script to go back to redis and collect the struct.
         if type_name == "struct":
             lua_dim = int(lua_data[2])  # assuming that structs can't be multidimensional arrays
-            lua_date = datetime.utcfromtimestamp(float(lua_data[3]))
+            lua_date = datetime.fromtimestamp(float(lua_data[3]), timezone.utc)
             if lua_data[4]:
                 lua_origin = lua_data[4].decode("utf-8")
             else:
@@ -342,74 +343,109 @@ class SmaxRedisClient(SmaxClient):
         Returns:
             tuple: tuple of (data_string, type_name, dim_string)
         """
-
+        # First determine the SMA-X type of value.
+        
         # Derive the type according to Python.
         python_type = type(value)
-
-        # Single value of a supported type, cast to string and send to redis.
+        
+        self._logger.debug(f"_to_smax_format received {value}, type {str(python_type)}")
+        self._logger.debug(f"_to_smax_format 'type is list': {python_type is list}")
+        
+        # Single value of a supported python or numpy type, cast to string and send to redis.
         if python_type in _REVERSE_TYPE_MAP:
             type_name = _REVERSE_TYPE_MAP[python_type]
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
+            
             return str(value), type_name, 1
         
-        if python_type in _REVERSE_SMAX_TYPE_MAP:
-            type_name = _REVERSE_SMAX_TYPE_MAP[python_type]
+        # Single value of a Smax<var> type
+        elif python_type in _REVERSE_SMAX_TYPE_MAP:
+            type_name = value.type
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
+            
             return str(value), type_name, 1
 
-        # Copy the data into a variable that we will manipulate for smax.
-        converted_data = value
-
-        # If type is list or tuple, convert to numpy array for further manipulation.
-        if python_type == list or python_type == tuple or python_type == SmaxStrArray:
-            ppython_type = type(value[0]).__name__
-            self._logger.debug(f"_to_smax_format working on a list of type {str(ppython_type)}")
-            size = len(value)
-            if ppython_type == "str":
-                # We have a string array.  This needs to be concatenated with '\r' and uploaded as a string
-                converted_data = "\r".join(value)
-                type_name = "string"
-                self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-                return converted_data, type_name, size
+        # We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)
+        elif isinstance(value, Container):
+            a = value[0]
+            data_shape = [len(value)]
+            # recursively move down a level in the collection hierarchy
+            while True:
+                if isinstance(a, str):
+                    break
+                elif isinstance(a, Container):
+                    data_shape.append(len(a))
+                    a = a[0]
+                else:
+                    break  
+            
+            if python_type is SmaxArray:
+                # Preserve the SMA-X type
+                type_name = value.type
+            elif type(a) in _REVERSE_TYPE_MAP:
+                type_name = _REVERSE_TYPE_MAP[type(a)]
+            elif type(a) in _REVERSE_SMAX_TYPE_MAP:
+                type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
             else:
+                self._logger.warning(f"Did not recognize type {str(type(a))}, storing as string or string array.")
+                type_name = "string"
+
+            # Either convert to a string array, or to an numpy.ndarray
+            if python_type is list or python_type is tuple or python_type is SmaxStrArray:
+                self._logger.debug(f"_to_smax_format working on a {python_type} of type {type_name}")
+                if type_name == "string":
+                    # We have a string array of unknown (and possibly variable) depth.  This needs to be concatenated with '\r' and uploaded as a string
+                    values = []
+                    def flatten(v):
+                        for item in v:
+                            if isinstance(item, str):
+                                values.append(item)
+                            elif isinstance(item, Container):
+                                flatten(item)
+                            else:
+                                values.append(item)
+                    flatten(value)
+                    converted_data = "\r".join(values)
+                    if python_type is SmaxStrArray:
+                        size = value.dim
+                    else:
+                        size = len(values)
+                    type_name = "string"
+                    self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
+                    return converted_data, type_name, size
+                else:
+                    python_type = np.ndarray
+                    
+            # Now if its a numpy array, flatten, convert to a string, and return.
+            if python_type == np.ndarray or python_type == SmaxArray:
                 # Convert to numpy array, dtype="O" preserves the original types.
                 converted_data = np.array(value, dtype="O")
-            python_type = np.ndarray
+                # If the shape is a single dimension, set 'size' equal to that value.
+                data_shape = converted_data.shape
+                if len(data_shape) == 1:
+                    size = data_shape[0]
+                else:
+                    # Convert shape tuple to a space delimited list for smax.
+                    size = " ".join(str(i) for i in data_shape)
 
-        # Now if its a numpy array, flatten, convert to a string, and return.
-        if python_type == np.ndarray or python_type == np.array or python_type == SmaxArray:
+                    # Flatten and make a space delimited string of dimensions.
+                    converted_data = converted_data.flatten()
+            
+                # Check this 1D representation of the data for type uniformity.
+                if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
+                    raise TypeError("All values in list are not the same type.")
 
-            # If the shape is a single dimension, set 'size' equal to that value.
-            data_shape = converted_data.shape
-            if len(data_shape) == 1:
-                size = data_shape[0]
-            else:
-                # Convert shape tuple to a space delimited list for smax.
-                size = " ".join(str(i) for i in data_shape)
-
-                # Flatten and make a space delimited string of dimensions.
-                converted_data = converted_data.flatten()
-        
-            # Check this 1D representation of the data for type uniformity.
-            if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
-                raise TypeError("All values in list are not the same type.")
-
-            if type(converted_data[0]) in _REVERSE_TYPE_MAP:
-                type_name = _REVERSE_TYPE_MAP[type(converted_data[0])]
-            elif type(converted_data[0]) in _REVERSE_SMAX_TYPE_MAP:
-                type_name = _REVERSE_SMAX_TYPE_MAP[type(converted_data[0])]
-            else:
-                self._logger.warning(f"Did not recognize type {python_type}, storing as string.")
-                type_name = "string"
-                
-            # Create a string representation of the data in the array.
-            converted_data = ' '.join(str(x) for x in converted_data)
-            self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-            return converted_data, type_name, size
-
+                self._logger.debug(f"_to_smax_format converted_data.dtype.type : {converted_data.dtype.type}")
+                    
+                # Create a string representation of the data in the array.
+                converted_data = ' '.join(str(x) for x in converted_data)
+                self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
+                return converted_data, type_name, size
+        # Single value of an unknown type
         else:
-            self._logger.error(f"Unable to convert {python_type} for SMAX.")
-            raise TypeError(f"Unable to convert {python_type} for SMAX")
+            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as string.")
+            type_name = "string"
+            return str(value), type_name, 1
 
     def _recurse_nested_dict(self, dictionary):
         """
