@@ -200,6 +200,7 @@ class SmaxRedisClient(SmaxClient):
         # Get additional meta data.
         if pull_meta:
             for meta in optional_metadata:
+                m = None
                 try:
                     m = self.smax_pull_meta(meta, smaxname)
                 except:
