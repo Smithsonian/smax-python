@@ -109,7 +109,7 @@ def normalize_pair(*args):
     return full_key.rsplit(":", maxsplit=1)
 
 
-def print_tree(d, verbose, indent=0):
+def print_tree(d, verbose=False, indent=0):
     """Walk through a tree of SMA-X values, printing the leaf nodes"""
     if indent != 0:
         indent_str = " "*(indent)
@@ -123,17 +123,30 @@ def print_tree(d, verbose, indent=0):
             print_smax(i, verbose, indent)
 
 
-def print_smax(smax_value, verbose, indent=0):
+def print_smax(smax_value, verbose=False, indent=0):
     """Print a SMA-X value"""
     if indent != 0:
         indent_str = " "*(indent)
     else:
         indent_str = ""
     if verbose:
-        print(indent_str, f"SMA-X value {smax_value.smaxname} :", sep="")
+        if hasattr(smax_value, "smaxname"):
+            if smax_value.smaxname is not None:
+                print(indent_str, f"SMA-X value {smax_value.smaxname} :", sep="")
+            else:
+                print(indent_str, f"{type(smax_value).__name__} :", sep="")
+        else:
+            print(indent_str, f"{type(smax_value).__name__} :", sep="")
         prefix = "    data   : "
     else:
-        prefix = f"{smax_value.smaxname.split(':')[-1]} : "
+        if hasattr(smax_value, "smaxname"):
+            if smax_value.smaxname is not None:
+                prefix = f"{smax_value.smaxname.split(':')[-1]} : "
+            else:
+                prefix = f"{type(smax_value).__name__}:"
+        else:
+            prefix = f"{type(smax_value).__name__}:"
+    
     if smax_value.type == str:
         if smax_value.dim == 1:
             print(indent_str, prefix, smax_value.data, sep="")
@@ -146,9 +159,12 @@ def print_smax(smax_value, verbose, indent=0):
             print(indent_str, prefix, l, sep="")
             prefix = " "*len(prefix)
     if verbose:
-        print(indent_str, f"    type   : {_REVERSE_TYPE_MAP[smax_value.type]}", sep="")
+        print(indent_str, f"    type   : {smax_value.type}", sep="")
         print(indent_str, f"    dim    : {smax_value.dim}", sep="")
-        print(indent_str, f"    date   : {datetime.datetime.utcfromtimestamp(smax_value.date)}", sep="")
+        try:
+            print(indent_str, f"    date   : {datetime.datetime.fromtimestamp(smax_value.timestamp, datetime.timezone.utc)}", sep="")
+        except TypeError:
+            print(indent_str, "    date   : None", sep="")
         print(indent_str, f"    origin : {smax_value.origin}", sep="")
         print(indent_str, f"    seq    : {smax_value.seq}", sep="")
         for meta in optional_metadata:

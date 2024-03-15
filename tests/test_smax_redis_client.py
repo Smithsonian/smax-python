@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from redis import TimeoutError
 
-from smax import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP
+from smax import SmaxRedisClient, _TYPE_MAP, _REVERSE_TYPE_MAP, print_smax
 
 smax_redis_ip = "127.0.0.1"
 
@@ -98,6 +98,47 @@ def test_roundtrip_int(smax_client):
     assert result.smaxname == f"{table}:{key}"
 
 
+def test_roundtrip_bool(smax_client):
+    expected_data = False
+    expected_type = "boolean"
+    expected_dim = 1
+    table = "test_roundtrip_boolean"
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+    
+
+def test_reading_bool(smax_client):
+    # We need to inject various legal formats for a boolean to Redis
+    # and test that we can read them all appropriately
+    truths = ['1', 'True', 'T', 'true', 't', '1.0']
+    lies = ['0', 'False', 'F', 'false', 'f', '0.0']
+    
+    expected_data = True
+    expected_type = "boolean"
+    expected_dim = 1
+    table = "test_reading_boolean"
+    key = "pytest"
+    
+    for t in truths:
+        smax_client._evalsha_set(table, key, t, expected_type, expected_dim)
+        result = smax_client.smax_pull(table, key)
+        assert result == expected_data
+        assert result.type == expected_type
+    
+    expected_data = False
+    for l in lies:
+        smax_client._evalsha_set(table, key, l, expected_type, expected_dim)
+        result = smax_client.smax_pull(table, key)
+        assert result == expected_data
+        assert result.type == expected_type
+    
+    
 def test_roundtrip_string_list(smax_client):
     expected_data = ["i", "am", "list"]
     expected_type = "string"
@@ -123,6 +164,23 @@ def test_roundtrip_int_list(smax_client):
     smax_client.smax_share(table, key, data)
     result = smax_client.smax_pull(table, key)
     print(type(result))
+    assert np.array_equal(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_bool_list(smax_client):
+    data = [True, False, True, True]
+    expected_data = np.array([True, False, True, True])
+    expected_type = "boolean"
+    expected_dim = len(data)
+    table = "test_roundtrip_bool_list"
+    key = "pytest"
+    smax_client.smax_share(table, key, data)
+    result = smax_client.smax_pull(table, key)
+    print(type(result))
+    print_smax(result)
     assert np.array_equal(result.data, expected_data)
     assert result.type == expected_type
     assert result.dim == expected_dim

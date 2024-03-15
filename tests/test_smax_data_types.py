@@ -409,6 +409,75 @@ class TestSmaxBool:
         
         assert c == d
         
+    def test_conversion_from_int(self):
+        a = True
+        b = SmaxBool(int(a))
+        
+        assert a == b
+        
+        c = False
+        d = SmaxBool(int(c))
+        
+        assert c == d
+        
+    def test_conversion_from_strint(self):
+        a = True
+        b = SmaxBool(str(int(a)))
+        
+        assert a == b
+        
+        c = False
+        d = SmaxBool(str(int(c)))
+        
+        assert c == d
+
+    def test_boolean_array_conversion(self):
+        data = [False, 'False', 'false', 0, 'f', 'F', b'F']
+        expected_data = np.array([False, False, False, False, False, False, False])
+        expected_type = "boolean"
+        expected_dim = len(data)
+        table = "test_roundtrip_bool_list"
+        key = "pytest"
+        result = SmaxArray(data, type='boolean')
+        assert np.array_equal(result.data, expected_data)
+        assert result.type == expected_type
+        assert result.dim == expected_dim
+        
+        data = [True, 'True', 'true', 1, 't', 'T', b't']
+        expected_data = np.array([True, True, True, True, True, True, True])
+        expected_type = "boolean"
+        expected_dim = len(data)
+        table = "test_roundtrip_bool_list"
+        key = "pytest"
+        result = SmaxArray(data, type='boolean')
+        assert np.array_equal(result.data, expected_data)
+        assert result.type == expected_type
+        assert result.dim == expected_dim
+        
+    def test_boolean_2d_array_conversion(self):
+        data = [[False, 'False', 'false'], [0, 'f', 'F']]
+        expected_data = np.array([[False, False, False], [False, False, False]])
+        expected_type = "boolean"
+        expected_dim = expected_data.shape
+        table = "test_roundtrip_bool_list"
+        key = "pytest"
+        result = SmaxArray(data, type='boolean', dim=expected_dim)
+        assert np.array_equal(result.data, expected_data)
+        assert result.type == expected_type
+        assert result.dim == expected_dim
+        
+        data = [[True, 'True', 'true'], [1, 't', 'T']]
+        expected_data = np.array([[True, True, True], [True, True, True]])
+        expected_type = "boolean"
+        expected_dim = expected_data.shape
+        table = "test_roundtrip_bool_list"
+        key = "pytest"
+        result = SmaxArray(data, type='boolean', dim=expected_dim)
+        assert np.array_equal(result.data, expected_data)
+        assert result.type == expected_type
+        assert result.dim == expected_dim
+        
+        
     def test_metadata(self):
         a = True
         timestamp = datetime.datetime.fromtimestamp(100000000)
@@ -418,6 +487,26 @@ class TestSmaxBool:
         description = "A test SmaxBool"
         
         b = SmaxBool(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description)
+        
+        assert a == b
+        assert a == b.data
+        assert timestamp == b.timestamp
+        assert origin == b.origin
+        assert seq == b.seq
+        assert smaxname == b.smaxname
+        assert "boolean" == b.type
+        assert 1 == b.dim
+        assert description == b.description
+        
+    def test_metadata_str(self):
+        a = True
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxbool"
+        description = "A test SmaxBool"
+        
+        b = SmaxBool(str(a), timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description)
         
         assert a == b
         assert a == b.data
@@ -578,11 +667,114 @@ class TestSmaxFloatArray:
         timestamp = datetime.datetime.fromtimestamp(100000000)
         origin = "pytest"
         seq = 2
-        smaxname = "test:smaxfloat:pi"
-        desc = "A test SmaxFloat"
+        smaxname = "test:smaxfloatarray:pi"
+        desc = "A test SmaxFloatArray"
         unit = "V"
         
         b = SmaxArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=desc, unit=unit)
         
         assert b+c == pytest.approx(a+c)
         assert c+b == pytest.approx(c+a)
+        
+        
+class TestSmaxIntArray:
+    """Tests of SmaxArray"""
+    def test_equality(self):
+        shape = (5, 4)
+        pi = 3
+        
+        a = np.full(shape, pi, dtype=np.int16)
+        print(a)
+        b = SmaxArray(a)
+        print(b)
+        
+        assert np.array_equal(a, b)
+        
+    def test_metadata(self):
+        shape = (5, 4)
+        pi = 3
+        
+        a = np.full(shape, pi)
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxintarray:pi"
+        desc = "A test SmaxIntArray"
+        
+        b = SmaxArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, type='integer', description=desc)
+        
+        assert np.array_equal(a, b)
+        assert np.array_equal(a, b.data)
+        assert timestamp == b.timestamp
+        assert origin == b.origin
+        assert seq == b.seq
+        assert smaxname == b.smaxname
+        assert 'integer' == b.type
+        # b.dim should be automatically created if not supplied
+        assert shape == b.dim
+        assert desc == b.description
+        
+    def test_reshaping(self):
+        shape = (5, 4)
+        pi = 3
+        
+        a = np.arange(1*pi, 20*pi, pi)
+        
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        desc = "A test SmaxIntArray"
+        
+        c = SmaxArray(a, timestamp=timestamp, dim=shape, description=desc)
+        
+        assert c.shape == shape
+        assert c.dim == shape
+        assert type(c) == SmaxArray
+        
+    def test_addition(self):
+        shape = (5, 4)
+        pi = 3
+        
+        a = np.arange(0, 20*pi, pi)
+        c = np.arange(20*pi, 0, -pi)
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxint:pi"
+        desc = "A test SmaxInt"
+        
+        b = SmaxArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=desc)
+        
+        assert np.array_equal(b+c, a+c)
+        assert np.array_equal(c+b, c+a)
+        
+
+class TestSmaxStrArray:
+    """Tests of SmaxStrArray"""
+    def test_equality(self):
+        a = ["Hello","I am a", "string array"]
+        b = SmaxStrArray(a)
+        
+        assert a == b
+        
+    def test_metadata(self):
+        a = ["Hello","I am a", "string array"]
+
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxstrarray"
+        desc = "A test SmaxStrArray"
+        
+        b = SmaxStrArray(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, type='string', description=desc)
+        
+        for i, bb in enumerate(b):
+            assert a[i] == bb
+        assert timestamp == b.timestamp
+        assert origin == b.origin
+        assert seq == b.seq
+        assert smaxname == b.smaxname
+        assert 'string' == b.type
+        # b.dim should be automatically created if not supplied
+        assert len(a) == b.dim
+        assert desc == b.description
+        
+    

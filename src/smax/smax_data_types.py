@@ -243,18 +243,29 @@ class UserArray(np.ndarray):
         elif hasattr(args[0], 'shape'):
             shape = args[0].shape
         else:
-            shape = None
+            shape = len(args[0])
             
         if 'type' in kwargs.keys():
             datatype = kwargs['type']
             dtype = _TYPE_MAP[datatype]
-        else:
+        elif type(args[0]) is np.ndarray:
             dtype = args[0].dtype
+        else:
+            dtype = type(args[0][0])
         
-        x = np.array(args[0], dtype=dtype).view(cls).copy()
+        if dtype is bool:
+            invar = np.array(args[0], dtype='O')
+            initvar = np.ndarray(invar.shape, dtype='bool')
+            for i, a in enumerate(invar.flat):
+                initvar.flat[i] = _to_bool(a)
+                
+        else:
+            initvar = np.array(args[0], )
+            if type(shape) is not int:
+                if len(shape) > 1:
+                    initvar.resize(shape)
         
-        if shape:
-            x.resize(shape)
+        x = np.array(initvar, dtype=dtype).view(cls).copy()
         
         return x
 
@@ -483,19 +494,49 @@ class SmaxInt64(UserInt64, SmaxVarBase):
 #
 # This won't work exactly as bool, e.g. with type testing, but
 # should be correct in all the normal uses of bool
+def _to_bool(a):
+    """Convert a value to bool, according to SMA-X rules.
+    
+    Boolean values can be stored as 'T', 'F', 't', 'f', 
+    'True', 'False', 'true', 'false', '0', '1', 0, or 1.
+    
+    Returns 1 or 0, which is then converted to bool."""
+    print(f"_to_bool received {a} of type {type(a)}")
+    if type(a) is bytes:
+        a = a.decode('utf-8')
+        
+    if type(a) is str:
+        if a.lower().startswith('t'):
+            b = 1
+        elif a.lower().startswith('f'):
+            b = 0
+        elif a == '0':
+            b = 0
+        else:
+            try:
+                if int(float(a)):
+                    b = 1
+                else:
+                    b = 0
+            except:
+                b = 1
+    elif a:
+        b = 1
+    else:
+        b = 0
+    print(f"_to_bool returning {b} of type {type(b)}")
+    
+    return b
+
 class UserBool(int):
     def __new__(cls, *args, **kwargs):
         if len(args) == 0:
-            args = (kwargs.pop('data'))
-        if type(args[0]) is str:
-            if args[0].lower().startswith('t'):
-                arg = 1
-            else:
-                arg = 0
-        elif args[0]:
-            arg = 1
+            initvar = kwargs.pop('data')
         else:
-            arg = 0
+            initvar = args[0]
+            
+        arg = _to_bool(initvar)
+        
         x = int.__new__(cls, arg)
         return x
     

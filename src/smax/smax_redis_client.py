@@ -10,10 +10,11 @@ import numpy as np
 from redis import Redis, ConnectionError, TimeoutError
 from redis.exceptions import NoScriptError
 
-from .smax_client import SmaxClient, SmaxFloat, SmaxInt, SmaxStr, SmaxStrArray, \
-                         SmaxStruct, SmaxArray, SmaxInt16, SmaxInt32, SmaxInt64, SmaxInt8, \
-                         SmaxFloat32, SmaxFloat64, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
-                         _TYPE_MAP, _REVERSE_TYPE_MAP, optional_metadata
+from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, SmaxStr, \
+        SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
+        SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, \
+        _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
+        optional_metadata
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -152,9 +153,8 @@ class SmaxRedisClient(SmaxClient):
 
         if type_name in _SMAX_TYPE_MAP:
             data_type = _SMAX_TYPE_MAP[type_name]
-            self._logger.debug(f"{type_name} maps to type {data_type.__name__}")
         else:
-            self._logger.debug(f"I can't deal with data of type {type_name}, defaulting to 'string'")
+            self._logger.warning(f"I can't deal with data of type {type_name}, defaulting to 'string'")
             type_name = "string"
             data_type = SmaxStr
 
@@ -166,10 +166,8 @@ class SmaxRedisClient(SmaxClient):
 
         # Extract dimension information from meta data.
         data_dim = tuple(int(s) for s in lua_data[2].decode("utf-8").split())
-        self._logger.debug(f"_parse_lua_pull_response() got data_dim {data_dim}")
         # If only one dimension convert to a single value (rather than list)
         if len(data_dim) == 1:
-            self._logger.debug(f"_parse_lua_pull_response() truncating data_dim to single value {data_dim[0]}")
             data_dim = data_dim[0]
 
         # If there is only a single value, cast to the appropriate type and return.
@@ -208,6 +206,7 @@ class SmaxRedisClient(SmaxClient):
                 if m is not None:
                     setattr(data, meta, m)
 
+        self._logger.debug(f"_parse_lua_pull: returning {data}, {data.metadata}")
         return data
 
     def smax_pull(self, table, key, pull_meta=False):
@@ -334,18 +333,18 @@ class SmaxRedisClient(SmaxClient):
 
         return self._parse_lua_pull_response(lua_data, f"{table}:{key}")
 
-    def _to_smax_format(self, value):
+    def _to_smax_format(self, value, smax_type=None):
         """
         Private function that converts a given data value to the string format
         that SMAX supports.
         Args:
             value: Any supported data type, including (nested) dicts.
+            smax_type (str): SMA-X type to cast value(s) to.
 
         Returns:
             tuple: tuple of (data_string, type_name, dim_string)
         """
-        # First determine the SMA-X type of value.
-        
+
         # Derive the type according to Python.
         python_type = type(value)
         
@@ -353,9 +352,16 @@ class SmaxRedisClient(SmaxClient):
         self._logger.debug(f"_to_smax_format 'type is list': {python_type is list}")
         
         # Single value of a supported python or numpy type, cast to string and send to redis.
-        if python_type in _REVERSE_TYPE_MAP:
+                # First determine the SMA-X type of value.
+        if smax_type in _TYPE_MAP:
+            type_name = smax_type
+        elif python_type in _REVERSE_TYPE_MAP:
             type_name = _REVERSE_TYPE_MAP[python_type]
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
+            
+            if type_name is "boolean":
+                value = int(value)
+                self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
             
             return str(value), type_name, 1
         
@@ -527,7 +533,7 @@ class SmaxRedisClient(SmaxClient):
             tables[tab].extend([field[1], converted_data, type_name, dim])
         return tables
 
-    def smax_share(self, table, key, value, push_meta=False):
+    def smax_share(self, table, key, value, push_meta=False, smax_type=None):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -541,6 +547,7 @@ class SmaxRedisClient(SmaxClient):
             value: data to store, takes supported types, including (nested) dicts.
             push_meta (bool): Push optional metadata if present in object 
                             (does not work for SmaxStructs and is not atomic).
+            type_name (str): Force casting to type_name before sharing.
 
         Returns:
             return value from redis-py's evalsha() function.
@@ -552,7 +559,8 @@ class SmaxRedisClient(SmaxClient):
                     for meta in optional_metadata:
                         if hasattr(value, meta):
                             self.smax_push_meta(meta, table, getattr(value, meta))
-            converted_data, type_name, size = self._to_smax_format(value)
+
+            converted_data, type_name, size = self._to_smax_format(value, smax_type=smax_type)
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
             # Recursively traverse the (nested) dictionary to generate a set
