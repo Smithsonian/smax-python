@@ -12,7 +12,7 @@ exclude = ["redis_config_files*"]  # empty by default
 name = "smax"
 description = "Python code for interfacing to SMA-X"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "MIT License"}
 dependencies = [
     "numpy",
