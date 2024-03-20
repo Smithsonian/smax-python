@@ -8,6 +8,15 @@ from .smax_data_types import SmaxData, \
     SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, \
     _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
     optional_metadata
+    
+class SmaxConnectionError(RuntimeError):
+    pass
+    
+class SmaxKeyError(RuntimeError):
+    pass
+
+class SmaxUnderflowWarning(RuntimeWarning):
+    pass
 
 class SmaxClient(ABC):
 

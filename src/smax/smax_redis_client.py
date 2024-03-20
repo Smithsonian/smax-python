@@ -14,7 +14,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
         SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
         SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, \
         _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
-        optional_metadata
+        optional_metadata, SmaxConnectionError, SmaxKeyError, SmaxUnderflowWarning
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -101,9 +101,9 @@ class SmaxRedisClient(SmaxClient):
                                        health_check_interval=30)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error("Connecting to redis and getting scripts failed")
-            raise
+            raise SmaxConnectionError(e)
 
 
     def _get_scripts(self):
@@ -230,9 +230,9 @@ class SmaxRedisClient(SmaxClient):
         except NoScriptError:
             self._get_scripts()
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error(f"Reading {table}:{key} from Redis {self._client} failed")
-            raise
+            raise SmaxConnectionError(e)
     
         self._logger.debug(f"Received response: {lua_data}")
         
@@ -240,11 +240,13 @@ class SmaxRedisClient(SmaxClient):
             self._logger.info(f"Successfully pulled {table}:{key}")
         else:
             self._logger.warning(f"Failed to pull valid data for {table}:{key} from {self._client}")
+            raise SmaxKeyError(f"Unknown SMA-X error pulling {table}:{key}")
+
 
         # Check that we got a valid response
         if lua_data[0] is None:
             self._logger.error(f"Could not find {table}:{key} in Redis")
-            raise RuntimeError(f"Could not find {table}:{key} in Redis")
+            raise SmaxKeyError(f"Could not find {table}:{key} in Redis {self._client}")
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
@@ -269,9 +271,9 @@ class SmaxRedisClient(SmaxClient):
                 self._get_scripts()
                 lua_struct = self._client.evalsha(self._get_structSHA, '1', f"{table}:{key}")
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
-            except (ConnectionError, TimeoutError):
+            except (ConnectionError, TimeoutError) as e:
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
-                raise
+                raise SmaxConnectionError(e)
 
             # The struct will be parsed into a nested python dictionary.
             tree = SmaxStruct({}, dim=lua_dim, timestamp=lua_date, origin=lua_origin, seq=lua_sequence, smaxname=f"{table}:{key}")
@@ -604,9 +606,9 @@ class SmaxRedisClient(SmaxClient):
                                               type_name, size)
             self._logger.info(f"Successfully shared to {table}:{key}")
             return result
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
-            raise
+            raise SmaxConnectionError(e)
 
     def _pipeline_evalsha_set(self, table, key, commands):
         """
@@ -659,9 +661,9 @@ class SmaxRedisClient(SmaxClient):
             result = self._pipeline.execute()
             self._logger.info(f"Successfully executed pipeline share to {table}:{key}:{list(commands.keys())}")
             return result
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error("Unable to call HMSetWithMeta LUA script.")
-            raise
+            raise SmaxConnectionError(e)
 
     def smax_lazy_pull(self, table, key, value):
         raise NotImplementedError("Available in C API, not in python")
@@ -996,9 +998,9 @@ class SmaxRedisClient(SmaxClient):
             result = self._client.hset(f"<{meta}>", table, value)
             self._logger.info(f"Successfully shared metadata to {table}")
             return result
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hset.")
-            raise
+            raise SmaxConnectionError(e)
 
     def smax_pull_meta(self, meta, table):
         """
@@ -1017,7 +1019,7 @@ class SmaxRedisClient(SmaxClient):
                 return result.decode("utf-8")
             else:
                 return result
-        except (ConnectionError, TimeoutError):
+        except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hget.")
-            raise
+            raise SmaxConnectionError(e)
 
