@@ -7,8 +7,11 @@ from fnmatch import fnmatch
 
 import psutil
 import numpy as np
-from redis import Redis, ConnectionError, TimeoutError
-from redis.exceptions import NoScriptError
+
+from redis import Redis
+from redis.exceptions import NoScriptError, BusyLoadingError, ConnectionError, TimeoutError
+from redis.backoff import ExponentialBackoff
+from redis.retry import Retry
 
 from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, SmaxStr, \
         SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
@@ -91,13 +94,15 @@ class SmaxRedisClient(SmaxClient):
         Returns:
             Redis: A Redis client object configured from the given args.
         """
-
+        retry = Retry(ExponentialBackoff(), 3)
         try:
             # Connect to redis-server, and store LUA scripts on the object.
             # StrictRedis and Redis are now identical, so let's be explicit
             redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
+                                       retry=retry,
+                                       retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
                                        health_check_interval=30)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
@@ -163,7 +168,6 @@ class SmaxRedisClient(SmaxClient):
         origin = lua_data[4].decode("utf-8")
         sequence = int(lua_data[5])
         
-
         # Extract dimension information from meta data.
         data_dim = tuple(int(s) for s in lua_data[2].decode("utf-8").split())
         # If only one dimension convert to a single value (rather than list)
