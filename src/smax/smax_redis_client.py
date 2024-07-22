@@ -720,18 +720,18 @@ class SmaxRedisClient(SmaxClient):
 
         if pattern.endswith("*"):
             if callback is None:
-                self._pubsub.psubscribe(f"smax:{pattern}")
+                self._pubsub.psubscribe(f"{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.psubscribe(**{f"{pattern}": parent_callback})
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
-                self._pubsub.subscribe(f"smax:{pattern}")
+                self._pubsub.subscribe(f"{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.subscribe(**{f"{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
 
@@ -750,10 +750,10 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.unsubscribe()
                 self._logger.info("Unsubscribed from all tables")
             elif pattern.endswith("*"):
-                self._pubsub.punsubscribe(f"smax:{pattern}")
+                self._pubsub.punsubscribe(f"{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
             else:
-                self._pubsub.unsubscribe(f"smax:{pattern}")
+                self._pubsub.unsubscribe(f"{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
@@ -791,11 +791,10 @@ class SmaxRedisClient(SmaxClient):
                 raise TimeoutError("Timed out waiting for redis message.")
             elif message["type"] == "message" or message["type"] == "pmessage":
                 channel = message["channel"].decode("utf-8")
-                if channel.startswith("smax:"):
-                    if pattern is None:
-                        found_real_message = True
-                    elif fnmatch(channel[5:], pattern):
-                        found_real_message = True
+                if pattern is None:
+                    found_real_message = True
+                elif fnmatch(channel[5:], pattern):
+                    found_real_message = True
 
         if notification_only:
             # Strip the "smax:" prefix off of the channel.
