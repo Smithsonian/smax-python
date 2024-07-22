@@ -42,7 +42,7 @@ class SmaxRedisClient(SmaxClient):
             logging.basicConfig(level=logging.ERROR)
         
         if logger:
-            self_logger = logger
+            self._logger = logger
         else:
             self._logger = logging.getLogger(__name__)
 
