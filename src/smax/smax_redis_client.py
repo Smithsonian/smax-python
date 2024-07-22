@@ -18,6 +18,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
         SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, \
         _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
         optional_metadata, SmaxConnectionError, SmaxKeyError, SmaxUnderflowWarning, \
+        join, normalize_pair, print_smax, print_tree
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
