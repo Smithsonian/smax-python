@@ -22,7 +22,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
-                 program_name=None, hostname=None):
+                 program_name=None, hostname=None, debug=False, logger=None):
         """
         Constructor for SmaxRedisClient, automatically establishes connection
         and sets the redis-py connection object to 'self._client'. This magic
@@ -36,8 +36,15 @@ class SmaxRedisClient(SmaxClient):
         """
 
         # Logging convention for messages to have module names in them.
-        logging.basicConfig(level=logging.ERROR)
-        self._logger = logging.getLogger(__name__)
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.ERROR)
+        
+        if logger:
+            self_logger = logger
+        else:
+            self._logger = logging.getLogger(__name__)
 
         # Attributes for package, not exposed to users.
         self._redis_ip = redis_ip
