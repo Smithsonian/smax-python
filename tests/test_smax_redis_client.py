@@ -247,7 +247,6 @@ def test_pubsub_simple(smax_client):
     table = join(test_table, "test_pubsub")
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}")
-    sleep(1.0)
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
     assert result.data == expected_data

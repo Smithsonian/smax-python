@@ -19,6 +19,10 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
         _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
         optional_metadata, SmaxConnectionError, SmaxKeyError, SmaxUnderflowWarning, \
         join, normalize_pair, print_smax, print_tree
+        
+# This prefix is used on SMA-X pub/sub channels to identify the messages/notification
+# channels relevant to SMA-X
+pubsub_prefix = "smax"
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -690,6 +694,11 @@ class SmaxRedisClient(SmaxClient):
         name of the field you'd like to subscribe too, or use a wildcard "*"
         character as a suffix to specify a pattern. Use a callback for asynchronous
         processing of notifications, or use one of the smax_wait_on functions.
+        
+        Internal to the HSET* and HMSET*, notifications for pub/sub are
+        generated with the prefix `smax:`. This needs to be added/removed within
+        `smax_subscribe`, etc.
+        
         Args:
             pattern (str): Either full name of smax field, or use a wildcard '*'
                            at the end of the pattern to be notified for anything
@@ -721,18 +730,18 @@ class SmaxRedisClient(SmaxClient):
 
         if pattern.endswith("*"):
             if callback is None:
-                self._pubsub.psubscribe(f"smax:{pattern}")
+                self._pubsub.psubscribe(f"{pubsub_prefix}:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.psubscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
-                self._pubsub.subscribe(f"smax:{pattern}")
+                self._pubsub.subscribe(f"{pubsub_prefix}:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
+                self._callback_pubsub.subscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
 
@@ -751,10 +760,10 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.unsubscribe()
                 self._logger.info("Unsubscribed from all tables")
             elif pattern.endswith("*"):
-                self._pubsub.punsubscribe(f"smax:{pattern}")
+                self._pubsub.punsubscribe(f"{pubsub_prefix}:{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
             else:
-                self._pubsub.unsubscribe(f"smax:{pattern}")
+                self._pubsub.unsubscribe(f"{pubsub_prefix}:{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
@@ -795,18 +804,17 @@ class SmaxRedisClient(SmaxClient):
                 raise TimeoutError("Timed out waiting for redis message.")
             elif message["type"] == "message" or message["type"] == "pmessage":
                 channel = message["channel"].decode("utf-8")
-                if channel.startswith("smax:"):
+                if channel.startswith(f"{pubsub_prefix}:"):
                     if pattern is None:
                         found_real_message = True
-                    elif fnmatch(channel[5:], pattern):
+                    elif fnmatch(channel[len(pubsub_prefix)+1:], pattern):
                         found_real_message = True
 
         if notification_only:
             # Strip the "smax:" prefix off of the channel.
             channel = message["channel"].decode("utf-8")
-            prefix = "smax:"
-            if channel.startswith(prefix):
-                message["channel"] = channel[len(prefix):]
+            if channel.startswith(pubsub_prefix):
+                message["channel"] = channel[len(pubsub_prefix)+1:]
             else:
                 message["channel"] = channel
 
@@ -817,10 +825,11 @@ class SmaxRedisClient(SmaxClient):
         else:
             if pattern is None:
                 # Pull the exact table that sent the notification.
-                table = channel[5:channel.rfind(":")]
+                table = channel[len(pubsub_prefix)+1:channel.rfind(":")]
                 key = channel.split(":")[-1]
             else:
                 # Pull the parent struct or "pattern" that was subscribed to.
+                # (pattern is not prefixed with `smax:`)
                 table = pattern[:pattern.rfind(":")]
                 key = pattern.split(":")[-1].strip('*')
             self._logger.debug(f"Got table = {table}, key = {key}")
