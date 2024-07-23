@@ -507,7 +507,6 @@ class SmaxRedisClient(SmaxClient):
         for l in leaves:
             if ":" in l[0]:
                 tiers = l[0].split(":")
-                print(tiers)
                 for t, tier in enumerate(tiers[:-1]):
                     superstruct = ":".join(tiers[0:t])
                     pair = (superstruct, tiers[t], ":".join(tiers[0:t+1]), "struct")

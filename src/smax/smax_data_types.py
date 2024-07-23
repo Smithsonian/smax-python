@@ -78,6 +78,14 @@ class SmaxVarBase(object):
     unit: str | None = field(kw_only=True, default=None)
     coords: Any | None = field(kw_only=True, default=None)
 
+    @property
+    def data(self):
+        return self
+
+    @property
+    def metadata(self):
+        return self.__dict__
+
 @dataclass
 class SmaxFloat(float, SmaxVarBase):
     """Class for holding SMA-X float objects, with their metadata"""
@@ -86,14 +94,6 @@ class SmaxFloat(float, SmaxVarBase):
     
     def __repr__(self):
         return str(float(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
     
     def asdict(self):
         dic = {'data':self}
@@ -119,14 +119,6 @@ class SmaxInt(UserInt, SmaxVarBase):
 
     def __repr__(self):
         return str(int(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
         
     def asdict(self):
         dic = {'data':self}
@@ -150,14 +142,6 @@ class SmaxStr(UserStr, SmaxVarBase):
     
     def __repr__(self):
         return str(self)
-
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
     
     def asdict(self):
         dic = {'data':self}
@@ -193,14 +177,6 @@ class SmaxStrArray(UserList, SmaxVarBase):
     def __repr__(self):
         return super().__repr__()
 
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
-    
     def asdict(self):
         dic = {'data':self}
         dic.update(asdict(self))
@@ -219,14 +195,6 @@ class SmaxStruct(UserDict, SmaxVarBase):
     def __repr__(self):
         return super().__repr__()
 
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
-    
     def asdict(self):
         dic = {'data':self}
         dic.update(asdict(self))
@@ -294,13 +262,9 @@ class SmaxArray(UserArray, SmaxVarBase):
     def __repr__(self):
         return super().__repr__()
     
-    @property
+    @property    
     def data(self):
         return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
     
     def asdict(self):
         dic = {'data':self}
@@ -325,13 +289,9 @@ class SmaxFloat32(UserFloat32, SmaxVarBase):
     def __repr__(self):
         return str(self)
     
-    @property
+    @property    
     def data(self):
         return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
     
     def asdict(self):
         dic = {'data':self}
@@ -355,13 +315,9 @@ class SmaxFloat64(UserFloat64, SmaxVarBase):
     def __repr__(self):
         return str(self)
     
-    @property
+    @property    
     def data(self):
         return self
-    
-    @property
-    def metadata(self):
-        return self.__dict__
     
     def asdict(self):
         dic = {'data':self}
@@ -384,14 +340,6 @@ class SmaxInt8(UserInt8, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
         
     def asdict(self):
         dic = {'data':self}
@@ -414,15 +362,7 @@ class SmaxInt16(UserInt16, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
-        
+
     def asdict(self):
         dic = {'data':self}
         dic.update(asdict(self))
@@ -444,15 +384,7 @@ class SmaxInt32(UserInt32, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
-        
+
     def asdict(self):
         dic = {'data':self}
         dic.update(asdict(self))
@@ -474,14 +406,6 @@ class SmaxInt64(UserInt64, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
-    
-    @property
-    def data(self):
-        return self
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
         
     def asdict(self):
         dic = {'data':self}
@@ -592,10 +516,6 @@ class SmaxBool(UserBool, SmaxVarBase):
             return False
         else:
             return True
-    
-    @property
-    def metadata(self):
-        print(self.__dict__)
         
     def asdict(self):
         dic = {'data':self}
