@@ -246,7 +246,7 @@ def test_pubsub(smax_client):
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, expected_data)
-    result = smax_client.smax_wait_on_any_subscribed()
+    result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -261,7 +261,7 @@ def test_pubsub_pattern(smax_client):
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}*")
     smax_client.smax_share(table, key, expected_data)
-    result = smax_client.smax_wait_on_any_subscribed()
+    result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
     assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
@@ -302,7 +302,7 @@ def test_pubsub_notification(smax_client):
     smax_client.smax_subscribe(f"{table}:{key}")
     smax_client.smax_share(table, key, "doesn't matter")
     
-    result = smax_client.smax_wait_on_any_subscribed(notification_only=True)
+    result = smax_client.smax_wait_on_any_subscribed(timeout=3.0, notification_only=True)
     logger.debug(f"Received result: {result}")
     assert result["data"] == expected_data
 
@@ -319,8 +319,8 @@ def test_pubsub_wait_on_pattern(smax_client):
         smax_producer.smax_share(f"{table}:{key}:fpga", "temp", expected_data1)
         smax_producer.smax_share(f"{table}:{key}:fpga", "speed", expected_data2)
 
-    result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
-    result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*")
+    result1 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*", timeout=3.0)
+    result2 = smax_client.smax_wait_on_subscribed(f"{table}:{key}:fpga*", timeout=3.0)
     logger.debug(f"Received result1: {result1}")
     logger.debug(f"Received result1: {result2}")
     
