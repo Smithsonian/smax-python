@@ -705,7 +705,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 path = message["channel"].decode("utf-8")
 
-            table = path[path.rfind(":")]
+            table = path[5:path.rfind(":")]
             key = path[path.rfind(":") + 1:]
             self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
@@ -796,7 +796,6 @@ class SmaxRedisClient(SmaxClient):
             elif message["type"] == "message" or message["type"] == "pmessage":
                 channel = message["channel"].decode("utf-8")
                 if channel.startswith("smax:"):
-                    self._logger.debug(f"Got fnmatch({channel[5:]}, {pattern}) = {fnmatch(channel[5:], pattern)}")
                     if pattern is None:
                         found_real_message = True
                     elif fnmatch(channel[5:], pattern):
@@ -818,7 +817,7 @@ class SmaxRedisClient(SmaxClient):
         else:
             if pattern is None:
                 # Pull the exact table that sent the notification.
-                table = channel[channel.rfind(":")]
+                table = channel[5:channel.rfind(":")]
                 key = channel.split(":")[-1]
             else:
                 # Pull the parent struct or "pattern" that was subscribed to.
