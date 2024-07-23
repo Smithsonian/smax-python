@@ -102,7 +102,7 @@ def main():
                 if args.type is None:
                     # Try to convert set value to the current type of the SMA-X variable
                     try:
-                        smax_type = _REVERSE_TYPE_MAP[smax_client.smax_pull(table, key).type]
+                        smax_type = smax_client.smax_pull(table, key).type
                     except RuntimeError:
                         smax_type = None
                     except (TimeoutError, ConnectionError):
