@@ -373,7 +373,7 @@ class SmaxRedisClient(SmaxClient):
             type_name = _REVERSE_TYPE_MAP[python_type]
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
             
-            if type_name is "boolean":
+            if type_name == "boolean":
                 value = int(value)
                 self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
             
@@ -575,6 +575,7 @@ class SmaxRedisClient(SmaxClient):
                             self.smax_push_meta(meta, table, getattr(value, meta))
 
             converted_data, type_name, size = self._to_smax_format(value, smax_type=smax_type)
+            self._logger.debug(f"Calling HSetWithMeta script with {table}, {key}, {converted_data}, {type_name}, {size}")
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
             # Recursively traverse the (nested) dictionary to generate a set
@@ -585,7 +586,7 @@ class SmaxRedisClient(SmaxClient):
             fields = self._get_struct_fields(leaves)
             tables = self._get_struct_tables(table, key, fields)
 
-            self._logger.debug(f"Table from smax_share: {tables}")
+            self._logger.debug(f"Calling HMSetWithMeta script with {table}, {key} {tables}")
 
             return self._pipeline_evalsha_set(table, key, tables)
 
@@ -704,7 +705,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 path = message["channel"].decode("utf-8")
 
-            table = path[5:path.rfind(":")]
+            table = path[path.rfind(":")]
             key = path[path.rfind(":") + 1:]
             self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
@@ -720,18 +721,18 @@ class SmaxRedisClient(SmaxClient):
 
         if pattern.endswith("*"):
             if callback is None:
-                self._pubsub.psubscribe(f"{pattern}")
+                self._pubsub.psubscribe(f"smax:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.psubscribe(**{f"{pattern}": parent_callback})
+                self._callback_pubsub.psubscribe(**{f"smax:{pattern}": parent_callback})
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
-                self._pubsub.subscribe(f"{pattern}")
+                self._pubsub.subscribe(f"smax:{pattern}")
                 self._logger.info(f"Subscribed to {pattern}")
             else:
-                self._callback_pubsub.subscribe(**{f"{pattern}": parent_callback})
+                self._callback_pubsub.subscribe(**{f"smax:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
                 self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
 
@@ -750,10 +751,10 @@ class SmaxRedisClient(SmaxClient):
                 self._pubsub.unsubscribe()
                 self._logger.info("Unsubscribed from all tables")
             elif pattern.endswith("*"):
-                self._pubsub.punsubscribe(f"{pattern}")
+                self._pubsub.punsubscribe(f"smax:{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
             else:
-                self._pubsub.unsubscribe(f"{pattern}")
+                self._pubsub.unsubscribe(f"smax:{pattern}")
                 self._logger.info(f"Unsubscribed from {pattern}")
 
     def _redis_listen(self, pattern=None, timeout=None, notification_only=False):
@@ -782,19 +783,24 @@ class SmaxRedisClient(SmaxClient):
 
         while not found_real_message:
             if timeout is None:
+                self._logger.debug(f"Waiting for message matching {pattern} with .listen()")
                 for message in self._pubsub.listen():
                     break
             else:
+                self._logger.debug(f"Waiting for message matching {pattern} with .get_message() with timeout {timeout}")
                 message = self._pubsub.get_message(timeout=timeout)
+                
             self._logger.debug(f"Redis message received:{message}")
             if message is None:
                 raise TimeoutError("Timed out waiting for redis message.")
             elif message["type"] == "message" or message["type"] == "pmessage":
                 channel = message["channel"].decode("utf-8")
-                if pattern is None:
-                    found_real_message = True
-                elif fnmatch(channel[5:], pattern):
-                    found_real_message = True
+                if channel.startswith("smax:"):
+                    self._logger.debug(f"Got fnmatch({channel[5:]}, {pattern}) = {fnmatch(channel[5:], pattern)}")
+                    if pattern is None:
+                        found_real_message = True
+                    elif fnmatch(channel[5:], pattern):
+                        found_real_message = True
 
         if notification_only:
             # Strip the "smax:" prefix off of the channel.
@@ -802,19 +808,23 @@ class SmaxRedisClient(SmaxClient):
             prefix = "smax:"
             if channel.startswith(prefix):
                 message["channel"] = channel[len(prefix):]
+            else:
+                message["channel"] = channel
 
             # Decode the other fields.
             message["data"] = message["data"].decode("utf-8")
+            self._logger.debug(f"Got notification: message = {message}")
             return message
         else:
             if pattern is None:
                 # Pull the exact table that sent the notification.
-                table = channel[5:channel.rfind(":")]
+                table = channel[channel.rfind(":")]
                 key = channel.split(":")[-1]
             else:
                 # Pull the parent struct or "pattern" that was subscribed to.
                 table = pattern[:pattern.rfind(":")]
                 key = pattern.split(":")[-1].strip('*')
+            self._logger.debug(f"Got table = {table}, key = {key}")
             return self.smax_pull(table, key)
 
     def smax_wait_on_subscribed(self, pattern, timeout=None, notification_only=False):
