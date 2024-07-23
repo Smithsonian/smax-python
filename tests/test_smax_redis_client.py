@@ -427,7 +427,7 @@ def test_mixed_pubsub_callback(smax_client):
     delayed_producer.start()
 
     # Now wait for the thread to share, and check the result.
-    result = smax_client.smax_wait_on_any_subscribed()
+    result = smax_client.smax_wait_on_any_subscribed(timeout=3.0)
     delayed_producer.join()
     assert result.data == expected_data
 
