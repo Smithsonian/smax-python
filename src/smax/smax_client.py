@@ -171,7 +171,7 @@ def print_smax(smax_value, verbose=False, indent=0):
         print(indent_str, f"    type   : {smax_value.type}", sep="")
         print(indent_str, f"    dim    : {smax_value.dim}", sep="")
         try:
-            print(indent_str, f"    date   : {datetime.datetime.fromtimestamp(smax_value.timestamp, datetime.timezone.utc)}", sep="")
+            print(indent_str, f"    date   : {smax_value.timestamp}", sep="")
         except TypeError:
             print(indent_str, "    date   : None", sep="")
         print(indent_str, f"    origin : {smax_value.origin}", sep="")
