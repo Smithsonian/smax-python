@@ -176,9 +176,9 @@ def print_smax(smax_value, verbose=False, indent=0):
             if smax_value.smaxname is not None:
                 prefix, tmp = normalize_pair(smax_value.smaxname)
             else:
-                prefix = f"{type(smax_value).__name__}:"
+                prefix = f"{type(smax_value).__name__}: "
         else:
-            prefix = f"{type(smax_value).__name__}:"
+            prefix = f"{type(smax_value).__name__}: "
     
     if smax_value.type == str:
         if smax_value.dim == 1:

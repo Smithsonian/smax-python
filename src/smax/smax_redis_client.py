@@ -23,6 +23,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
 # This prefix is used on SMA-X pub/sub channels to identify the messages/notification
 # channels relevant to SMA-X
 pubsub_prefix = "smax"
+pubsub_sleep = 0.001
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -678,7 +679,7 @@ class SmaxRedisClient(SmaxClient):
     def smax_lazy_end(self, table, key):
         raise NotImplementedError("Available in C API, not in python")
 
-    def smax_subscribe(self, pattern, callback=None):
+    def smax_subscribe(self, pattern, callback=None, pubsub_sleep=pubsub_sleep):
         """
         Subscribe to a redis field or group of fields. You can type the full
         name of the field you'd like to subscribe too, or use a wildcard "*"
@@ -696,6 +697,8 @@ class SmaxRedisClient(SmaxClient):
             callback (func): Function that takes a single argument (Default=None).
                              The message in your callback will be an SmaData
                              object, or a nested dictionary for a struct.
+            pubsub_sleep (float): Sleep time within each loop of the pubsub
+                                  event handling thread
         """
         def parent_callback(message):
             msg_pattern = message["pattern"]
@@ -712,9 +715,10 @@ class SmaxRedisClient(SmaxClient):
         def exception_handler(ex, pubsub, thread):
             """Silently close threads if connection fails - other code will catch the missing
             connection"""
-            thread.stop()
-            thread.join(timeout=1.0)
-            pubsub.close()
+            print("Pubsub lost connection")
+            print("Pubsub reconnecting")
+            pubsub.on_connect(pubsub.connection)
+            print("Pubsub reconnected")
 
         if callback is not None and self._callback_pubsub is None:
             self._callback_pubsub = self._client.pubsub()
@@ -730,7 +734,7 @@ class SmaxRedisClient(SmaxClient):
                 self._logger.info(f"Subscribed to {pattern}")
             else:
                 self._callback_pubsub.psubscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
-                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True, exception_handler=exception_handler)
+                self._callback_pubsub.run_in_thread(sleep_time=pubsub_sleep, daemon=True, exception_handler=exception_handler)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
@@ -739,7 +743,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 self._callback_pubsub.subscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
-                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True, exception_handler=exception_handler)
+                self._callback_pubsub.run_in_thread(sleep_time=pubsub_sleep, daemon=True, exception_handler=exception_handler)
 
     def smax_unsubscribe(self, pattern=None):
         """
