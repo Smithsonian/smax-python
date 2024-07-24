@@ -174,7 +174,7 @@ def print_smax(smax_value, verbose=False, indent=0):
     else:
         if hasattr(smax_value, "smaxname"):
             if smax_value.smaxname is not None:
-                prefix, tmp = normalize_pair(smax_value.smaxname)
+                prefix = smax_value.smaxname + ": "
             else:
                 prefix = f"{type(smax_value).__name__}: "
         else:
