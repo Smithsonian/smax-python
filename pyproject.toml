@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 # All the following settings are optional:
-where = ["."]  # ["."] by default
+where = ["src"]  # ["."] by default
 include = ["smax"]  # ["*"] by default
 exclude = ["redis_config_files*"]  # empty by default
 
@@ -12,7 +12,7 @@ exclude = ["redis_config_files*"]  # empty by default
 name = "smax"
 description = "Python code for interfacing to SMA-X"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "MIT License"}
 dependencies = [
     "numpy",
@@ -25,3 +25,9 @@ dynamic = ["version"]
 
 [project.scripts]
 smax = "smax.cli:main"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = ["src"]
