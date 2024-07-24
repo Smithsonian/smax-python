@@ -52,10 +52,15 @@ def main():
     
     
     parser.add_argument("--verbose", "-v", action='store_true', help="Show all SMA-X metadata associated with the key")
+    parser.add_argument("--debug", action='store_true', help="Show debug information")
+    
     
     args = parser.parse_args()
     
-    with SmaxRedisClient(redis_ip=args.redis_ip, redis_port=args.port, redis_db=args.db, program_name="smax-cli") as smax_client:
+    if args.debug:
+        print(args)
+    
+    with SmaxRedisClient(redis_ip=args.redis_ip, redis_port=args.port, redis_db=args.db, program_name="smax-cli", debug=args.debug) as smax_client:
 
         # If search is set, search for the string
         if args.search is not None:
@@ -75,6 +80,9 @@ def main():
                 if key[0] == "<" or key == "scripts":
                     continue
                 else:
+                    if args.table is not None:
+                        if not key.startswith(args.table):
+                            continue
                     print(key)
         elif args.purge:
             if args.table is not None or args.key is not None:
@@ -95,9 +103,11 @@ def main():
                 smax_client.smax_purge_volatile()
             else:
                 print('Not confirmed - exiting.')
-        # If set is set, set the value
-        elif args.table is not None or args.key is not None:
+        elif args.table is not None and args.key is not None:
             table, key = normalize_pair(args.table, args.key)
+            if args.debug:
+                print(f"Got {table}, key {key}")
+            # If set is set, set the value
             if args.set is not None:
                 if args.type is None:
                     # Try to convert set value to the current type of the SMA-X variable
@@ -111,7 +121,7 @@ def main():
                     
                     if smax_type is None:
                         # Value isn't in Redis yet
-                        print(f"Type not given and {table}:{key} not yet in Redis. Trying to determine best type from int, float, str")
+                        print(f"Type not given and {join(table, key)} not yet in Redis. Trying to determine best type from int, float, str")
                         try:
                             v = float(args.set)
                             smax_type = "float"
@@ -147,7 +157,7 @@ def main():
                     print("Could not connect to Redis")
             
                 if result is None:
-                    print(f"Can't find {table}:{key} in Redis")
+                    print(f"Can't find {join(table, key)} in Redis")
                 else:
                     if type(result) is dict:
                         # We have a struct of SMA-X values and need to walk through the values

@@ -113,14 +113,14 @@ class SmaxRedisClient(SmaxClient):
             redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
-                                       retry=retry,
-                                       retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
+                                       #retry=retry,
+                                       #retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
                                        health_check_interval=30)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError) as e:
-            self._logger.error("Connecting to redis and getting scripts failed")
-            raise SmaxConnectionError(e)
+            self._logger.error(f"Connecting to redis and getting scripts failed with {e}")
+            raise SmaxConnectionError(e.args)
 
 
     def _get_scripts(self):
@@ -240,29 +240,31 @@ class SmaxRedisClient(SmaxClient):
         Returns:
             Smax<type>: Populated Smax<type> dataclass object.
         """
-
+        # Carry out a sanity check on (table, key) pair and normalize
+        table, key = normalize_pair(table, key)
+        self._logger.debug(f"Calliing _getSHA with: '1', {table}, {key}")
         try:
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
         except NoScriptError:
             self._get_scripts()
             lua_data = self._client.evalsha(self._getSHA, '1', table, key)
         except (ConnectionError, TimeoutError) as e:
-            self._logger.error(f"Reading {table}:{key} from Redis {self._client} failed")
-            raise SmaxConnectionError(e)
+            self._logger.error(f"Reading {join(table, key)} from Redis {self._client} failed")
+            raise SmaxConnectionError(e.args)
     
         self._logger.debug(f"Received response: {lua_data}")
         
         if lua_data is not None:
-            self._logger.info(f"Successfully pulled {table}:{key}")
+            self._logger.info(f"Successfully pulled {join(table, key)}")
         else:
-            self._logger.warning(f"Failed to pull valid data for {table}:{key} from {self._client}")
-            raise SmaxKeyError(f"Unknown SMA-X error pulling {table}:{key}")
+            self._logger.warning(f"Failed to pull valid data for {join(table, key)} from {self._client}")
+            raise SmaxKeyError(f"Unknown SMA-X error pulling {join(table, key)}")
 
 
         # Check that we got a valid response
         if lua_data[0] is None:
-            self._logger.error(f"Could not find {table}:{key} in Redis")
-            raise SmaxKeyError(f"Could not find {table}:{key} in Redis {self._client}")
+            self._logger.error(f"Could not find {join(table, key)} in Redis")
+            raise SmaxKeyError(f"Could not find {join(table, key)} in Redis {self._client}")
 
         # Extract the type out of the meta data, and map string to real type object.
         type_name = lua_data[1].decode("utf-8")
@@ -289,7 +291,7 @@ class SmaxRedisClient(SmaxClient):
                 self._logger.info(f"Successfully pulled struct {table}:{key}")
             except (ConnectionError, TimeoutError) as e:
                 self._logger.error(f"Reading {table}:{key} from Redis failed")
-                raise SmaxConnectionError(e)
+                raise SmaxConnectionError(e.args)
 
             # The struct will be parsed into a nested python dictionary.
             tree = SmaxStruct({}, dim=lua_dim, timestamp=lua_date, origin=lua_origin, seq=lua_sequence, smaxname=f"{table}:{key}")
@@ -309,7 +311,7 @@ class SmaxRedisClient(SmaxClient):
 
                 for table_name_index, table_name in enumerate(names):
                     offset = struct_name_index + struct_name_index + 1
-                    smaxname = struct_name.decode("utf-8") + ":" + table_name
+                    smaxname = join(struct_name.decode("utf-8"), table_name)
                             
                     # Grow a new hierarchical level with a blank dictionary.
                     t = t.setdefault(table_name, SmaxStruct({}, dim=lua_dim, timestamp=lua_date, \
@@ -508,17 +510,11 @@ class SmaxRedisClient(SmaxClient):
             if ":" in l[0]:
                 tiers = l[0].split(":")
                 for t, tier in enumerate(tiers[:-1]):
-                    superstruct = ":".join(tiers[0:t])
-                    pair = (superstruct, tiers[t], ":".join(tiers[0:t+1]), "struct")
+                    superstruct = join(*tiers[0:t])
+                    pair = (superstruct, tiers[t], join(*tiers[0:t+1]), "struct")
                     if pair not in outpairs:
                         outpairs.append(pair)
-            tablekey = l[0].rsplit(":", 1)
-            if len(tablekey) == 1:
-                table = ""
-                key = tablekey[0]
-            else:
-                table = tablekey[0]
-                key = tablekey[1]
+            table, key = normalize_pair(l[0])
             outpairs.append((table, key, l[1], "value"))
         return outpairs
             
@@ -538,11 +534,11 @@ class SmaxRedisClient(SmaxClient):
         tables = {}
         for field in fields:
             if field[3] == "struct":
-                converted_data, type_name, dim = (":".join((table, key, field[2])), field[3], 1)
+                converted_data, type_name, dim = (join(table, key, field[2]), field[3], 1)
             else:
                 converted_data, type_name, dim = self._to_smax_format(field[2])
             if field[0] != "":
-                tab = f"{key}:{field[0]}"
+                tab = join(key, field[0])
             else:
                 tab = key
             if tab not in tables:
@@ -624,7 +620,7 @@ class SmaxRedisClient(SmaxClient):
             return result
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call the _setSHA LUA script.")
-            raise SmaxConnectionError(e)
+            raise SmaxConnectionError(e.args)
 
     def _pipeline_evalsha_set(self, table, key, commands):
         """
@@ -655,12 +651,7 @@ class SmaxRedisClient(SmaxClient):
             if self._pipeline is None:
                 self._pipeline = self._client.pipeline()
             for k in commands.keys():
-                if len(k.split(":")) <= 1:
-                    t = table
-                    ke = k
-                else:
-                    t = ":".join((table, *k.split(":")[:-1]))
-                    ke = k.split(":")[-1]
+                t, ke = normalize_pair(table, k)
                 self._logger.debug(f"munged table name {t}\n munged key name {ke}")
                 try:
                     self._logger.debug(f"evalsha arguments{t}, {ke}, {commands[k]}")
@@ -671,7 +662,7 @@ class SmaxRedisClient(SmaxClient):
                 except NoScriptError:
                     self._get_scripts()
                     self._pipeline.evalsha(self._multi_setSHA, '1',
-                                       f"{t}:{ke}",
+                                       join(t, ke),
                                        self._hostname,
                                        *commands[k])
             result = self._pipeline.execute()
@@ -679,7 +670,7 @@ class SmaxRedisClient(SmaxClient):
             return result
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Unable to call HMSetWithMeta LUA script.")
-            raise SmaxConnectionError(e)
+            raise SmaxConnectionError(e.args)
 
     def smax_lazy_pull(self, table, key, value):
         raise NotImplementedError("Available in C API, not in python")
@@ -713,11 +704,17 @@ class SmaxRedisClient(SmaxClient):
             else:
                 path = message["channel"].decode("utf-8")
 
-            table = path[5:path.rfind(":")]
-            key = path[path.rfind(":") + 1:]
+            table, key = normalize_pair(path[len(pubsub_prefix)+1:])
             self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
             callback(data)
+                
+        def exception_handler(ex, pubsub, thread):
+            """Silently close threads if connection fails - other code will catch the missing
+            connection"""
+            thread.stop()
+            thread.join(timeout=1.0)
+            pubsub.close()
 
         if callback is not None and self._callback_pubsub is None:
             self._callback_pubsub = self._client.pubsub()
@@ -733,7 +730,7 @@ class SmaxRedisClient(SmaxClient):
                 self._logger.info(f"Subscribed to {pattern}")
             else:
                 self._callback_pubsub.psubscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
-                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
+                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True, exception_handler=exception_handler)
                 self._logger.info(f"Subscribed to {pattern} with a callback")
         else:
             if callback is None:
@@ -742,7 +739,7 @@ class SmaxRedisClient(SmaxClient):
             else:
                 self._callback_pubsub.subscribe(**{f"{pubsub_prefix}:{pattern}": parent_callback})
                 self._logger.info(f"Subscribed to {pattern} with a callback")
-                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True)
+                self._callback_pubsub.run_in_thread(sleep_time=None, daemon=True, exception_handler=exception_handler)
 
     def smax_unsubscribe(self, pattern=None):
         """
@@ -824,13 +821,12 @@ class SmaxRedisClient(SmaxClient):
         else:
             if pattern is None:
                 # Pull the exact table that sent the notification.
-                table = channel[len(pubsub_prefix)+1:channel.rfind(":")]
-                key = channel.split(":")[-1]
+                table, key = normalize_pair(channel[len(pubsub_prefix)+1:])
             else:
                 # Pull the parent struct or "pattern" that was subscribed to.
                 # (pattern is not prefixed with `smax:`)
-                table = pattern[:pattern.rfind(":")]
-                key = pattern.split(":")[-1].strip('*')
+                table, key = normalize_pair(pattern)
+                key = key.strip('*')
             self._logger.debug(f"Got table = {table}, key = {key}")
             return self.smax_pull(table, key)
 
@@ -1028,7 +1024,7 @@ class SmaxRedisClient(SmaxClient):
             return result
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hset.")
-            raise SmaxConnectionError(e)
+            raise SmaxConnectionError(e.args)
 
     def smax_pull_meta(self, meta, table):
         """
@@ -1049,5 +1045,5 @@ class SmaxRedisClient(SmaxClient):
                 return result
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hget.")
-            raise SmaxConnectionError(e)
+            raise SmaxConnectionError(e.args)
 

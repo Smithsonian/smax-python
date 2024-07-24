@@ -8,6 +8,9 @@ from .smax_data_types import SmaxData, \
     SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, \
     _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
     optional_metadata
+
+# The separator used in key names
+smax_sep = ':'
     
 class SmaxConnectionError(RuntimeError):
     pass
@@ -100,12 +103,30 @@ class SmaxClient(ABC):
 
 
 def join(*args):
-    """Join SMA-X tables and keys.
+    """Join SMA-X tables and keys.  We use this method to
+    avoid the TypeErrors from string.join()
     
     params:
         *args : SMA-X key elements to join
     """
-    return ":".join(args)
+    if len(args) == 1:
+        if args[0].startswith(smax_sep):
+            args[0] = args[0][1:]
+        return str(args[0])
+    elif len(args) == 0:
+        return None
+    else:
+        out = ""
+        for a in args:
+            if a is None or a == '':
+                pass
+            else:
+                if type(a) is not str:
+                    a = str(a)
+                if a.startswith(smax_sep):
+                    a = a[1:]
+                out += f'{a}{smax_sep}'
+        return out[:-1]
 
 
 def normalize_pair(*args):
@@ -115,7 +136,10 @@ def normalize_pair(*args):
         *args : SMA-X key elements to join and split
     """
     full_key = join(*args)
-    return full_key.rsplit(":", maxsplit=1)
+    table_key = full_key.rsplit(":", maxsplit=1)
+    if len(table_key) == 1:
+        table_key = ["", table_key[0]]
+    return table_key
 
 
 def print_tree(d, verbose=False, indent=0):
@@ -150,7 +174,7 @@ def print_smax(smax_value, verbose=False, indent=0):
     else:
         if hasattr(smax_value, "smaxname"):
             if smax_value.smaxname is not None:
-                prefix = f"{smax_value.smaxname.split(':')[-1]} : "
+                prefix, tmp = normalize_pair(smax_value.smaxname)
             else:
                 prefix = f"{type(smax_value).__name__}:"
         else:
