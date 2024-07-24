@@ -23,7 +23,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
 # This prefix is used on SMA-X pub/sub channels to identify the messages/notification
 # channels relevant to SMA-X
 pubsub_prefix = "smax"
-pubsub_sleep = 0.001
+pubsub_sleep = 0.010
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
@@ -107,15 +107,15 @@ class SmaxRedisClient(SmaxClient):
         Returns:
             Redis: A Redis client object configured from the given args.
         """
-        retry = Retry(ExponentialBackoff(), 3)
+        retry = Retry(ExponentialBackoff(cap=30, base=0.05), 30)
         try:
             # Connect to redis-server, and store LUA scripts on the object.
             # StrictRedis and Redis are now identical, so let's be explicit
             redis_client = Redis(host=redis_ip,
                                        port=redis_port,
                                        db=redis_db,
-                                       #retry=retry,
-                                       #retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError],
+                                       retry=retry,
+                                       retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError, OSError],
                                        health_check_interval=30)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
@@ -716,7 +716,7 @@ class SmaxRedisClient(SmaxClient):
             """Silently close threads if connection fails - other code will catch the missing
             connection"""
             print("Pubsub lost connection")
-            print("Pubsub reconnecting")
+            pubsub.connection.retry.call_with_retry(pubsub.ping())
             pubsub.on_connect(pubsub.connection)
             print("Pubsub reconnected")
 
