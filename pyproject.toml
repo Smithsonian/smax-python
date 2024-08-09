@@ -23,6 +23,9 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[tool.setuptools.dynamic]
+version = {attr = "smax.__version__"}
+
 [project.scripts]
 smax = "smax.cli:main"
 
