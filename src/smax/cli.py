@@ -103,7 +103,7 @@ def main():
                 smax_client.smax_purge_volatile()
             else:
                 print('Not confirmed - exiting.')
-        elif args.table is not None and args.key is not None:
+        elif args.table is not None or args.key is not None:
             table, key = normalize_pair(args.table, args.key)
             if args.debug:
                 print(f"Got {table}, key {key}")
