@@ -3,7 +3,7 @@
 # SMAX for Python 
 Client side python library for communicating with SMA-X (aka Redis).
 
-Version 1.0.2
+Version 1.0.3
 
 [API Documentation](https://ideal-funicular-124903cd.pages.github.io/)
 
