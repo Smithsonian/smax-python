@@ -715,10 +715,10 @@ class SmaxRedisClient(SmaxClient):
         def exception_handler(ex, pubsub, thread):
             """Silently close threads if connection fails - other code will catch the missing
             connection"""
-            print("Pubsub lost connection")
+            self._logger.info("Pubsub lost connection")
             pubsub.connection.retry.call_with_retry(pubsub.ping())
             pubsub.on_connect(pubsub.connection)
-            print("Pubsub reconnected")
+            self._logger.info("Pubsub reconnected")
 
         if callback is not None and self._callback_pubsub is None:
             self._callback_pubsub = self._client.pubsub()

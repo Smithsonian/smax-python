@@ -425,7 +425,6 @@ def _to_bool(a):
     'True', 'False', 'true', 'false', '0', '1', 0, or 1.
     
     Returns 1 or 0, which is then converted to bool."""
-    print(f"_to_bool received {a} of type {type(a)}")
     if type(a) is bytes:
         a = a.decode('utf-8')
         
@@ -448,7 +447,6 @@ def _to_bool(a):
         b = 1
     else:
         b = 0
-    print(f"_to_bool returning {b} of type {type(b)}")
     
     return b
 
