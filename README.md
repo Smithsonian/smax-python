@@ -35,9 +35,9 @@ pip install . -e
   * For [Raspberry pi](https://redis.io/topics/ARM)
   * [From source](https://redis.io/topics/quickstart)
 * Set up the SMA-X server on top of Redis
-  * Clone [Smithsonian/smax-server](https://github.com/Smithsonian/smax-server)
-  * In `smax-server`: edit `redis.conf` files as necessary or desired for your application.
-  * In `smax-server`: run `install.sh`.
+  1. Clone [Smithsonian/smax-server](https://github.com/Smithsonian/smax-server)
+  2. In `smax-server`: edit `redis.conf` files as necessary or desired for your application.
+  3. In `smax-server`: run `install.sh`.
 * Clone this repo locally
 * That's it, you now have SMAX running locally!
 
