@@ -1,6 +1,11 @@
 name: SMAX Unit Tests (Linux, Mac)
 
-on: [push]
+on: 
+  push:
+    branches:
+      - main
+      
+  pull_request:
 
 jobs:
   build:
@@ -17,15 +22,14 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v2
-        
-      - name: Git checkout server submodule
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Git checkout smax-server
+        uses: actions/checkout@v4
         with:
           repository: Smithsonian/smax-server
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
-          path: redis_config_files
-        
+          path: smax-server
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -43,12 +47,10 @@ jobs:
             bind 127.0.0.1
             protected-mode no
 
-
       - name: Load LUA scripts
         run: |
-          cd redis_config_files
-          chmod 755 smax-init.sh
-          ./smax-init.sh
+          cd smax-server
+          ./smax-init.sh lua
 
       - name: Test with pytest
         run: |
