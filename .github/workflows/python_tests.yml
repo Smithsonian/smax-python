@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Git checkout smax-server
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
 	  path: redis_config_files
 
