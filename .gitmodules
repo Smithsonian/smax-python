@@ -1,3 +1,0 @@
-[submodule "redis_config_files"]
-	path = redis_config_files
-	url = https://github.com/Smithsonian/smax-server.git
