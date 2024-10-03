@@ -18,14 +18,12 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
-        
-      - name: Git checkout server submodule
+
+      - name: Git checkout smax-server
         uses: actions/checkout@v2
         with:
-          repository: Smithsonian/smax-server
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SMAX_SERVER }}
-          path: redis_config_files
-        
+	  path: redis_config_files
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
