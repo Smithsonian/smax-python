@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>smax.smax_redis_client &mdash; smax 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            smax
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../smax.html">smax package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">smax</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">smax.smax_redis_client</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for smax.smax_redis_client</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span> <span class="nn">fnmatch</span> <span class="kn">import</span> <span class="n">fnmatch</span>
+
+<span class="kn">import</span> <span class="nn">psutil</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">redis</span> <span class="kn">import</span> <span class="n">Redis</span>
+<span class="kn">from</span> <span class="nn">redis.exceptions</span> <span class="kn">import</span> <span class="n">NoScriptError</span><span class="p">,</span> <span class="n">BusyLoadingError</span><span class="p">,</span> <span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span>
+<span class="kn">from</span> <span class="nn">redis.backoff</span> <span class="kn">import</span> <span class="n">ExponentialBackoff</span>
+<span class="kn">from</span> <span class="nn">redis.retry</span> <span class="kn">import</span> <span class="n">Retry</span>
+
+<span class="kn">from</span> <span class="nn">.smax_client</span> <span class="kn">import</span> <span class="n">SmaxClient</span><span class="p">,</span> <span class="n">SmaxData</span><span class="p">,</span> <span class="n">SmaxInt</span><span class="p">,</span> <span class="n">SmaxFloat</span><span class="p">,</span> <span class="n">SmaxBool</span><span class="p">,</span> <span class="n">SmaxStr</span><span class="p">,</span> \
+        <span class="n">SmaxStrArray</span><span class="p">,</span> <span class="n">SmaxArray</span><span class="p">,</span> <span class="n">SmaxStruct</span><span class="p">,</span> <span class="n">SmaxInt8</span><span class="p">,</span> <span class="n">SmaxInt16</span><span class="p">,</span> <span class="n">SmaxInt32</span><span class="p">,</span> \
+        <span class="n">SmaxInt64</span><span class="p">,</span> <span class="n">SmaxFloat32</span><span class="p">,</span> <span class="n">SmaxFloat64</span><span class="p">,</span> <span class="n">SmaxBool</span><span class="p">,</span> \
+        <span class="n">_TYPE_MAP</span><span class="p">,</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">,</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">,</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">,</span> \
+        <span class="n">optional_metadata</span><span class="p">,</span> <span class="n">SmaxConnectionError</span><span class="p">,</span> <span class="n">SmaxKeyError</span><span class="p">,</span> <span class="n">SmaxUnderflowWarning</span><span class="p">,</span> \
+        <span class="n">join</span><span class="p">,</span> <span class="n">normalize_pair</span><span class="p">,</span> <span class="n">print_smax</span><span class="p">,</span> <span class="n">print_tree</span>
+        
+<span class="c1"># This prefix is used on SMA-X pub/sub channels to identify the messages/notification</span>
+<span class="c1"># channels relevant to SMA-X</span>
+<span class="n">pubsub_prefix</span> <span class="o">=</span> <span class="s2">&quot;smax&quot;</span>
+<span class="n">pubsub_sleep</span> <span class="o">=</span> <span class="mf">0.010</span>
+
+<div class="viewcode-block" id="SmaxRedisClient">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient">[docs]</a>
+<span class="k">class</span> <span class="nc">SmaxRedisClient</span><span class="p">(</span><span class="n">SmaxClient</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redis_ip</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">redis_port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">redis_db</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">program_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor for SmaxRedisClient, automatically establishes connection</span>
+<span class="sd">        and sets the redis-py connection object to &#39;self._client&#39;. This magic</span>
+<span class="sd">        happens in the SmaxClient parent class that is inherited.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            redis_ip (str): IP address of redis-server.</span>
+<span class="sd">            redis_port (int): Port of redis-server.</span>
+<span class="sd">            redis_db (int): Database index to connect to.</span>
+<span class="sd">            program_name (str): Optional program name gets appended to hostname.</span>
+<span class="sd">            hostname (str): Optional hostname, obtained automatically otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Logging convention for messages to have module names in them.</span>
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">logger</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logger</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="c1"># Attributes for package, not exposed to users.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redis_ip</span> <span class="o">=</span> <span class="n">redis_ip</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redis_port</span> <span class="o">=</span> <span class="n">redis_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_redis_db</span> <span class="o">=</span> <span class="n">redis_db</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_multi_getSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_multi_setSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_structSHA</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_zeroesSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_higher_thanSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_newer_thanSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dsm_get_tableSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_purgeSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_purge_volatileSHA</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_del_structSHA</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_threads</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Obtain _hostname automatically, unless &#39;_hostname&#39; argument is passed.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span> <span class="k">if</span> <span class="n">hostname</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hostname</span>
+        
+        <span class="n">program_name</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="n">program_name</span>
+
+        <span class="c1"># Call parent constructor, which calls smax_connect_to() and sets the</span>
+        <span class="c1"># returned client as self._client.</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">redis_ip</span><span class="p">,</span> <span class="n">redis_port</span><span class="p">,</span> <span class="n">redis_db</span><span class="p">)</span>
+
+        <span class="c1"># load the script SHAs from the server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_scripts</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_connect_to">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_connect_to">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_connect_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redis_ip</span><span class="p">,</span> <span class="n">redis_port</span><span class="p">,</span> <span class="n">redis_db</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses the redis-py library to establish a connection to redis, then</span>
+<span class="sd">        obtains and stores the LUA scripts in the object (ex self._getSHA). This</span>
+<span class="sd">        function is called automatically by the SmaxClient parent class, so</span>
+<span class="sd">        there shouldn&#39;t be a need to call this explicitly.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            redis_ip (str): IP address of redis-server.</span>
+<span class="sd">            redis_port (int): Port of redis-server.</span>
+<span class="sd">            redis_db (int): Database index to connect to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Redis: A Redis client object configured from the given args.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">retry</span> <span class="o">=</span> <span class="n">Retry</span><span class="p">(</span><span class="n">ExponentialBackoff</span><span class="p">(</span><span class="n">cap</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="mf">0.05</span><span class="p">),</span> <span class="mi">30</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Connect to redis-server, and store LUA scripts on the object.</span>
+            <span class="c1"># StrictRedis and Redis are now identical, so let&#39;s be explicit</span>
+            <span class="n">redis_client</span> <span class="o">=</span> <span class="n">Redis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">redis_ip</span><span class="p">,</span>
+                                       <span class="n">port</span><span class="o">=</span><span class="n">redis_port</span><span class="p">,</span>
+                                       <span class="n">db</span><span class="o">=</span><span class="n">redis_db</span><span class="p">,</span>
+                                       <span class="n">retry</span><span class="o">=</span><span class="n">retry</span><span class="p">,</span>
+                                       <span class="n">retry_on_error</span><span class="o">=</span><span class="p">[</span><span class="n">BusyLoadingError</span><span class="p">,</span> <span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">],</span>
+                                       <span class="n">health_check_interval</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connected to redis server </span><span class="si">{</span><span class="n">redis_ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">redis_port</span><span class="si">}</span><span class="s2"> db=</span><span class="si">{</span><span class="n">redis_db</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">redis_client</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connecting to redis and getting scripts failed with </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">_get_scripts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the SHAs of the cached scripts using the Redis.hget methods</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pulling script SHAs from server&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_getSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;HGetWithMeta&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;HSetWithMeta&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_multi_getSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;HMGetWithMeta&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_multi_setSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;HMSetWithMeta&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_structSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;GetStruct&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_purgeSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;Purge&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_purge_volatileSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;PurgeVolatile&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_newer_thanSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;ListNewerThan&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_newer_thanSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;ListOlderThan&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_higher_thanSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;ListHigherThan&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list_zeroesSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;ListZeroes&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dsm_get_tableSHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;DSMGetTable&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_disconnect">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_disconnect">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Python manages a connection pool automatically, if somehow that fails</span>
+<span class="sd">        release the connection, this disconnect function will do it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected redis server </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_port</span><span class="si">}</span><span class="s2"> db=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_db</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_parse_lua_pull_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lua_data</span><span class="p">,</span> <span class="n">smaxname</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private method to parse the response from calling the HGetWithMeta LUA</span>
+<span class="sd">        script.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            lua_data (list): value, vtype, dim, timestamp, origin, serial</span>
+<span class="sd">            smaxname (str): Full name of the SMAX table and key</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Smax&lt;var&gt;: Populated Smax&lt;var&gt; dataclass object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Extract the type out of the meta data, and map string to real type object.</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_parse_lua_pull_response() got type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">type_name</span> <span class="ow">in</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">:</span>
+            <span class="n">data_type</span> <span class="o">=</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">type_name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I can&#39;t deal with data of type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, defaulting to &#39;string&#39;&quot;</span><span class="p">)</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+            <span class="n">data_type</span> <span class="o">=</span> <span class="n">SmaxStr</span>
+
+        <span class="c1"># Extract data, origin and sequence from meta data.</span>
+        <span class="n">data_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">sequence</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+        
+        <span class="c1"># Extract dimension information from meta data.</span>
+        <span class="n">data_dim</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="c1"># If only one dimension convert to a single value (rather than list)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_dim</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">data_dim</span> <span class="o">=</span> <span class="n">data_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># If there is only a single value, cast to the appropriate type and return.</span>
+        <span class="k">if</span> <span class="n">data_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s1">&#39;string&#39;</span><span class="p">:</span>
+                <span class="n">strdata</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data_type</span><span class="p">(</span><span class="n">strdata</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> \
+                                <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Use the builtin base type&#39;s conversion from string to that type</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data_type</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">)</span>
+
+        <span class="c1"># This is some kind of array.</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If this is a list of strings, just clean up string and return.</span>
+            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s1">&#39;string&#39;</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># Remove the leading and trailing \&#39; in each string in the list.</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">SmaxStrArray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> \
+                        <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                <span class="c1"># Use numpy for all other numerical types</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">SmaxArray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> \
+                        <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">)</span>
+
+        <span class="c1"># Get additional meta data.</span>
+        <span class="k">if</span> <span class="n">pull_meta</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">optional_metadata</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">smaxname</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_parse_lua_pull: returning </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">metadata</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_pull">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_pull">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get data which was stored with the smax macro HSetWithMeta along with</span>
+<span class="sd">        the associated metadata. The return value will an SmaxData object</span>
+<span class="sd">        containing the data, typeName, dataDimension(s), dataDate, source of the</span>
+<span class="sd">        data, and a sequence number. If you pulled a struct, you will get a</span>
+<span class="sd">        nested dictionary back, with each leaf being an SmaxData object.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): SMAX table name</span>
+<span class="sd">            key (str): SMAX key name</span>
+<span class="sd">            pull_meta (bool): Flag whether to pull optional metadata</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Smax&lt;type&gt;: Populated Smax&lt;type&gt; dataclass object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Carry out a sanity check on (table, key) pair and normalize</span>
+        <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calliing _getSHA with: &#39;1&#39;, </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lua_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NoScriptError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_scripts</span><span class="p">()</span>
+            <span class="n">lua_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_getSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2"> from Redis </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received response: </span><span class="si">{</span><span class="n">lua_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">lua_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully pulled </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to pull valid data for </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxKeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown SMA-X error pulling </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+        <span class="c1"># Check that we got a valid response</span>
+        <span class="k">if</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2"> in Redis&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxKeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find </span><span class="si">{</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s2"> in Redis </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Extract the type out of the meta data, and map string to real type object.</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Type: </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># If the lua response says its a struct we have to now use another LUA</span>
+        <span class="c1"># script to go back to redis and collect the struct.</span>
+        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;struct&quot;</span><span class="p">:</span>
+            <span class="n">lua_dim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>  <span class="c1"># assuming that structs can&#39;t be multidimensional arrays</span>
+            <span class="n">lua_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span>
+                <span class="n">lua_origin</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lua_origin</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span>
+                <span class="n">lua_sequence</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lua_sequence</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">lua_struct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_structSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully pulled struct </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">NoScriptError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_scripts</span><span class="p">()</span>
+                <span class="n">lua_struct</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_structSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully pulled struct </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reading </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> from Redis failed&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+            <span class="c1"># The struct will be parsed into a nested python dictionary.</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">SmaxStruct</span><span class="p">({},</span> <span class="n">dim</span><span class="o">=</span><span class="n">lua_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">lua_date</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">lua_origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">lua_sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">pull_meta</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">optional_metadata</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">smaxname</span><span class="p">)</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">struct_name_index</span><span class="p">,</span> <span class="n">struct_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lua_struct</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">tree</span>
+                <span class="n">names</span> <span class="o">=</span> <span class="n">struct_name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">table_name_index</span><span class="p">,</span> <span class="n">table_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+                    <span class="n">offset</span> <span class="o">=</span> <span class="n">struct_name_index</span> <span class="o">+</span> <span class="n">struct_name_index</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">smaxname</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">struct_name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span> <span class="n">table_name</span><span class="p">)</span>
+                            
+                    <span class="c1"># Grow a new hierarchical level with a blank dictionary.</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="n">SmaxStruct</span><span class="p">({},</span> <span class="n">dim</span><span class="o">=</span><span class="n">lua_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">lua_date</span><span class="p">,</span> \
+                        <span class="n">origin</span><span class="o">=</span><span class="n">lua_origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">lua_sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">))</span>
+
+                    <span class="c1"># If this is the last name in the path, add actual data.</span>
+                    <span class="k">if</span> <span class="n">table_name_index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+
+                        <span class="c1"># Create offset indices for more readable code.</span>
+                        <span class="n">offset2</span> <span class="o">=</span> <span class="n">struct_name_index</span> <span class="o">+</span> <span class="n">struct_name_index</span> <span class="o">+</span> <span class="mi">2</span>
+
+                        <span class="c1"># Process leaf node like it is a normal smax_pull.</span>
+                        <span class="k">for</span> <span class="n">leaf_index</span><span class="p">,</span> <span class="n">leaf</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lua_struct</span><span class="p">[</span><span class="n">offset</span><span class="p">]):</span>
+
+                            <span class="c1"># If the leaf says its a struct, ignore it.</span>
+                            <span class="n">lua_type</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">lua_type</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;struct&quot;</span><span class="p">:</span>
+                                <span class="k">continue</span>
+
+                            <span class="c1"># Extract data and metadata to pass into parser.</span>
+                            <span class="n">lua_data</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+                            <span class="n">lua_dim</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+                            <span class="n">lua_date</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">3</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+                            <span class="n">lua_origin</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">4</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+                            <span class="n">lua_sequence</span> <span class="o">=</span> <span class="n">lua_struct</span><span class="p">[</span><span class="n">offset2</span><span class="p">][</span><span class="mi">5</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span>
+
+                            <span class="c1"># Parser will return an SmaxData object.</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;struct_name: </span><span class="si">{</span><span class="n">struct_name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="n">smaxname</span> <span class="o">=</span> <span class="n">struct_name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">leaf</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                            <span class="n">smax_data_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_lua_pull_response</span><span class="p">(</span>
+                                <span class="p">[</span><span class="n">lua_data</span><span class="p">,</span> <span class="n">lua_type</span><span class="p">,</span> <span class="n">lua_dim</span><span class="p">,</span> <span class="n">lua_date</span><span class="p">,</span>
+                                 <span class="n">lua_origin</span><span class="p">,</span> <span class="n">lua_sequence</span><span class="p">],</span> <span class="n">smaxname</span><span class="p">,</span> <span class="n">pull_meta</span><span class="p">)</span>
+
+                            <span class="c1"># Add SmaxData object into the nested dictionary.</span>
+                            <span class="n">t</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">lua_struct</span><span class="p">[</span><span class="n">offset</span><span class="p">][</span><span class="n">leaf_index</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">),</span>
+                                         <span class="n">smax_data_object</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="n">tree</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_lua_pull_response</span><span class="p">(</span><span class="n">lua_data</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_to_smax_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function that converts a given data value to the string format</span>
+<span class="sd">        that SMAX supports.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            value: Any supported data type, including (nested) dicts.</span>
+<span class="sd">            smax_type (str): SMA-X type to cast value(s) to.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: tuple of (data_string, type_name, dim_string)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Derive the type according to Python.</span>
+        <span class="n">python_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format received </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">, type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">python_type</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format &#39;type is list&#39;: </span><span class="si">{</span><span class="n">python_type</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="nb">list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Single value of a supported python or numpy type, cast to string and send to redis.</span>
+                <span class="c1"># First determine the SMA-X type of value.</span>
+        <span class="k">if</span> <span class="n">smax_type</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="p">:</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="n">smax_type</span>
+        <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">:</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">python_type</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, 1&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;boolean&quot;</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format converting Python bool to int </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
+        
+        <span class="c1"># Single value of a Smax&lt;var&gt; type</span>
+        <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, 1&quot;</span><span class="p">)</span>
+            
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
+
+        <span class="c1"># We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">data_shape</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)]</span>
+            <span class="c1"># recursively move down a level in the collection hierarchy</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">break</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
+                    <span class="n">data_shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>  
+            
+            <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxArray</span><span class="p">:</span>
+                <span class="c1"># Preserve the SMA-X type</span>
+                <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">type</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">:</span>
+                <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
+            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
+                <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Did not recognize type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">))</span><span class="si">}</span><span class="s2">, storing as string or string array.&quot;</span><span class="p">)</span>
+                <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+
+            <span class="c1"># Either convert to a string array, or to an numpy.ndarray</span>
+            <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="nb">tuple</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxStrArray</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format working on a </span><span class="si">{</span><span class="n">python_type</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;string&quot;</span><span class="p">:</span>
+                    <span class="c1"># We have a string array of unknown (and possibly variable) depth.  This needs to be concatenated with &#39;\r&#39; and uploaded as a string</span>
+                    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
+                                <span class="n">flatten</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="n">flatten</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                    <span class="n">converted_data</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxStrArray</span><span class="p">:</span>
+                        <span class="n">size</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">dim</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                    <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">python_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+                    
+            <span class="c1"># Now if its a numpy array, flatten, convert to a string, and return.</span>
+            <span class="k">if</span> <span class="n">python_type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="o">==</span> <span class="n">SmaxArray</span><span class="p">:</span>
+                <span class="c1"># Convert to numpy array, dtype=&quot;O&quot; preserves the original types.</span>
+                <span class="n">converted_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;O&quot;</span><span class="p">)</span>
+                <span class="c1"># If the shape is a single dimension, set &#39;size&#39; equal to that value.</span>
+                <span class="n">data_shape</span> <span class="o">=</span> <span class="n">converted_data</span><span class="o">.</span><span class="n">shape</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">data_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Convert shape tuple to a space delimited list for smax.</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">)</span>
+
+                    <span class="c1"># Flatten and make a space delimited string of dimensions.</span>
+                    <span class="n">converted_data</span> <span class="o">=</span> <span class="n">converted_data</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            
+                <span class="c1"># Check this 1D representation of the data for type uniformity.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">converted_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">converted_data</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All values in list are not the same type.&quot;</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format converted_data.dtype.type : </span><span class="si">{</span><span class="n">converted_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    
+                <span class="c1"># Create a string representation of the data in the array.</span>
+                <span class="n">converted_data</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">converted_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span>
+        <span class="c1"># Single value of an unknown type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Did not recognize type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="si">}</span><span class="s2">, storing as string.&quot;</span><span class="p">)</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_recurse_nested_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function to recursively traverse a nested dictionary, finding</span>
+<span class="sd">        the leaf nodes that have actual data values.  Each real data value</span>
+<span class="sd">        is yielded back as it recurses.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            dictionary (dict): Dict containing keys that exist in SMAX.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            (key, value) for every leaf node in the nested dictionary.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="c1"># If value is dict then iterate over all its values</span>
+                <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
+                
+    <span class="k">def</span> <span class="nf">_get_struct_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leaves</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function to generate the set of all SMA-X fields required to describe the</span>
+<span class="sd">        tree structure of a nested dictionary.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            leaves (list): List of leaf nodes from _recurse_nested_dict()</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
+<span class="sd">                        type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outpairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">leaves</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">tiers</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">tier</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tiers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">superstruct</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="p">])</span>
+                    <span class="n">pair</span> <span class="o">=</span> <span class="p">(</span><span class="n">superstruct</span><span class="p">,</span> <span class="n">tiers</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">pair</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">outpairs</span><span class="p">:</span>
+                        <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span>
+            <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">outpairs</span>
+            
+    <span class="k">def</span> <span class="nf">_get_struct_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from</span>
+<span class="sd">        fields generated by _get_struct_fields() for a nested SMA-X struct.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str)   : The top level hash table name for the nested struct.</span>
+<span class="sd">            key (str)     : The top level key for the nested struct.</span>
+<span class="sd">            fields (list) : List of nested fields from _get_struct_fields()</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
+<span class="sd">                        type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;struct&quot;</span><span class="p">:</span>
+                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_smax_format</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">tab</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tab</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="k">if</span> <span class="n">tab</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
+                <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">field</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">tables</span>
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_share">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_share">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">push_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send data to redis using the smax macro HSetWithMeta to include</span>
+<span class="sd">        metadata.  The metadata is typeName, dataDimension(s), dataDate,</span>
+<span class="sd">        source of the data, and a sequence number.  The first two are</span>
+<span class="sd">        determined from the data and the source from this computer&#39;s name</span>
+<span class="sd">        plus the program name if given when this class is instantiated.</span>
+<span class="sd">        Date and sequence number are added by the redis macro.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): SMAX table name</span>
+<span class="sd">            key (str): SMAX key name</span>
+<span class="sd">            value: data to store, takes supported types, including (nested) dicts.</span>
+<span class="sd">            push_meta (bool): Push optional metadata if present in object </span>
+<span class="sd">                            (does not work for SmaxStructs and is not atomic).</span>
+<span class="sd">            type_name (str): Force casting to type_name before sharing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            return value from redis-py&#39;s evalsha() function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If this is not a dict, then convert data to smax format and send.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">push_meta</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">optional_metadata</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">meta</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">smax_push_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">meta</span><span class="p">))</span>
+
+            <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_smax_format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="n">smax_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calling HSetWithMeta script with </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evalsha_set</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Recursively traverse the (nested) dictionary to generate a set</span>
+            <span class="c1"># of values to update atomically. The recurse_nested_dict function</span>
+            <span class="c1"># yields key/value pairs as it finds the leaf nodes of the nested</span>
+            <span class="c1"># dict.</span>
+            <span class="n">leaves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_struct_fields</span><span class="p">(</span><span class="n">leaves</span><span class="p">)</span>
+            <span class="n">tables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_struct_tables</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calling HMSetWithMeta script with </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">tables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline_evalsha_set</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">tables</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_evalsha_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data_string</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function that calls evalsha() using an SMAX LUA script.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): SMAX table name.</span>
+<span class="sd">            key (str): SMAX key name.</span>
+<span class="sd">            data_string (str): Data converted to proper SMAX string format.</span>
+<span class="sd">            type_name (str): String representation of type.</span>
+<span class="sd">            size: (str): Representation of the dimensions of the data. If one</span>
+<span class="sd">                     dimension, than a single integer.Otherwise will be a string</span>
+<span class="sd">                     of space delimited dimension values.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            return value from redis-py&#39;s evalsha() function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_setSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data_string</span><span class="p">,</span>
+                                          <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully shared to </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="n">NoScriptError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_scripts</span><span class="p">()</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_setSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data_string</span><span class="p">,</span>
+                                              <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully shared to </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Redis seems down, unable to call the _setSHA LUA script.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_pipeline_evalsha_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">commands</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        In order to execute multiple LUA scripts atomically, it has to use the</span>
+<span class="sd">        pipeline module in redis-py.  This function takes a list of commands,</span>
+<span class="sd">        and issues them as a &quot;pipeline&quot;, which uses a MULTI/EXEC block under the</span>
+<span class="sd">        covers. The HMSetWithMeta LUA script allows you to update multiple</span>
+<span class="sd">        values for a table, although a separate call for each new table is needed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): SMAX table name</span>
+<span class="sd">            key (str): SMAX key name</span>
+<span class="sd">            commands (dict): Keys for each table to update, and list of commands</span>
+<span class="sd">            to pass to HMSetWithMeta LUA script.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            return value from redis-py&#39;s pipeline.execute() function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Append the optional &#39;T&#39; value to the end of the last entry in the command dict.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Dict keys are (as of Py 3.7) sorted by the order they are added to the dict,</span>
+        <span class="c1"># so this command should be the last one accessed in the for loop below.</span>
+        <span class="n">commands</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">commands</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">commands</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">commands</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">t</span><span class="p">,</span> <span class="n">ke</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;munged table name </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="se">\n</span><span class="s2"> munged key name </span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;evalsha arguments</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">commands</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_multi_setSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+                                       <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span><span class="p">,</span>
+                                       <span class="o">*</span><span class="n">commands</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="k">except</span> <span class="n">NoScriptError</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_get_scripts</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_multi_setSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+                                       <span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">ke</span><span class="p">),</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span><span class="p">,</span>
+                                       <span class="o">*</span><span class="n">commands</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully executed pipeline share to </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">commands</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Unable to call HMSetWithMeta LUA script.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_lazy_pull">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_lazy_pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Available in C API, not in python&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_lazy_end">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_lazy_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_lazy_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Available in C API, not in python&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_subscribe">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_subscribe">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_subscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pubsub_sleep</span><span class="o">=</span><span class="n">pubsub_sleep</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Subscribe to a redis field or group of fields. You can type the full</span>
+<span class="sd">        name of the field you&#39;d like to subscribe too, or use a wildcard &quot;*&quot;</span>
+<span class="sd">        character as a suffix to specify a pattern. Use a callback for asynchronous</span>
+<span class="sd">        processing of notifications, or use one of the smax_wait_on functions.</span>
+<span class="sd">        </span>
+<span class="sd">        Internal to the HSET* and HMSET*, notifications for pub/sub are</span>
+<span class="sd">        generated with the prefix `smax:`. This needs to be added/removed within</span>
+<span class="sd">        `smax_subscribe`, etc.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;</span>
+<span class="sd">                           at the end of the pattern to be notified for anything</span>
+<span class="sd">                           underneath.</span>
+<span class="sd">            callback (func): Function that takes a single argument (Default=None).</span>
+<span class="sd">                             The message in your callback will be an SmaData</span>
+<span class="sd">                             object, or a nested dictionary for a struct.</span>
+<span class="sd">            pubsub_sleep (float): Sleep time within each loop of the pubsub</span>
+<span class="sd">                                  event handling thread</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">parent_callback</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">msg_pattern</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;pattern&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">msg_pattern</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;pattern&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+
+            <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">pubsub_prefix</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Callback notification received:</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">callback</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                
+        <span class="k">def</span> <span class="nf">exception_handler</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">pubsub</span><span class="p">,</span> <span class="n">thread</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Silently close threads if connection fails - other code will catch the missing</span>
+<span class="sd">            connection&quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Pubsub lost connection&quot;</span><span class="p">)</span>
+            <span class="n">pubsub</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">retry</span><span class="o">.</span><span class="n">call_with_retry</span><span class="p">(</span><span class="n">pubsub</span><span class="o">.</span><span class="n">ping</span><span class="p">())</span>
+            <span class="n">pubsub</span><span class="o">.</span><span class="n">on_connect</span><span class="p">(</span><span class="n">pubsub</span><span class="o">.</span><span class="n">connection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Pubsub reconnected&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">pubsub</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created redis pubsub object for callbacks&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">pubsub</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Created redis pubsub object&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">psubscribe</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subscribed to </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span><span class="o">.</span><span class="n">psubscribe</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">parent_callback</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span><span class="o">.</span><span class="n">run_in_thread</span><span class="p">(</span><span class="n">sleep_time</span><span class="o">=</span><span class="n">pubsub_sleep</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exception_handler</span><span class="o">=</span><span class="n">exception_handler</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subscribed to </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> with a callback&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subscribed to </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">parent_callback</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Subscribed to </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> with a callback&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_callback_pubsub</span><span class="o">.</span><span class="n">run_in_thread</span><span class="p">(</span><span class="n">sleep_time</span><span class="o">=</span><span class="n">pubsub_sleep</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exception_handler</span><span class="o">=</span><span class="n">exception_handler</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_unsubscribe">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_unsubscribe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unsubscribe from all subscribed channels, or pass a pattern argument</span>
+<span class="sd">        to unsubscribe from specific channels.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): Either full name of smax field, or use a wildcard &#39;*&#39;</span>
+<span class="sd">                           at the end of the pattern to be notified for anything</span>
+<span class="sd">                           underneath.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">punsubscribe</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unsubscribed from all tables&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">pattern</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">punsubscribe</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsubscribed from </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">unsubscribe</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsubscribed from </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_redis_listen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">notification_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private function to help implement the &quot;wait&quot; functions in this API.</span>
+<span class="sd">        In the redis-py library, the listen() function is a blocking call, so</span>
+<span class="sd">        it gets used if there is no timeout specified.  When there is a timeout,</span>
+<span class="sd">        the get_message() function is used, because listen() doesn&#39;t take a timeout</span>
+<span class="sd">        value.  The get_message() function doesn&#39;t block by default, but when</span>
+<span class="sd">        a timeout is specified it blocks until the timeout is reached. This function</span>
+<span class="sd">        will raise a redis Timeout exception when the timeout is reached.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): SMAX table/key pattern to listen on.</span>
+<span class="sd">            timeout (float): Value in seconds to wait before raising timeout exception.</span>
+<span class="sd">            notification_only (bool): If True, only returns the notification from redis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Either a (list) notification, or the actual pulled data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Throw away any blank messages or of type &#39;subscribe&#39;</span>
+        <span class="n">found_real_message</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">found_real_message</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">timeout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for message matching </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> with .listen()&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">listen</span><span class="p">():</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for message matching </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> with .get_message() with timeout </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pubsub</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redis message received:</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Timed out waiting for redis message.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;message&quot;</span> <span class="ow">or</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;pmessage&quot;</span><span class="p">:</span>
+                <span class="n">channel</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pubsub_prefix</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">found_real_message</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">fnmatch</span><span class="p">(</span><span class="n">channel</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">pubsub_prefix</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:],</span> <span class="n">pattern</span><span class="p">):</span>
+                        <span class="n">found_real_message</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">notification_only</span><span class="p">:</span>
+            <span class="c1"># Strip the &quot;smax:&quot; prefix off of the channel.</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">pubsub_prefix</span><span class="p">):</span>
+                <span class="n">message</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">channel</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">pubsub_prefix</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">message</span><span class="p">[</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">channel</span>
+
+            <span class="c1"># Decode the other fields.</span>
+            <span class="n">message</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got notification: message = </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Pull the exact table that sent the notification.</span>
+                <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">channel</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">pubsub_prefix</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Pull the parent struct or &quot;pattern&quot; that was subscribed to.</span>
+                <span class="c1"># (pattern is not prefixed with `smax:`)</span>
+                <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got table = </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, key = </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_wait_on_subscribed">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_wait_on_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">notification_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If you use smax_subscribe without a callback, you can use this function</span>
+<span class="sd">        to specify with channel to listen to, and block until a message is received.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): SMAX table/key pattern to listen on.</span>
+<span class="sd">            timeout (int): Value in seconds to wait before raising timeout exception.</span>
+<span class="sd">            notification_only (bool): If True, only returns the notification from redis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Either a (list) notification, or the actual pulled data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redis_listen</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                                  <span class="n">notification_only</span><span class="o">=</span><span class="n">notification_only</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_wait_on_any_subscribed">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_wait_on_any_subscribed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">notification_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If you use smax_subscribe without a callback, you can use this function</span>
+<span class="sd">        to block until a message is received from any channel you are subscribed to.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            timeout (float): Value in seconds to wait before raising timeout exception.</span>
+<span class="sd">            notification_only (bool): If True, only returns the notification from redis.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Either a (list) notification, or the actual pulled data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redis_listen</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+                                  <span class="n">notification_only</span><span class="o">=</span><span class="n">notification_only</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_purge">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_purge">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_purge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Purges a table or key from Redis.  Use with ultimate caution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): SMA-X table to purge. Can include wild cards to purge by pattern matching.</span>
+<span class="sd">            key (str, optional): Specific SMA-X key in table to purge. Defaults to None.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            int: number of SMA-X keys purged from Redis</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">table</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">table</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Purging all keys matching </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_purgeSHA</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SmaxRedisClient.smax_purge_volatile">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_purge_volatile">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_purge_volatile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Purges all volatile tables and keys from Redis.  Use with ultimate caution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Purging all volatile keys&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_purge_volatileSHA</span><span class="p">,</span> <span class="s1">&#39;0&#39;</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="SmaxRedisClient.smax_dsm_get_table">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_dsm_get_table">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_dsm_get_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the SMA-X name that maps to a DSM target, key, and (optionally) host.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (str): DSM target or caller</span>
+<span class="sd">            key (str): DSM key</span>
+<span class="sd">            host (str, optional): DSM host (caller). If not set, defaults to target.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            str : SMA-X table where the key can be found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">host</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dsm_get_tableSHA</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="SmaxRedisClient.smax_list_newer_than">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_list_newer_than">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_list_newer_than</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all SMA-X keys newer than the datetime object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (datetime.datetime): cutoff time.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list[(str, smax.SmaxData)]: list of pairs of SMA-X keys and values newer than dt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If tzinfo is not given in the datetime object, assume it is UTC</span>
+        <span class="k">if</span> <span class="n">dt</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+            
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        
+        <span class="n">keypairs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_newer_thanSHA</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">)</span>
+    
+        <span class="n">result</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">kp</span> <span class="ow">in</span> <span class="n">keypairs</span><span class="p">:</span>
+            <span class="n">smax_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull</span><span class="p">(</span><span class="n">kp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smax_value</span><span class="p">))</span>
+            
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_list_older_than">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_list_older_than">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_list_older_than</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all SMA-X keys older than the datetime object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dt (datetime.datetime): cutoff time.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list[(str, smax.SmaxData)]: list of pairs of SMA-X keys and values older than dt</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If tzinfo is not given in the datetime object, assume it is UTC</span>
+        <span class="k">if</span> <span class="n">dt</span><span class="o">.</span><span class="n">tzinfo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+            
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+        
+        <span class="n">keypairs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_older_thanSHA</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">)</span>
+    
+        <span class="n">result</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">kp</span> <span class="ow">in</span> <span class="n">keypairs</span><span class="p">:</span>
+            <span class="n">smax_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull</span><span class="p">(</span><span class="n">kp</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">kp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">smax_value</span><span class="p">))</span>
+            
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    
+<div class="viewcode-block" id="SmaxRedisClient.smax_list_higher_than">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_list_higher_than">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_list_higher_than</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all SMA-X fields in table with values higher than the value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): table, struct or meta name</span>
+<span class="sd">            value (int or float): cutoff value.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list[(str, smax.SmaxData)]: list of pairs of SMA-X fields and values higher than value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_higher_thanSHA</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    
+        <span class="n">result</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="n">smax_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">f</span><span class="p">,</span> <span class="n">smax_value</span><span class="p">))</span>
+            
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    
+<div class="viewcode-block" id="SmaxRedisClient.smax_list_zeroes">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_list_zeroes">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_list_zeroes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all fields in key equal to zero.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            key (str): Redis key to test.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list(str): list of all fields equal to zero.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list_zeroesSHA</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_set_description">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_set_description">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_set_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a &lt;description&gt; metadata field for specified table.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): Full SMAX table name (with key included).</span>
+<span class="sd">            description (str): String for the description of this smax field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_push_meta</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_get_description">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_get_description">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_get_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_set_units">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_set_units">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_set_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">unit</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_push_meta</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">unit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_get_units">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_get_units">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_get_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="s2">&quot;units&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_set_coordinate_system">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_set_coordinate_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">coordinate_system</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smax_push_meta</span><span class="p">(</span><span class="s2">&quot;coords&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">coordinate_system</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_get_coordinate_system">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_get_coordinate_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="s2">&quot;coords&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_create_coordinate_system">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_create_coordinate_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_axis</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Available in C API, not in python&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_push_meta">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_push_meta">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_push_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets additional metadata for a given table.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            meta (str): Key for the metadata field.</span>
+<span class="sd">            table (str): Name of the table to set metadata for.</span>
+<span class="sd">            value (str or int): Metadata value to store in redis, note this</span>
+<span class="sd">                                needs to be a string int.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Result of redis-py hset function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hset</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="n">meta</span><span class="si">}</span><span class="s2">&gt;&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully shared metadata to </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Redis seems down, unable to call hset.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SmaxRedisClient.smax_pull_meta">
+<a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_pull_meta">[docs]</a>
+    <span class="k">def</span> <span class="nf">smax_pull_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta</span><span class="p">,</span> <span class="n">table</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pulls specified metadata field from a given table.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            table (str): Name of the table to pull metadata from.</span>
+<span class="sd">            meta (str): Metadata field name to pull.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Result of redis-py hget function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_client</span><span class="o">.</span><span class="n">hget</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="n">meta</span><span class="si">}</span><span class="s2">&gt;&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Successfully pulled metadata from </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bytes</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Redis seems down, unable to call hget.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Center for Astrohysics | Harvard &amp; Smithsonian.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -47,7 +47,10 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">smax package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#smax-cli-module">smax.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax.cli">smax.cli module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smax.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#module-smax.smax_client">smax.smax_client module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.SmaxClient"><code class="docutils literal notranslate"><span class="pre">SmaxClient</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_connect_to"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_connect_to()</span></code></a></li>
@@ -185,9 +188,71 @@
 <li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserStr"><code class="docutils literal notranslate"><span class="pre">UserStr</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#smax-smax-redis-client-module">smax.smax_redis_client module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#smax-smax-redis-client-old-module">smax.smax_redis_client_old module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax.smax_redis_client">smax.smax_redis_client module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_connect_to"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_connect_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_create_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_disconnect"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_disconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_dsm_get_table"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_dsm_get_table()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_description"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_units"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_end"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_lazy_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_lazy_pull()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_higher_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_higher_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_newer_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_newer_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_older_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_older_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_zeroes"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_zeroes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_pull()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull_meta"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_pull_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_purge"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_purge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_purge_volatile"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_purge_volatile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_push_meta"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_push_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_description"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_units"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_share"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_share()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_subscribe"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_subscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_unsubscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_wait_on_any_subscribed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_wait_on_subscribed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax.smax_redis_client_old">smax.smax_redis_client_old module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_connect_to"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_connect_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_create_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_create_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_disconnect"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_disconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_dsm_get_table"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_dsm_get_table()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_description"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_units"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_get_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_end"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_lazy_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_pull"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_lazy_pull()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_higher_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_higher_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_newer_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_newer_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_older_than"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_older_than()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_zeroes"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_list_zeroes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_pull"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_pull()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_pull_meta"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_pull_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_purge"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_purge()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_purge_volatile"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_purge_volatile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_push_meta"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_push_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_description"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_units"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_set_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_share"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_share()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_subscribe"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_subscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_unsubscribe"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_unsubscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_any_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_wait_on_any_subscribed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxRedisClient.smax_wait_on_subscribed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -221,8 +286,13 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="smax-cli-module">
-<h2>smax.cli module<a class="headerlink" href="#smax-cli-module" title="Link to this heading"></a></h2>
+<section id="module-smax.cli">
+<span id="smax-cli-module"></span><h2>smax.cli module<a class="headerlink" href="#module-smax.cli" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="smax.cli.main">
+<span class="sig-prename descclassname"><span class="pre">smax.cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/cli.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.cli.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-smax.smax_client">
 <span id="smax-smax-client-module"></span><h2>smax.smax_client module<a class="headerlink" href="#module-smax.smax_client" title="Link to this heading"></a></h2>
@@ -799,14 +869,731 @@ Out[1]: False</p>
 </dd></dl>
 
 </section>
-<section id="smax-smax-redis-client-module">
-<h2>smax.smax_redis_client module<a class="headerlink" href="#smax-smax-redis-client-module" title="Link to this heading"></a></h2>
+<section id="module-smax.smax_redis_client">
+<span id="smax-smax-redis-client-module"></span><h2>smax.smax_redis_client module<a class="headerlink" href="#module-smax.smax_redis_client" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_redis_client.</span></span><span class="sig-name descname"><span class="pre">SmaxRedisClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redis_ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6379</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">program_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_client.SmaxClient" title="smax.smax_client.SmaxClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxClient</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_connect_to">
+<span class="sig-name descname"><span class="pre">smax_connect_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redis_ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_db</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_connect_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_connect_to" title="Link to this definition"></a></dt>
+<dd><p>Uses the redis-py library to establish a connection to redis, then
+obtains and stores the LUA scripts in the object (ex self._getSHA). This
+function is called automatically by the SmaxClient parent class, so
+there shouldn’t be a need to call this explicitly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>redis_ip</strong> (<em>str</em>) – IP address of redis-server.</p></li>
+<li><p><strong>redis_port</strong> (<em>int</em>) – Port of redis-server.</p></li>
+<li><p><strong>redis_db</strong> (<em>int</em>) – Database index to connect to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Redis client object configured from the given args.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Redis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_create_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_create_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_create_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_disconnect">
+<span class="sig-name descname"><span class="pre">smax_disconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_disconnect" title="Link to this definition"></a></dt>
+<dd><p>Python manages a connection pool automatically, if somehow that fails
+release the connection, this disconnect function will do it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_dsm_get_table">
+<span class="sig-name descname"><span class="pre">smax_dsm_get_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_dsm_get_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_dsm_get_table" title="Link to this definition"></a></dt>
+<dd><p>Get the SMA-X name that maps to a DSM target, key, and (optionally) host.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>str</em>) – DSM target or caller</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – DSM key</p></li>
+<li><p><strong>host</strong> (<em>str</em><em>, </em><em>optional</em>) – DSM host (caller). If not set, defaults to target.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>SMA-X table where the key can be found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_get_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_get_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_get_description">
+<span class="sig-name descname"><span class="pre">smax_get_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_get_units">
+<span class="sig-name descname"><span class="pre">smax_get_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_get_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_get_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_lazy_end">
+<span class="sig-name descname"><span class="pre">smax_lazy_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_lazy_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_end" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull">
+<span class="sig-name descname"><span class="pre">smax_lazy_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_lazy_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_lazy_pull" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_list_higher_than">
+<span class="sig-name descname"><span class="pre">smax_list_higher_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_list_higher_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_higher_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X fields in table with values higher than the value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>str</em>) – table, struct or meta name</p></li>
+<li><p><strong>value</strong> (<em>int</em><em> or </em><em>float</em>) – cutoff value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X fields and values higher than value</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_list_newer_than">
+<span class="sig-name descname"><span class="pre">smax_list_newer_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_list_newer_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_newer_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X keys newer than the datetime object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>datetime.datetime</em>) – cutoff time.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X keys and values newer than dt</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_list_older_than">
+<span class="sig-name descname"><span class="pre">smax_list_older_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_list_older_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_older_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X keys older than the datetime object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>datetime.datetime</em>) – cutoff time.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X keys and values older than dt</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_list_zeroes">
+<span class="sig-name descname"><span class="pre">smax_list_zeroes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_list_zeroes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_list_zeroes" title="Link to this definition"></a></dt>
+<dd><p>List all fields in key equal to zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – Redis key to test.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of all fields equal to zero.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_pull">
+<span class="sig-name descname"><span class="pre">smax_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pull_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull" title="Link to this definition"></a></dt>
+<dd><p>Get data which was stored with the smax macro HSetWithMeta along with
+the associated metadata. The return value will an SmaxData object
+containing the data, typeName, dataDimension(s), dataDate, source of the
+data, and a sequence number. If you pulled a struct, you will get a
+nested dictionary back, with each leaf being an SmaxData object.
+:param table: SMAX table name
+:type table: str
+:param key: SMAX key name
+:type key: str
+:param pull_meta: Flag whether to pull optional metadata
+:type pull_meta: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Populated Smax&lt;type&gt; dataclass object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Smax&lt;type&gt;</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_pull_meta">
+<span class="sig-name descname"><span class="pre">smax_pull_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_pull_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull_meta" title="Link to this definition"></a></dt>
+<dd><p>Pulls specified metadata field from a given table.
+:param table: Name of the table to pull metadata from.
+:type table: str
+:param meta: Metadata field name to pull.
+:type meta: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Result of redis-py hget function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_purge">
+<span class="sig-name descname"><span class="pre">smax_purge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_purge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_purge" title="Link to this definition"></a></dt>
+<dd><p>Purges a table or key from Redis.  Use with ultimate caution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>str</em>) – SMA-X table to purge. Can include wild cards to purge by pattern matching.</p></li>
+<li><p><strong>key</strong> (<em>str</em><em>, </em><em>optional</em>) – Specific SMA-X key in table to purge. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of SMA-X keys purged from Redis</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_purge_volatile">
+<span class="sig-name descname"><span class="pre">smax_purge_volatile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_purge_volatile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_purge_volatile" title="Link to this definition"></a></dt>
+<dd><p>Purges all volatile tables and keys from Redis.  Use with ultimate caution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_push_meta">
+<span class="sig-name descname"><span class="pre">smax_push_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_push_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_push_meta" title="Link to this definition"></a></dt>
+<dd><p>Sets additional metadata for a given table.
+:param meta: Key for the metadata field.
+:type meta: str
+:param table: Name of the table to set metadata for.
+:type table: str
+:param value: Metadata value to store in redis, note this</p>
+<blockquote>
+<div><p>needs to be a string int.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Result of redis-py hset function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_set_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinate_system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_set_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_set_description">
+<span class="sig-name descname"><span class="pre">smax_set_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_set_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_description" title="Link to this definition"></a></dt>
+<dd><p>Creates a &lt;description&gt; metadata field for specified table.
+:param table: Full SMAX table name (with key included).
+:type table: str
+:param description: String for the description of this smax field.
+:type description: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_set_units">
+<span class="sig-name descname"><span class="pre">smax_set_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_set_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_set_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_share">
+<span class="sig-name descname"><span class="pre">smax_share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">push_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smax_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_share" title="Link to this definition"></a></dt>
+<dd><p>Send data to redis using the smax macro HSetWithMeta to include
+metadata.  The metadata is typeName, dataDimension(s), dataDate,
+source of the data, and a sequence number.  The first two are
+determined from the data and the source from this computer’s name
+plus the program name if given when this class is instantiated.
+Date and sequence number are added by the redis macro.
+:param table: SMAX table name
+:type table: str
+:param key: SMAX key name
+:type key: str
+:param value: data to store, takes supported types, including (nested) dicts.
+:param push_meta: Push optional metadata if present in object</p>
+<blockquote>
+<div><p>(does not work for SmaxStructs and is not atomic).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>type_name</strong> (<em>str</em>) – Force casting to type_name before sharing.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>return value from redis-py’s evalsha() function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_subscribe">
+<span class="sig-name descname"><span class="pre">smax_subscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pubsub_sleep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_subscribe" title="Link to this definition"></a></dt>
+<dd><p>Subscribe to a redis field or group of fields. You can type the full
+name of the field you’d like to subscribe too, or use a wildcard “*”
+character as a suffix to specify a pattern. Use a callback for asynchronous
+processing of notifications, or use one of the smax_wait_on functions.</p>
+<p>Internal to the HSET* and HMSET*, notifications for pub/sub are
+generated with the prefix <cite>smax:</cite>. This needs to be added/removed within
+<cite>smax_subscribe</cite>, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> (<em>str</em>) – Either full name of smax field, or use a wildcard ‘*’
+at the end of the pattern to be notified for anything
+underneath.</p></li>
+<li><p><strong>callback</strong> (<em>func</em>) – Function that takes a single argument (Default=None).
+The message in your callback will be an SmaData
+object, or a nested dictionary for a struct.</p></li>
+<li><p><strong>pubsub_sleep</strong> (<em>float</em>) – Sleep time within each loop of the pubsub
+event handling thread</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe">
+<span class="sig-name descname"><span class="pre">smax_unsubscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_unsubscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_unsubscribe" title="Link to this definition"></a></dt>
+<dd><p>Unsubscribe from all subscribed channels, or pass a pattern argument
+to unsubscribe from specific channels.
+:param pattern: Either full name of smax field, or use a wildcard ‘*’</p>
+<blockquote>
+<div><p>at the end of the pattern to be notified for anything
+underneath.</p>
+</div></blockquote>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed">
+<span class="sig-name descname"><span class="pre">smax_wait_on_any_subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notification_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_wait_on_any_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_any_subscribed" title="Link to this definition"></a></dt>
+<dd><p>If you use smax_subscribe without a callback, you can use this function
+to block until a message is received from any channel you are subscribed to.
+:param timeout: Value in seconds to wait before raising timeout exception.
+:type timeout: float
+:param notification_only: If True, only returns the notification from redis.
+:type notification_only: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Either a (list) notification, or the actual pulled data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed">
+<span class="sig-name descname"><span class="pre">smax_wait_on_subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notification_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_wait_on_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_wait_on_subscribed" title="Link to this definition"></a></dt>
+<dd><p>If you use smax_subscribe without a callback, you can use this function
+to specify with channel to listen to, and block until a message is received.
+:param pattern: SMAX table/key pattern to listen on.
+:type pattern: str
+:param timeout: Value in seconds to wait before raising timeout exception.
+:type timeout: int
+:param notification_only: If True, only returns the notification from redis.
+:type notification_only: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Either a (list) notification, or the actual pulled data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="smax-smax-redis-client-old-module">
-<h2>smax.smax_redis_client_old module<a class="headerlink" href="#smax-smax-redis-client-old-module" title="Link to this heading"></a></h2>
+<section id="module-smax.smax_redis_client_old">
+<span id="smax-smax-redis-client-old-module"></span><h2>smax.smax_redis_client_old module<a class="headerlink" href="#module-smax.smax_redis_client_old" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_redis_client_old.</span></span><span class="sig-name descname"><span class="pre">SmaxRedisClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redis_ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6379</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_db</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">program_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_client.SmaxClient" title="smax.smax_client.SmaxClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxClient</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_connect_to">
+<span class="sig-name descname"><span class="pre">smax_connect_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">redis_ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">redis_db</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_connect_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_connect_to" title="Link to this definition"></a></dt>
+<dd><p>Uses the redis-py library to establish a connection to redis, then
+obtains and stores the LUA scripts in the object (ex self._getSHA). This
+function is called automatically by the SmaxClient parent class, so
+there shouldn’t be a need to call this explicitly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>redis_ip</strong> (<em>str</em>) – IP address of redis-server.</p></li>
+<li><p><strong>redis_port</strong> (<em>int</em>) – Port of redis-server.</p></li>
+<li><p><strong>redis_db</strong> (<em>int</em>) – Database index to connect to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Redis client object configured from the given args.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Redis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_create_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_create_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_create_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_create_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_disconnect">
+<span class="sig-name descname"><span class="pre">smax_disconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_disconnect" title="Link to this definition"></a></dt>
+<dd><p>Python manages a connection pool automatically, if somehow that fails
+release the connection, this disconnect function will do it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_dsm_get_table">
+<span class="sig-name descname"><span class="pre">smax_dsm_get_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_dsm_get_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_dsm_get_table" title="Link to this definition"></a></dt>
+<dd><p>Get the SMA-X name that maps to a DSM target, key, and (optionally) host.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>str</em>) – DSM target or caller</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – DSM key</p></li>
+<li><p><strong>host</strong> (<em>str</em><em>, </em><em>optional</em>) – DSM host (caller). If not set, defaults to target.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>SMA-X table where the key can be found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_get_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_get_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_get_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_get_description">
+<span class="sig-name descname"><span class="pre">smax_get_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_get_units">
+<span class="sig-name descname"><span class="pre">smax_get_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_get_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_get_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_end">
+<span class="sig-name descname"><span class="pre">smax_lazy_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_lazy_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_end" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_pull">
+<span class="sig-name descname"><span class="pre">smax_lazy_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_lazy_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_lazy_pull" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_list_higher_than">
+<span class="sig-name descname"><span class="pre">smax_list_higher_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_list_higher_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_higher_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X fields in table with values higher than the value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>str</em>) – table, struct or meta name</p></li>
+<li><p><strong>value</strong> (<em>int</em><em> or </em><em>float</em>) – cutoff value.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X fields and values higher than value</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_list_newer_than">
+<span class="sig-name descname"><span class="pre">smax_list_newer_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_list_newer_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_newer_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X keys newer than the datetime object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>datetime.datetime</em>) – cutoff time.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X keys and values newer than dt</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_list_older_than">
+<span class="sig-name descname"><span class="pre">smax_list_older_than</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_list_older_than"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_older_than" title="Link to this definition"></a></dt>
+<dd><p>List all SMA-X keys older than the datetime object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dt</strong> (<em>datetime.datetime</em>) – cutoff time.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of pairs of SMA-X keys and values older than dt</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[(str, smax.SmaxData)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_list_zeroes">
+<span class="sig-name descname"><span class="pre">smax_list_zeroes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_list_zeroes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_list_zeroes" title="Link to this definition"></a></dt>
+<dd><p>List all fields in key equal to zero.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – Redis key to test.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of all fields equal to zero.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_pull">
+<span class="sig-name descname"><span class="pre">smax_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_pull" title="Link to this definition"></a></dt>
+<dd><p>Get data which was stored with the smax macro HSetWithMeta along with
+the associated metadata. The return value will an SmaxData object
+containing the data, typeName, dataDimension(s), dataDate, source of the
+data, and a sequence number. If you pulled a struct, you will get a
+nested dictionary back, with each leaf being an SmaxData object.
+:param table: SMAX table name
+:type table: str
+:param key: SMAX key name
+:type key: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Populated SmaxData NamedTuple object.
+dict: If a struct is pulled, this returns a nested dictionary.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#smax.smax_data_types.SmaxData" title="smax.smax_data_types.SmaxData">SmaxData</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_pull_meta">
+<span class="sig-name descname"><span class="pre">smax_pull_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_pull_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_pull_meta" title="Link to this definition"></a></dt>
+<dd><p>Pulls specified metadata field from a given table.
+:param table: Name of the table to pull metadata from.
+:type table: str
+:param meta: Metadata field name to pull.
+:type meta: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Result of redis-py hget function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_purge">
+<span class="sig-name descname"><span class="pre">smax_purge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_purge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_purge" title="Link to this definition"></a></dt>
+<dd><p>Purges a table or key from Redis.  Use with ultimate caution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>str</em>) – SMA-X table to purge. Can include wild cards to purge by pattern matching.</p></li>
+<li><p><strong>key</strong> (<em>str</em><em>, </em><em>optional</em>) – Specific SMA-X key in table to purge. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>number of SMA-X keys purged from Redis</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_purge_volatile">
+<span class="sig-name descname"><span class="pre">smax_purge_volatile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_purge_volatile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_purge_volatile" title="Link to this definition"></a></dt>
+<dd><p>Purges all volatile tables and keys from Redis.  Use with ultimate caution.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_push_meta">
+<span class="sig-name descname"><span class="pre">smax_push_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_push_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_push_meta" title="Link to this definition"></a></dt>
+<dd><p>Sets additional metadata for a given table.
+:param meta: Key for the metadata field.
+:type meta: str
+:param table: Name of the table to set metadata for.
+:type table: str
+:param value: Metadata value to store in redis, note this</p>
+<blockquote>
+<div><p>needs to be a string int.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Result of redis-py hset function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_set_coordinate_system">
+<span class="sig-name descname"><span class="pre">smax_set_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinate_system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_set_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_set_description">
+<span class="sig-name descname"><span class="pre">smax_set_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_set_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_description" title="Link to this definition"></a></dt>
+<dd><p>Creates a &lt;description&gt; metadata field for specified table.
+:param table: Full SMAX table name (with key included).
+:type table: str
+:param description: String for the description of this smax field.
+:type description: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_set_units">
+<span class="sig-name descname"><span class="pre">smax_set_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_set_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_set_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_share">
+<span class="sig-name descname"><span class="pre">smax_share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_share" title="Link to this definition"></a></dt>
+<dd><p>Send data to redis using the smax macro HSetWithMeta to include
+metadata.  The metadata is typeName, dataDimension(s), dataDate,
+source of the data, and a sequence number.  The first two are
+determined from the data and the source from this computer’s name
+plus the program name if given when this class is instantiated.
+Date and sequence number are added by the redis macro.
+:param table: SMAX table name
+:type table: str
+:param key: SMAX key name
+:type key: str
+:param value: data to store, takes supported types, including (nested) dicts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>return value from redis-py’s evalsha() function.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_subscribe">
+<span class="sig-name descname"><span class="pre">smax_subscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_subscribe" title="Link to this definition"></a></dt>
+<dd><p>Subscribe to a redis field or group of fields. You can type the full
+name of the field you’d like to subscribe too, or use a wildcard “*”
+character as a suffix to specify a pattern. Use a callback for asynchronous
+processing of notifications, or use one of the smax_wait_on functions.
+:param pattern: Either full name of smax field, or use a wildcard ‘*’</p>
+<blockquote>
+<div><p>at the end of the pattern to be notified for anything
+underneath.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>callback</strong> (<em>func</em>) – Function that takes a single argument (Default=None).
+The message in your callback will be an SmaData
+object, or a nested dictionary for a struct.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_unsubscribe">
+<span class="sig-name descname"><span class="pre">smax_unsubscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_unsubscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_unsubscribe" title="Link to this definition"></a></dt>
+<dd><p>Unsubscribe from all subscribed channels, or pass a pattern argument
+to unsubscribe from specific channels.
+:param pattern: Either full name of smax field, or use a wildcard ‘*’</p>
+<blockquote>
+<div><p>at the end of the pattern to be notified for anything
+underneath.</p>
+</div></blockquote>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_any_subscribed">
+<span class="sig-name descname"><span class="pre">smax_wait_on_any_subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notification_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_wait_on_any_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_any_subscribed" title="Link to this definition"></a></dt>
+<dd><p>If you use smax_subscribe without a callback, you can use this function
+to block until a message is received from any channel you are subscribed to.
+:param timeout: Value in seconds to wait before raising timeout exception.
+:type timeout: float
+:param notification_only: If True, only returns the notification from redis.
+:type notification_only: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Either a (list) notification, or the actual pulled data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_subscribed">
+<span class="sig-name descname"><span class="pre">smax_wait_on_subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notification_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client_old.html#SmaxRedisClient.smax_wait_on_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client_old.SmaxRedisClient.smax_wait_on_subscribed" title="Link to this definition"></a></dt>
+<dd><p>If you use smax_subscribe without a callback, you can use this function
+to specify with channel to listen to, and block until a message is received.
+:param pattern: SMAX table/key pattern to listen on.
+:type pattern: str
+:param timeout: Value in seconds to wait before raising timeout exception.
+:type timeout: int
+:param notification_only: If True, only returns the notification from redis.
+:type notification_only: bool</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Either a (list) notification, or the actual pulled data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-smax">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-smax" title="Link to this heading"></a></h2>
 </section>
 </section>
 
