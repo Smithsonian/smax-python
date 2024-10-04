@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Removed
 
- - #13: `redis_config_files` submodule. These were needed for testing only, but there are better better ways to do that
+ - #13: `redis_config_files` submodule. These were needed for testing only, but there are better ways to do that 
    without using submodules. (by @attipaci)
  - Removed old static API documentation. (by @attipaci)
  
