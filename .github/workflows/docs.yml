@@ -28,6 +28,15 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Install numpy libs
+      run: pip install numpy
+
+    - name: Install psutil libs
+      run: pip install psutil
+
+    - name: Install redis libs
+      run: pip install redis
+
     - name: Install Sphinx and RTM theme
       run: pip install sphinx sphinx-rtd-theme
           
