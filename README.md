@@ -122,3 +122,6 @@ a few simple ones to help get you started.
   print(result.data, result.type)
 ```
 
+------------------------------------------------------------------------------
+Copyright (C) 2024 Center for Astrophysics \| Harvard \& Smithsonian
+
