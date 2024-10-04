@@ -348,10 +348,10 @@
                 <span class="n">initvar</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_to_bool</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
                 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">initvar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">initvar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">)</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">initvar</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+                    <span class="n">initvar</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">refcheck</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initvar</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         
