@@ -6,13 +6,13 @@ on:
       - main
     paths:
       - 'src/**'
-      - '.github/workflows/python_tests.yml'
+      - '.github/workflows/test.yml'
       - '.coveragerc'
       
   pull_request:
     paths:
       - 'src/**'
-      - '.github/workflows/python_tests.yml'
+      - '.github/workflows/test.yml'
       - '.coveragerc'
 
 jobs:
