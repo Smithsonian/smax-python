@@ -48,8 +48,143 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">smax package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#smax-cli-module">smax.cli module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#smax-smax-client-module">smax.smax_client module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#smax-smax-data-types-module">smax.smax_data_types module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax.smax_client">smax.smax_client module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.SmaxClient"><code class="docutils literal notranslate"><span class="pre">SmaxClient</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_connect_to"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_connect_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_create_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_create_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_disconnect"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_disconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_get_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_get_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_get_description"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_get_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_get_units"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_get_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_pull"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_pull()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_pull_meta"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_pull_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_push_meta"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_push_meta()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_set_coordinate_system"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_set_coordinate_system()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_set_description"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_set_description()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_set_units"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_set_units()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_share"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_share()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_subscribe"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_subscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_unsubscribe"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_unsubscribe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_wait_on_any_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_wait_on_any_subscribed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_client.SmaxClient.smax_wait_on_subscribed"><code class="docutils literal notranslate"><span class="pre">SmaxClient.smax_wait_on_subscribed()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.SmaxConnectionError"><code class="docutils literal notranslate"><span class="pre">SmaxConnectionError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.SmaxKeyError"><code class="docutils literal notranslate"><span class="pre">SmaxKeyError</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.SmaxUnderflowWarning"><code class="docutils literal notranslate"><span class="pre">SmaxUnderflowWarning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.join"><code class="docutils literal notranslate"><span class="pre">join()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.normalize_pair"><code class="docutils literal notranslate"><span class="pre">normalize_pair()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.print_smax"><code class="docutils literal notranslate"><span class="pre">print_smax()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_client.print_tree"><code class="docutils literal notranslate"><span class="pre">print_tree()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-smax.smax_data_types">smax.smax_data_types module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxArray"><code class="docutils literal notranslate"><span class="pre">SmaxArray</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxArray.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxArray.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxArray.data"><code class="docutils literal notranslate"><span class="pre">SmaxArray.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxArray.type"><code class="docutils literal notranslate"><span class="pre">SmaxArray.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxBool"><code class="docutils literal notranslate"><span class="pre">SmaxBool</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxBool.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxBool.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxBool.data"><code class="docutils literal notranslate"><span class="pre">SmaxBool.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxBool.type"><code class="docutils literal notranslate"><span class="pre">SmaxBool.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxData"><code class="docutils literal notranslate"><span class="pre">SmaxData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.data"><code class="docutils literal notranslate"><span class="pre">SmaxData.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.date"><code class="docutils literal notranslate"><span class="pre">SmaxData.date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.dim"><code class="docutils literal notranslate"><span class="pre">SmaxData.dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.origin"><code class="docutils literal notranslate"><span class="pre">SmaxData.origin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.seq"><code class="docutils literal notranslate"><span class="pre">SmaxData.seq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.smaxname"><code class="docutils literal notranslate"><span class="pre">SmaxData.smaxname</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxData.type"><code class="docutils literal notranslate"><span class="pre">SmaxData.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat"><code class="docutils literal notranslate"><span class="pre">SmaxFloat</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxFloat.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat.type"><code class="docutils literal notranslate"><span class="pre">SmaxFloat.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat32"><code class="docutils literal notranslate"><span class="pre">SmaxFloat32</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat32.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxFloat32.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat32.data"><code class="docutils literal notranslate"><span class="pre">SmaxFloat32.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat32.type"><code class="docutils literal notranslate"><span class="pre">SmaxFloat32.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat64"><code class="docutils literal notranslate"><span class="pre">SmaxFloat64</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat64.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxFloat64.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat64.data"><code class="docutils literal notranslate"><span class="pre">SmaxFloat64.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxFloat64.type"><code class="docutils literal notranslate"><span class="pre">SmaxFloat64.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxInt"><code class="docutils literal notranslate"><span class="pre">SmaxInt</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxInt.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt.type"><code class="docutils literal notranslate"><span class="pre">SmaxInt.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxInt16"><code class="docutils literal notranslate"><span class="pre">SmaxInt16</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt16.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxInt16.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt16.type"><code class="docutils literal notranslate"><span class="pre">SmaxInt16.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxInt32"><code class="docutils literal notranslate"><span class="pre">SmaxInt32</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt32.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxInt32.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt32.type"><code class="docutils literal notranslate"><span class="pre">SmaxInt32.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxInt64"><code class="docutils literal notranslate"><span class="pre">SmaxInt64</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt64.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxInt64.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt64.type"><code class="docutils literal notranslate"><span class="pre">SmaxInt64.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxInt8"><code class="docutils literal notranslate"><span class="pre">SmaxInt8</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt8.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxInt8.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxInt8.type"><code class="docutils literal notranslate"><span class="pre">SmaxInt8.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxStr"><code class="docutils literal notranslate"><span class="pre">SmaxStr</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStr.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxStr.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStr.type"><code class="docutils literal notranslate"><span class="pre">SmaxStr.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxStrArray"><code class="docutils literal notranslate"><span class="pre">SmaxStrArray</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStrArray.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxStrArray.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStrArray.type"><code class="docutils literal notranslate"><span class="pre">SmaxStrArray.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxStruct"><code class="docutils literal notranslate"><span class="pre">SmaxStruct</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStruct.asdict"><code class="docutils literal notranslate"><span class="pre">SmaxStruct.asdict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxStruct.type"><code class="docutils literal notranslate"><span class="pre">SmaxStruct.type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.coords"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.coords</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.data"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.description"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.dim"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.metadata"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.origin"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.origin</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.seq"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.seq</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.smaxname"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.smaxname</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.timestamp"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.timestamp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#smax.smax_data_types.SmaxVarBase.unit"><code class="docutils literal notranslate"><span class="pre">SmaxVarBase.unit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserArray"><code class="docutils literal notranslate"><span class="pre">UserArray</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserBool"><code class="docutils literal notranslate"><span class="pre">UserBool</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserDict"><code class="docutils literal notranslate"><span class="pre">UserDict</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserFloat32"><code class="docutils literal notranslate"><span class="pre">UserFloat32</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserFloat64"><code class="docutils literal notranslate"><span class="pre">UserFloat64</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserInt"><code class="docutils literal notranslate"><span class="pre">UserInt</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserInt16"><code class="docutils literal notranslate"><span class="pre">UserInt16</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserInt32"><code class="docutils literal notranslate"><span class="pre">UserInt32</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserInt64"><code class="docutils literal notranslate"><span class="pre">UserInt64</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserInt8"><code class="docutils literal notranslate"><span class="pre">UserInt8</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserList"><code class="docutils literal notranslate"><span class="pre">UserList</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#smax.smax_data_types.UserStr"><code class="docutils literal notranslate"><span class="pre">UserStr</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#smax-smax-redis-client-module">smax.smax_redis_client module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#smax-smax-redis-client-old-module">smax.smax_redis_client_old module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-contents">Module contents</a></li>
@@ -89,11 +224,580 @@
 <section id="smax-cli-module">
 <h2>smax.cli module<a class="headerlink" href="#smax-cli-module" title="Link to this heading"></a></h2>
 </section>
-<section id="smax-smax-client-module">
-<h2>smax.smax_client module<a class="headerlink" href="#smax-smax-client-module" title="Link to this heading"></a></h2>
+<section id="module-smax.smax_client">
+<span id="smax-smax-client-module"></span><h2>smax.smax_client module<a class="headerlink" href="#module-smax.smax_client" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">SmaxClient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_connect_to">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_connect_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_connect_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_connect_to" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_create_coordinate_system">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_create_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_create_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_create_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_disconnect">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_disconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_disconnect" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_get_coordinate_system">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_get_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_get_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_get_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_get_description">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_get_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_get_description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_get_units">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_get_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_get_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_get_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_pull">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_pull" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_pull_meta">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_pull_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_pull_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_pull_meta" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_push_meta">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_push_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_push_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_push_meta" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_set_coordinate_system">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_set_coordinate_system</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinate_system</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_set_coordinate_system"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_set_coordinate_system" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_set_description">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_set_description</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_set_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_set_description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_set_units">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_set_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_set_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_set_units" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_share">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_share" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_subscribe">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_subscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_subscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_subscribe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_unsubscribe">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_unsubscribe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_unsubscribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_unsubscribe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_wait_on_any_subscribed">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_wait_on_any_subscribed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_wait_on_any_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_wait_on_any_subscribed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxClient.smax_wait_on_subscribed">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smax_wait_on_subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pattern</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxClient.smax_wait_on_subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxClient.smax_wait_on_subscribed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxConnectionError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">SmaxConnectionError</span></span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxConnectionError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxConnectionError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxKeyError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">SmaxKeyError</span></span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxKeyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxKeyError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="smax.smax_client.SmaxUnderflowWarning">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">SmaxUnderflowWarning</span></span><a class="reference internal" href="_modules/smax/smax_client.html#SmaxUnderflowWarning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.SmaxUnderflowWarning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeWarning</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="smax.smax_client.join">
+<span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">join</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#join"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.join" title="Link to this definition"></a></dt>
+<dd><p>Join SMA-X tables and keys.  We use this method to
+avoid the TypeErrors from string.join()</p>
+<dl class="simple">
+<dt>params:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">*</span></a>args : SMA-X key elements to join</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="smax.smax_client.normalize_pair">
+<span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">normalize_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#normalize_pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.normalize_pair" title="Link to this definition"></a></dt>
+<dd><p>Return a SMA-X table, key pair with exactly one level in the key</p>
+<dl class="simple">
+<dt>params:</dt><dd><p><a href="#id3"><span class="problematic" id="id4">*</span></a>args : SMA-X key elements to join and split</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="smax.smax_client.print_smax">
+<span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">print_smax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smax_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#print_smax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.print_smax" title="Link to this definition"></a></dt>
+<dd><p>Print a SMA-X value</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="smax.smax_client.print_tree">
+<span class="sig-prename descclassname"><span class="pre">smax.smax_client.</span></span><span class="sig-name descname"><span class="pre">print_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_client.html#print_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_client.print_tree" title="Link to this definition"></a></dt>
+<dd><p>Walk through a tree of SMA-X values, printing the leaf nodes</p>
+</dd></dl>
+
 </section>
-<section id="smax-smax-data-types-module">
-<h2>smax.smax_data_types module<a class="headerlink" href="#smax-smax-data-types-module" title="Link to this heading"></a></h2>
+<section id="module-smax.smax_data_types">
+<span id="smax-smax-data-types-module"></span><h2>smax.smax_data_types module<a class="headerlink" href="#module-smax.smax_data_types" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserArray" title="smax.smax_data_types.UserArray"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserArray</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X array objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxArray.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxArray.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxArray.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxArray.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxArray.data" title="Link to this definition"></a></dt>
+<dd><p>Python buffer object pointing to the start of the array’s data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxArray.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxArray.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxBool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxBool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxBool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxBool" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserBool" title="smax.smax_data_types.UserBool"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserBool</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X boolean objects, with their metadata.</p>
+<dl class="simple">
+<dt>This class is not an exact subclass for bool - e.g.:</dt><dd><p>In [1]: SmaxBool(True) is True
+Out[1]: False</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxBool.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxBool.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxBool.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxBool.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxBool.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxBool.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'boolean'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxBool.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smaxname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#smax.smax_data_types.SmaxData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.data" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.date">
+<span class="sig-name descname"><span class="pre">date</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.date" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.dim" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.origin">
+<span class="sig-name descname"><span class="pre">origin</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.origin" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.seq">
+<span class="sig-name descname"><span class="pre">seq</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.seq" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.smaxname">
+<span class="sig-name descname"><span class="pre">smaxname</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.smaxname" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxData.type">
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxData.type" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxFloat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">dataclasses.InitVar[float]</span> <span class="pre">=</span> <span class="pre">&lt;property</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp:</span> <span class="pre">~datetime.datetime</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smaxname:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">tuple</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords:</span> <span class="pre">~typing.Any</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'float'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X float objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'float'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxFloat.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat32">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxFloat32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat32" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserFloat32" title="smax.smax_data_types.UserFloat32"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserFloat32</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X float objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat32.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat32.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat32.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat32.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxFloat32.data" title="Link to this definition"></a></dt>
+<dd><p>Pointer to start of data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat32.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'float32'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxFloat32.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxFloat64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat64" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserFloat64" title="smax.smax_data_types.UserFloat64"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserFloat64</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X float objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat64.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxFloat64.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxFloat64.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat64.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxFloat64.data" title="Link to this definition"></a></dt>
+<dd><p>Pointer to start of data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxFloat64.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'float64'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxFloat64.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxInt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserInt" title="smax.smax_data_types.UserInt"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserInt</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X integer objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'integer'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxInt.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt16">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxInt16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt16"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt16" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserInt16" title="smax.smax_data_types.UserInt16"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserInt16</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X integer objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt16.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt16.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt16.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt16.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'int16'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxInt16.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt32">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxInt32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt32" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserInt32" title="smax.smax_data_types.UserInt32"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserInt32</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X integer objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt32.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt32.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt32.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt32.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'int32'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxInt32.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxInt64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt64" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserInt64" title="smax.smax_data_types.UserInt64"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserInt64</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X integer objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt64.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt64.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt64.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt64.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'int64'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxInt64.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt8">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxInt8</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt8"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt8" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserInt8" title="smax.smax_data_types.UserInt8"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserInt8</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X integer objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt8.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxInt8.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxInt8.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxInt8.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'int8'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxInt8.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxStr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStr" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserStr" title="smax.smax_data_types.UserStr"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserStr</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X string objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStr.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStr.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStr.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStr.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'string'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxStr.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStrArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxStrArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStrArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStrArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserList" title="smax.smax_data_types.UserList"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserList</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X string arrays, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStrArray.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStrArray.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStrArray.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStrArray.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'string'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxStrArray.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStruct">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxStruct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStruct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStruct" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#smax.smax_data_types.UserDict" title="smax.smax_data_types.UserDict"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserDict</span></code></a>, <a class="reference internal" href="#smax.smax_data_types.SmaxVarBase" title="smax.smax_data_types.SmaxVarBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmaxVarBase</span></code></a></p>
+<p>Class for holding SMA-X string objects, with their metadata</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStruct.asdict">
+<span class="sig-name descname"><span class="pre">asdict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxStruct.asdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxStruct.asdict" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxStruct.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'struct'</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxStruct.type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">SmaxVarBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smaxname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#SmaxVarBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class defining the metadata for SMA-X data types.</p>
+<p>We define all the metadata except data and type here.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.coords">
+<span class="sig-name descname"><span class="pre">coords</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.coords" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.description" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.metadata">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.origin">
+<span class="sig-name descname"><span class="pre">origin</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.origin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.seq">
+<span class="sig-name descname"><span class="pre">seq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.seq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.smaxname">
+<span class="sig-name descname"><span class="pre">smaxname</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.smaxname" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.timestamp">
+<span class="sig-name descname"><span class="pre">timestamp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.timestamp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="smax.smax_data_types.SmaxVarBase.unit">
+<span class="sig-name descname"><span class="pre">unit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#smax.smax_data_types.SmaxVarBase.unit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserArray">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserArray" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserBool">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserBool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserBool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserBool" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserDict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserDict" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserFloat32">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserFloat32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserFloat32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserFloat32" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">float32</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserFloat64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserFloat64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserFloat64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserFloat64" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserInt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserInt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserInt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserInt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserInt16">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserInt16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserInt16"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserInt16" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int16</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserInt32">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserInt32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserInt32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserInt32" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int32</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserInt64">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserInt64</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserInt64"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserInt64" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int64</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserInt8">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserInt8</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserInt8"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserInt8" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">int8</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserList">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserList"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserList" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="smax.smax_data_types.UserStr">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">smax.smax_data_types.</span></span><span class="sig-name descname"><span class="pre">UserStr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_data_types.html#UserStr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_data_types.UserStr" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd></dl>
+
 </section>
 <section id="smax-smax-redis-client-module">
 <h2>smax.smax_redis_client module<a class="headerlink" href="#smax-smax-redis-client-module" title="Link to this heading"></a></h2>
