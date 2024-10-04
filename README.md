@@ -1,4 +1,4 @@
-[![tests](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml)
+[![Unit tests](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/test.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/test.yml)
 [![API Documentation](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml)
 
 <picture>

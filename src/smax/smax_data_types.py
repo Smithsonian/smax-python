@@ -228,10 +228,10 @@ class UserArray(np.ndarray):
                 initvar.flat[i] = _to_bool(a)
                 
         else:
-            initvar = np.array(args[0], )
+            initvar = np.array(args[0], copy=True)
             if type(shape) is not int:
                 if len(shape) > 1:
-                    initvar.resize(shape)
+                    initvar.resize(shape, refcheck=False)
         
         x = np.array(initvar, dtype=dtype).view(cls).copy()
         
