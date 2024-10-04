@@ -1,0 +1,7 @@
+smax
+====
+
+.. toctree::
+   :maxdepth: 4
+
+   smax

@@ -1,0 +1,53 @@
+smax package
+============
+
+Submodules
+----------
+
+smax.cli module
+---------------
+
+.. automodule:: smax.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+smax.smax\_client module
+------------------------
+
+.. automodule:: smax.smax_client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+smax.smax\_data\_types module
+-----------------------------
+
+.. automodule:: smax.smax_data_types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+smax.smax\_redis\_client module
+-------------------------------
+
+.. automodule:: smax.smax_redis_client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+smax.smax\_redis\_client\_old module
+------------------------------------
+
+.. automodule:: smax.smax_redis_client_old
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: smax
+   :members:
+   :undoc-members:
+   :show-inheritance:
