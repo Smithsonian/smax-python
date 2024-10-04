@@ -1,5 +1,6 @@
 [![Unit tests](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/test.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/test.yml)
 [![API Documentation](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml)
+[![codecov](https://codecov.io/gh/Smithsonian/smax-python/graph/badge.svg?token=BTEFMR9W4F)](https://codecov.io/gh/Smithsonian/smax-python)
 
 <picture>
   <source srcset="resources/CfA-logo-dark.png" alt="CfA logo" media="(prefers-color-scheme: dark)"/>
