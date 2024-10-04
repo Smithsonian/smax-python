@@ -7,11 +7,13 @@ on:
     paths:
       - 'src/**'
       - '.github/workflows/python_tests.yml'
+      - '.coveragerc'
       
   pull_request:
     paths:
       - 'src/**'
       - '.github/workflows/python_tests.yml'
+      - '.coveragerc'
 
 jobs:
   build:
