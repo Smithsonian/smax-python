@@ -9,10 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+ - #17: numpy resize() refcheck bypass. (by @attipaci, @PaulKGrimes)
+
 ### Added
 
  - Automatic dependabot updates. (by @attipaci)
  - GitHub CodeQL workflow. (by @attipaci)
+ - #17: Coverage tracking via Codecov.io. (by @attipaci)
  - Added license, contributors' guide, code of conduct, changelog.
  
 ### Changed
