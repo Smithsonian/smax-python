@@ -1,4 +1,5 @@
-[![pytest](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml)
+[![tests](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/python_tests.yml)
+[![API Documentation](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml/badge.svg)](https://github.com/Smithsonian/sma-python-redis-client/actions/workflows/docs.yml)
 
 <picture>
   <source srcset="resources/CfA-logo-dark.png" alt="CfA logo" media="(prefers-color-scheme: dark)"/>
