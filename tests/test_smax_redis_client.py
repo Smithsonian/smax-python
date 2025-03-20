@@ -392,6 +392,8 @@ def test_multiple_pubsub_callback(smax_client):
     smax_client.smax_subscribe(f"{table}:{key}:fpga1:temp", callback=my_callback1)
     smax_client.smax_subscribe(f"{table}:{key}:fpga2:temp", callback=my_callback2)
 
+    sleep(1) # Sleep a little bit before sharing to avoid a race between subscribe and share
+
     with SmaxRedisClient("localhost") as smax_producer:
         smax_producer.smax_share(f"{table}:{key}:fpga1", "temp", expected_value1)
         sleep(.1)  # Sleep a little bit in between these.
@@ -423,6 +425,8 @@ def test_mixed_pubsub_callback(smax_client):
     # Subscribes with callbacks have to be declared first for some reason.
     smax_client.smax_subscribe(f"{table}:nocallback")
     smax_client.smax_subscribe(f"{table}:callback:fpga1:temp", callback=my_callback1)
+
+    sleep(.1) # Sleep a little bit to allow subscribe threads to start
 
     # Create a seperate thread that will share a value while the wait is active.
     delayed_producer = threading.Thread(target=producer)
