@@ -679,6 +679,10 @@ class SmaxRedisClient(SmaxClient):
     def smax_lazy_end(self, table, key):
         raise NotImplementedError("Available in C API, not in python")
 
+    def fail(self, error):
+        """A minimalist error handler required by call_with_retry in smax_subscribe"""
+        self._logger.error(f"Redis connection issue {repr(error)}")
+
     def smax_subscribe(self, pattern, callback=None, pubsub_sleep=pubsub_sleep):
         """
         Subscribe to a redis field or group of fields. You can type the full
@@ -711,16 +715,12 @@ class SmaxRedisClient(SmaxClient):
             self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
             callback(data)
-        
-        def fail(self, error):
-            """A minimalist error handler required by call_with_retry"""
-            self._logger.error(f"Redis connection issue {repr(error)}")
             
         def exception_handler(ex, pubsub, thread):
             """Silently close threads if connection fails - other code will catch the missing
             connection"""
             self._logger.info("Pubsub lost connection")
-            pubsub.connection.retry.call_with_retry(pubsub.ping(), fail)
+            pubsub.connection.retry.call_with_retry(pubsub.ping(), self.fail)
             pubsub.on_connect(pubsub.connection)
             self._logger.info("Pubsub reconnected")
 
