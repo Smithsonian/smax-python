@@ -720,7 +720,7 @@ class SmaxRedisClient(SmaxClient):
             """Silently close threads if connection fails - other code will catch the missing
             connection"""
             self._logger.info("Pubsub lost connection")
-            pubsub.connection.retry.call_with_retry(pubsub.ping(), self.fail)
+            pubsub.connection.retry.call_with_retry(pubsub.ping(), fail)
             pubsub.on_connect(pubsub.connection)
             self._logger.info("Pubsub reconnected")
 
