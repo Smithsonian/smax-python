@@ -141,7 +141,7 @@ class UserBytes(bytes):
     def __new__(cls, *args, **kwargs):
         if len(args) == 0:
             args = (kwargs.pop('data'),)
-        x = bytes.__new__(cls, args[0])
+        x = bytes.__new__(cls, args[0], 'UTF-8')
         return x
         
 @dataclass
