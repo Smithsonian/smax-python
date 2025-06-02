@@ -77,21 +77,19 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># Lookup tables for converting python types to smax type names.</span>
-<span class="c1"># The official SMA-X types are not currently given in the spec, but</span>
-<span class="c1"># the following types have been seen in the wild.</span>
 <span class="c1">#</span>
 <span class="c1"># For the reverse conversion of Python types to SMA-X types</span>
 <span class="c1"># (represented in SMA-X in their string form), the last</span>
 <span class="c1"># occurence of the Python type as a value in _TYPE_MAP</span>
 <span class="c1"># will be used to pair Python values of that type to a</span>
-<span class="c1"># named SMA-X type (this is a consequency of the order of dictionaries</span>
+<span class="c1"># named SMA-X type (this is a consequence of the order of dictionaries</span>
 <span class="c1"># being maintained in Python since 3.7).</span>
 <span class="c1">#</span>
 <span class="c1"># Thus in the current form of the _TYPE_MAP below, Python</span>
-<span class="c1"># floats will be sent to SMA-X with the type &#39;float&#39; rather </span>
-<span class="c1"># than &#39;double&#39; or &#39;float64&#39;, even though Python floats are </span>
+<span class="c1"># floats will be sent to SMA-X with the type &#39;float64&#39; rather </span>
+<span class="c1"># than &#39;double&#39; or &#39;float&#39;, even though Python floats are </span>
 <span class="c1"># double precision by default, and Python ints will be sent with</span>
-<span class="c1"># the SMA-X type &#39;integer&#39; rather than &#39;int&#39;.</span>
+<span class="c1"># the SMA-X type &#39;int32&#39; rather than &#39;int&#39;.</span>
 <span class="c1"># </span>
 <span class="c1"># See the bottom of this file for the SmaxVar version of these maps</span>
 <span class="n">_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span>
@@ -106,6 +104,7 @@
              <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
              <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+             <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
              <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -767,6 +766,7 @@
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="n">SmaxStr</span><span class="p">,</span>
              <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="n">SmaxStr</span><span class="p">,</span>
+             <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="n">SmaxBool</span><span class="p">,</span>
              <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="n">SmaxBool</span><span class="p">,</span>
              <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">SmaxBytes</span><span class="p">}</span>
 
