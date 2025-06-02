@@ -45,7 +45,7 @@ _TYPE_MAP = {
 _REVERSE_TYPE_MAP = {v: k for k, v in _TYPE_MAP.items()}
 
 # Add standard Python types to the inverse map
-_REVERSE_TYPE_MAP[int] = 'int64'
+_REVERSE_TYPE_MAP[int] = 'int32'
 _REVERSE_TYPE_MAP[float] = 'float64'
 
 inv_map = _REVERSE_TYPE_MAP
