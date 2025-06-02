@@ -140,8 +140,11 @@ class SmaxInt(UserInt, SmaxVarBase):
 class UserBytes(bytes):
     def __new__(cls, *args, **kwargs):
         if len(args) == 0:
-            args = (kwargs.pop('data'),)
-        x = bytes.__new__(cls, args[0], 'UTF-8')
+            args = (kwargs.pop('data'), 'UTF-8')
+        elif len(args) == 1:
+            # Add the default Redis encoding definition.
+            args.append('UTF-8')
+        x = bytes.__new__(cls, args)
         return x
         
 @dataclass
