@@ -162,7 +162,7 @@ class SmaxBytes(UserBytes, SmaxVarBase):
     type: str = field(kw_only=True, default='raw')
 
     def __repr__(self):
-        return str(bytes(self))
+        return str(self)
         
     def asdict(self):
         dic = {'data':self}
