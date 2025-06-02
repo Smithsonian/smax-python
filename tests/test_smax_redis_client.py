@@ -87,7 +87,7 @@ def test_roundtrip_string(smax_client):
 
 def test_roundtrip_int(smax_client):
     expected_data = 123456789
-    expected_type = "integer"
+    expected_type = "int32"
     expected_dim = 1
     table = join(test_table, "test_roundtrip_int")
     key = "pytest"
