@@ -343,8 +343,8 @@ def test_pubsub_wait_on_pattern(smax_client):
     table = join(test_table, "test_pubsub_wait_on_pattern")
     key = "pytest"
     smax_client.smax_subscribe(f"{table}:{key}*")
-    expected_data1 = 666
-    expected_data2 = 33
+    expected_data1 = np.int32(666)
+    expected_data2 = np.int32(33)
 
     with SmaxRedisClient("localhost") as smax_producer:
         smax_producer.smax_share(f"{table}:{key}:nop", "nop", "nopvalue")
@@ -363,7 +363,7 @@ def test_pubsub_wait_on_pattern(smax_client):
 def test_pubsub_pattern_callback(smax_client):
     table = join(test_table, "test_pubsub_pattern_callback")
     key = "pytest"
-    expected_value = 42
+    expected_value = np.int32(42)
 
     # Inner functions can't modify outer variables unless they are mutable.
     actual = {"value": None}
@@ -382,7 +382,7 @@ def test_pubsub_pattern_callback(smax_client):
 
 
 def test_pubsub_callback(smax_client):
-    expected_value = 42
+    expected_value = np.int32(42)
 
     # Inner functions can't modify outer variables unless they are mutable.
     actual = {"value": None}
@@ -404,8 +404,8 @@ def test_pubsub_callback(smax_client):
 
 
 def test_multiple_pubsub_callback(smax_client):
-    expected_value1 = 42
-    expected_value2 = 24
+    expected_value1 = np.int32(42)
+    expected_value2 = np.int32(24)
 
     # Inner functions can't modify outer variables unless they are mutable.
     actual1 = {"value1": None}
@@ -447,7 +447,7 @@ def test_mixed_pubsub_callback(smax_client):
 
     expected_data = "just a string"
     table = join(test_table, "test_mixed_pubsub_callback")
-    expected_value1 = 42
+    expected_value1 = np.int32(42)
 
     # Inner functions can't modify outer variables unless they are mutable.
     actual1 = {"value1": None}
@@ -482,7 +482,7 @@ def test_pull_struct(smax_client):
     expected_firmware_value1 = 1.0
     expected_firmware_value2 = 1.1
     expected_dim_temp = 2
-    expected_type_firmware = 'float'
+    expected_type_firmware = 'float64'
     expected_dim_firmware = 1
 
     table = join(test_table, "test_pull_struct")
@@ -519,9 +519,9 @@ def test_share_struct(smax_client):
     expected_temp_value2 = 0
     expected_firmware_value1 = 2.0
     expected_firmware_value2 = 2.1
-    expected_type_temp = 'integer'
+    expected_type_temp = 'int32'
     expected_dim_temp = 1
-    expected_type_firmware = 'float'
+    expected_type_firmware = 'float64'
     expected_dim_firmware = 1
 
     struct = {"roach2-03": {"temp": expected_temp_value1, "firmware": expected_firmware_value1},
@@ -538,8 +538,8 @@ def test_share_struct(smax_client):
     roach04_firmware = result["dbe"]["roach2-04"]["firmware"]
 
     # Data and type checks.
-    assert roach03_temp.data == expected_temp_value1
-    assert roach04_temp.data == expected_temp_value2
+    assert roach03_temp.data == np.int32(expected_temp_value1)
+    assert roach04_temp.data == np.int32(expected_temp_value2)
     assert roach03_firmware.data == expected_firmware_value1
     assert roach04_firmware.data == expected_firmware_value2
     assert roach03_temp.type == expected_type_temp
