@@ -6,8 +6,395 @@ import numpy as np
 
 from smax.smax_data_types import SmaxData, \
     SmaxFloat, SmaxFloat32, SmaxFloat64, SmaxInt, SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, \
-    SmaxBool, SmaxArray, SmaxStr, SmaxStrArray, SmaxStruct
+    SmaxBool, SmaxArray, SmaxStr, SmaxStrArray, SmaxBytes, SmaxStruct, \
+    _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP
+
+class TestTypeLookup:
+    """Tests of _TYPE_MAP"""
+    def test_smax_to_int8(self):
+        smax_type = 'int8'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int8
     
+    def test_smax_to_int16(self):
+        smax_type = 'int16'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int16
+        
+    def test_smax_to_int32(self):
+        smax_type = 'int32'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int32
+        
+    def test_smax_to_int64(self):
+        smax_type = 'int64'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int64
+    
+    def test_smax_to_int(self):
+        smax_type = 'int'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int32
+        
+    def test_smax_to_integer(self):
+        smax_type = 'integer'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.int32
+        
+    def test_smax_to_float32(self):
+        smax_type = 'float32'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.float32
+        
+    def test_smax_to_float64(self):
+        smax_type = 'float64'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.float64
+        
+    def test_smax_to_float(self):
+        smax_type = 'float'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.float64
+        
+    def test_smax_to_single(self):
+        smax_type = 'single'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.float32
+        
+    def test_smax_to_double(self):
+        smax_type = 'double'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == np.float64
+        
+    def test_smax_to_string(self):
+        smax_type = 'string'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == str
+        
+    def test_smax_to_str(self):
+        smax_type = 'str'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == str
+        
+    def test_smax_to_boolean(self):
+        smax_type = 'boolean'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == bool
+        
+    def test_smax_to_bool(self):
+        smax_type = 'bool'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == bool
+        
+    def test_smax_to_bytes(self):
+        smax_type = 'raw'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == bytes
+        
+class TestReverseTypeLookup:
+    """Tests of _TYPE_MAP and _REVERSE_TYPE_MAP."""
+    def test_int_to_smax(self):
+        a = 42
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int32'
+
+    def test_npint8_to_smax(self):
+        a = np.int8(42)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int8'
+
+    def test_npint16_to_smax(self):
+        a = np.int16(42)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int16'
+
+    def test_npint32_to_smax(self):
+        a = np.int32(42)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int32'
+
+    def test_npint64_to_smax(self):
+        a = np.int64(42)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int64'
+
+    def test_float_to_smax(self):
+        a = 3.141259
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float64'
+
+    def test_float32_to_smax(self):
+        a = np.float32(3.141259)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float32'
+
+    def test_float64_to_smax(self):
+        a = np.float64(3.141259)
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float64'
+
+    def test_str_to_smax(self):
+        a = 'spam'
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'string'
+        
+    def test_bool_to_smax(self):
+        a = True
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'boolean'
+        
+    def test_bytes_to_smax(self):
+        a = b'42'
+        
+        smax_type = _REVERSE_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'raw'
+
+class TestSMAXTypeLookup:
+    """Tests of _TYPE_MAP"""
+    def test_smax_to_int8(self):
+        smax_type = 'int8'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxInt8
+    
+    def test_smax_to_int16(self):
+        smax_type = 'int16'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxInt16
+        
+    def test_smax_to_int32(self):
+        smax_type = 'int32'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxInt32
+        
+    def test_smax_to_int64(self):
+        smax_type = 'int64'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxInt64
+    
+    def test_smax_to_int(self):
+        smax_type = 'int'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == np.SmaxInt32
+        
+    def test_smax_to_integer(self):
+        smax_type = 'integer'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxInt32
+        
+    def test_smax_to_float32(self):
+        smax_type = 'float32'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxFloat32
+        
+    def test_smax_to_float64(self):
+        smax_type = 'float64'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxFloat64
+        
+    def test_smax_to_float(self):
+        smax_type = 'float'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxFloat64
+        
+    def test_smax_to_single(self):
+        smax_type = 'single'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxFloat32
+        
+    def test_smax_to_double(self):
+        smax_type = 'double'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxFloat64
+        
+    def test_smax_to_string(self):
+        smax_type = 'string'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxStr
+        
+    def test_smax_to_str(self):
+        smax_type = 'str'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxStr
+        
+    def test_smax_to_boolean(self):
+        smax_type = 'boolean'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxBool
+        
+    def test_smax_to_bool(self):
+        smax_type = 'bool'
+        
+        var_type = _SMAX_TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxBool
+        
+    def test_smax_to_bytes(self):
+        smax_type = 'raw'
+        
+        var_type = _TYPE_MAP[smax_type]
+        
+        assert var_type == SmaxBytes
+
+class TestReverseSMAXTypeLookup:
+    """Tests of _SMAX_TYPE_MAP and _REVERSE_SMAX_TYPE_MAP."""
+    def test_int_to_smax(self):
+        a = SmaxInt(42)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int32'
+
+    def test_npint8_to_smax(self):
+        a = SmaxInt8(42)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int8'
+
+    def test_npint16_to_smax(self):
+        a = SmaxInt16(42)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int16'
+
+    def test_npint32_to_smax(self):
+        a = SmaxInt32(42)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int32'
+
+    def test_npint64_to_smax(self):
+        a = SmaxInt64(42)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'int64'
+
+    def test_float_to_smax(self):
+        a = SmaxFloat(3.141259)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float64'
+
+    def test_float32_to_smax(self):
+        a = SmaxFloat32(3.141259)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float32'
+
+    def test_float64_to_smax(self):
+        a = SmaxFloat64(3.141259)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'float64'
+
+    def test_str_to_smax(self):
+        a = SmaxStr('spam')
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'string'
+        
+    def test_bool_to_smax(self):
+        a = SmaxBool(True)
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'boolean'
+        
+    def test_bytes_to_smax(self):
+        a = SmaxBytes('42')
+        
+        smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
+        
+        assert smax_type == 'raw'
+
 class TestSmaxFloat:
     """Tests of SmaxFloat"""
     def test_equality(self):
@@ -602,6 +989,35 @@ class TestSmaxStr:
         assert b.lower() == a.lower()
         
         assert type(b.lower()) is str
+        
+
+class TestSmaxBytes:
+    """Tests of SmaxBytes"""
+    def test_equality(self):
+        a = b"A SMA-X raw bytes"
+        b = SmaxBytes(a)
+        
+        assert a == b
+
+    def test_metadata(self):
+        a = b"A SMA-X string"
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxstr"
+        description = "A test SmaxStr"
+        
+        b = SmaxBytes(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description)
+        
+        assert a == b
+        assert a == b.data
+        assert timestamp == b.timestamp
+        assert origin == b.origin
+        assert seq == b.seq
+        assert smaxname == b.smaxname
+        assert "raw" == b.type
+        assert 1 == b.dim
+        assert description == b.description
         
         
 class TestSmaxFloatArray:

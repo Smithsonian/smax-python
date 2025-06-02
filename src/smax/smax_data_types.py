@@ -30,6 +30,7 @@ _TYPE_MAP = {
              'int32': np.int32,
              'int64': np.int64,
              'int8': np.int8,
+             'single': np.float32,
              'double': np.float64,
              'float32': np.float32,
              'float64': np.float64,
@@ -126,6 +127,31 @@ class SmaxInt(UserInt, SmaxVarBase):
 
     def __repr__(self):
         return str(int(self))
+        
+    def asdict(self):
+        dic = {'data':self}
+        dic.update(asdict(self))
+        
+        return dic
+        
+# For ints, we can't directly subclass the Python int type as they
+# are unmutable.  
+# So we have to go via an intermediate with an added .__new__ method
+class UserBytes(bytes):
+    def __new__(cls, *args, **kwargs):
+        if len(args) == 0:
+            args = (kwargs.pop('data'),)
+        x = int.__new__(cls, args[0])
+        return x
+        
+@dataclass
+class SmaxBytes(UserBytes, SmaxVarBase):
+    """Class for holding SMA-X raw objects, with their metadata"""
+    data: InitVar[bytes]
+    type: str = field(kw_only=True, default='bytes')
+
+    def __repr__(self):
+        return str(bytes(self))
         
     def asdict(self):
         dic = {'data':self}
@@ -541,7 +567,8 @@ _SMAX_TYPE_MAP = {
              'float64': SmaxFloat64,
              'str': SmaxStr,
              'string': SmaxStr,
-             'boolean': SmaxBool}
+             'boolean': SmaxBool,
+             'raw': SmaxBytes}
 
 # The reverse mapping here relies on overwriting the non-standard
 # SMA-X type reverse maps with the standard types 

@@ -15,7 +15,7 @@ from redis.retry import Retry
 
 from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, SmaxStr, \
         SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
-        SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, \
+        SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, SmaxBytes, \
         _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
         optional_metadata, SmaxConnectionError, SmaxKeyError, SmaxUnderflowWarning, \
         join, normalize_pair, print_smax, print_tree
@@ -415,8 +415,8 @@ class SmaxRedisClient(SmaxClient):
             elif type(a) in _REVERSE_SMAX_TYPE_MAP:
                 type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
             else:
-                self._logger.warning(f"Did not recognize type {str(type(a))}, storing as string or string array.")
-                type_name = "string"
+                self._logger.warning(f"Did not recognize type {str(type(a))}, storing raw values as bytes.")
+                type_name = "bytes"
 
             # Either convert to a string array, or to an numpy.ndarray
             if python_type is list or python_type is tuple or python_type is SmaxStrArray:
@@ -471,8 +471,8 @@ class SmaxRedisClient(SmaxClient):
                 return converted_data, type_name, size
         # Single value of an unknown type
         else:
-            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as string.")
-            type_name = "string"
+            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as bytes.")
+            type_name = "raw"
             return str(value), type_name, 1
 
     def _recurse_nested_dict(self, dictionary):

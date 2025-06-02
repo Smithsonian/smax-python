@@ -98,6 +98,21 @@ def test_roundtrip_int(smax_client):
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
+    
+
+def test_roundtrip_bytes(smax_client):
+    expected_data = b"1 2 3 4 5 6 7 8 9"
+    expected_type = "raw"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_raw")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.data == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
 
 
 def test_roundtrip_bool(smax_client):
