@@ -229,10 +229,17 @@ class SmaxRedisClient(SmaxClient):
     def smax_pull(self, table, key, pull_meta=False):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
-        the associated metadata. The return value will an SmaxData object
-        containing the data, typeName, dataDimension(s), dataDate, source of the
+        the associated metadata. The return value will an Smax<type> object
+        containing the data, type name, data dimension(s), data date, source of the
         data, and a sequence number. If you pulled a struct, you will get a
-        nested dictionary back, with each leaf being an SmaxData object.
+        nested dictionary back, with each leaf being an Smax<type> object.
+        
+        Note that Smax<type> scalars for numerical values are subclasses of
+        `numpy` dtypes: i.e. `SmaxInt32` is a subclass of `numpy.int32`, and
+        not related to Python's arbitrary precision built-in `int`.  You must cast
+        either the built-in to an appropriate numpy type or the Smax<type> to 
+        a built-in to test for (in) equality or membership of collections.
+        
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
