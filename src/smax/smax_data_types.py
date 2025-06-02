@@ -24,23 +24,30 @@ import numpy as np
 # 
 # See the bottom of this file for the SmaxVar version of these maps
 _TYPE_MAP = {
-             'int': int,
-             'integer': int,
+             'int': np.int32,
+             'integer': np.int32,
              'int16': np.int16,
              'int32': np.int32,
              'int64': np.int64,
              'int8': np.int8,
-             'double': float,
-             'float': float,
+             'double': np.float64,
              'float32': np.float32,
              'float64': np.float64,
-             'bool': bool,
              'boolean': bool,
              'str': str,
-             'string': str
+             'string': str,
+             'raw': bytes
              }
 
-_REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
+# The reverse mapping here relies on overwriting the non-standard
+# SMA-X types with the standard types. 
+_REVERSE_TYPE_MAP = {v: k for k, v in _TYPE_MAP.items()}
+
+# Add standard Python types to the inverse map
+_REVERSE_TYPE_MAP[int] = 'int32'
+_REVERSE_TYPE_MAP[float] = 'float64'
+
+inv_map = _REVERSE_TYPE_MAP
 
 # Legacy Named tuples for smax requests and responses.
 #
@@ -523,18 +530,25 @@ class SmaxBool(UserBool, SmaxVarBase):
 
 # Look up table for SMA-X data type maps
 _SMAX_TYPE_MAP = {
-             'int': SmaxInt,
-             'integer': SmaxInt,
+             'int': SmaxInt32,
+             'integer':SmaxInt32,
              'int16': SmaxInt16,
              'int32': SmaxInt32,
              'int64': SmaxInt64,
              'int8': SmaxInt8,
-             'double' : SmaxFloat,
-             'float': SmaxFloat,
+             'float': SmaxFloat64,
              'float32': SmaxFloat32,
              'float64': SmaxFloat64,
              'str': SmaxStr,
              'string': SmaxStr,
-             'bool': SmaxBool,
              'boolean': SmaxBool}
-_REVERSE_SMAX_TYPE_MAP = inv_smax_map = {v: k for k, v in _SMAX_TYPE_MAP.items()}
+
+# The reverse mapping here relies on overwriting the non-standard
+# SMA-X type reverse maps with the standard types 
+_REVERSE_SMAX_TYPE_MAP = {v: k for k, v in _SMAX_TYPE_MAP.items()}
+
+# Add the SMAX subclasses of standard python types
+_REVERSE_SMAX_TYPE_MAP[SmaxInt] = 'int32'
+_REVERSE_SMAX_TYPE_MAP[SmaxFloat] = 'float64'
+
+inv_smax_map = _REVERSE_SMAX_TYPE_MAP
