@@ -237,7 +237,7 @@ class TestSMAXTypeLookup:
         
         var_type = _SMAX_TYPE_MAP[smax_type]
         
-        assert var_type == np.SmaxInt32
+        assert var_type == SmaxInt32
         
     def test_smax_to_integer(self):
         smax_type = 'integer'
