@@ -310,10 +310,17 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">smax_pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get data which was stored with the smax macro HSetWithMeta along with</span>
-<span class="sd">        the associated metadata. The return value will an SmaxData object</span>
-<span class="sd">        containing the data, typeName, dataDimension(s), dataDate, source of the</span>
+<span class="sd">        the associated metadata. The return value will an Smax&lt;type&gt; object</span>
+<span class="sd">        containing the data, type name, data dimension(s), data date, source of the</span>
 <span class="sd">        data, and a sequence number. If you pulled a struct, you will get a</span>
-<span class="sd">        nested dictionary back, with each leaf being an SmaxData object.</span>
+<span class="sd">        nested dictionary back, with each leaf being an Smax&lt;type&gt; object.</span>
+<span class="sd">        </span>
+<span class="sd">        Note that Smax&lt;type&gt; scalars for numerical values are subclasses of</span>
+<span class="sd">        `numpy` dtypes: i.e. `SmaxInt32` is a subclass of `numpy.int32`, and</span>
+<span class="sd">        not related to Python&#39;s arbitrary precision built-in `int`.  You must cast</span>
+<span class="sd">        either the built-in to an appropriate numpy type or the Smax&lt;type&gt; to </span>
+<span class="sd">        a built-in to test for (in) equality or membership of collections.</span>
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            table (str): SMAX table name</span>
 <span class="sd">            key (str): SMAX key name</span>

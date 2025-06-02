@@ -1066,22 +1066,28 @@ release the connection, this disconnect function will do it.</p>
 <dt class="sig sig-object py" id="smax.smax_redis_client.SmaxRedisClient.smax_pull">
 <span class="sig-name descname"><span class="pre">smax_pull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pull_meta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/smax/smax_redis_client.html#SmaxRedisClient.smax_pull"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#smax.smax_redis_client.SmaxRedisClient.smax_pull" title="Link to this definition"></a></dt>
 <dd><p>Get data which was stored with the smax macro HSetWithMeta along with
-the associated metadata. The return value will an SmaxData object
-containing the data, typeName, dataDimension(s), dataDate, source of the
+the associated metadata. The return value will an Smax&lt;type&gt; object
+containing the data, type name, data dimension(s), data date, source of the
 data, and a sequence number. If you pulled a struct, you will get a
-nested dictionary back, with each leaf being an SmaxData object.
-:param table: SMAX table name
-:type table: str
-:param key: SMAX key name
-:type key: str
-:param pull_meta: Flag whether to pull optional metadata
-:type pull_meta: bool</p>
+nested dictionary back, with each leaf being an Smax&lt;type&gt; object.</p>
+<p>Note that Smax&lt;type&gt; scalars for numerical values are subclasses of
+<cite>numpy</cite> dtypes: i.e. <cite>SmaxInt32</cite> is a subclass of <cite>numpy.int32</cite>, and
+not related to Python’s arbitrary precision built-in <cite>int</cite>.  You must cast
+either the built-in to an appropriate numpy type or the Smax&lt;type&gt; to
+a built-in to test for (in) equality or membership of collections.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Populated Smax&lt;type&gt; dataclass object.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<em>str</em>) – SMAX table name</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – SMAX key name</p></li>
+<li><p><strong>pull_meta</strong> (<em>bool</em>) – Flag whether to pull optional metadata</p></li>
+</ul>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Smax&lt;type&gt;</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Populated Smax&lt;type&gt; dataclass object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Smax&lt;type&gt;</p>
 </dd>
 </dl>
 </dd></dl>
