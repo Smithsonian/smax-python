@@ -143,7 +143,7 @@ class UserBytes(bytes):
             args = (kwargs.pop('data'), 'UTF-8')
         elif len(args) == 1:
             # Add the default Redis encoding definition.
-            args.append('UTF-8')
+            args= (args[0], 'UTF-8')
         x = bytes.__new__(cls, args)
         return x
         
