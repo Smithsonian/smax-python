@@ -312,7 +312,7 @@ class TestSMAXTypeLookup:
     def test_smax_to_bytes(self):
         smax_type = 'raw'
         
-        var_type = _TYPE_MAP[smax_type]
+        var_type = _SMAX_TYPE_MAP[smax_type]
         
         assert var_type == SmaxBytes
 
