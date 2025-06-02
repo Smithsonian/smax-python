@@ -383,12 +383,21 @@ class SmaxRedisClient(SmaxClient):
             if type_name == "boolean":
                 value = int(value)
                 self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
+                
+            if type_name == "raw":
+                return value, type_name, 1
             
             return str(value), type_name, 1
         
         # Single value of a Smax<var> type
         elif python_type in _REVERSE_SMAX_TYPE_MAP:
             type_name = value.type
+            
+            if type_name == "raw":
+                self._logger.debug(f"_to_smax_format returning {value}, {type_name}, 1")
+                
+                return value, type_name, 1
+            
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
             
             return str(value), type_name, 1
