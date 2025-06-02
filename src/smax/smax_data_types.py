@@ -134,14 +134,14 @@ class SmaxInt(UserInt, SmaxVarBase):
         
         return dic
         
-# For ints, we can't directly subclass the Python int type as they
-# are unmutable.  
+# For bytes, we can't directly subclass the Python bytes type as base
+# types are immutable.  
 # So we have to go via an intermediate with an added .__new__ method
 class UserBytes(bytes):
     def __new__(cls, *args, **kwargs):
         if len(args) == 0:
             args = (kwargs.pop('data'),)
-        x = int.__new__(cls, args[0])
+        x = bytes.__new__(cls, args[0])
         return x
         
 @dataclass
