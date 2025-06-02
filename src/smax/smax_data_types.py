@@ -155,7 +155,7 @@ class UserBytes(bytes):
 class SmaxBytes(UserBytes, SmaxVarBase):
     """Class for holding SMA-X raw objects, with their metadata"""
     data: InitVar[bytes]
-    type: str = field(kw_only=True, default='bytes')
+    type: str = field(kw_only=True, default='raw')
 
     def __repr__(self):
         return str(bytes(self))
