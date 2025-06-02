@@ -38,7 +38,7 @@ of its forks / clones such as [Valkey](https://valkey.io) or [Dragonfly](https:/
 interface client applications; and a set of command-line tools built with them. Currently we provide client libraries 
 for Python 3 and C/C++ (C99). This repository contains the Python 3 client libraries for SMA-X.
 
-There are no official releases of __smax-python__ yet. An initial 1.0.0 release is expected early/mid 2025. 
+There are no official releases of __smax-python__ yet. An initial stable release is expected early/mid 2025. 
 Before then the API may undergo slight changes and tweaks. Use the repository as is at your own risk for now.
 
 ### Related links
@@ -122,6 +122,12 @@ a few simple ones to help get you started.
   result = smax_client.smax_wait_on_any_subscribed()
   print(result.data, result.type)
 ```
+
+Note that `smax_client.smax_pull()` returns `Smax<type>` variables, derived from `numpy` dtype variables such as `numpy.int32` and `numpy.float64`, in order to comply with the SMA-X standard types.  A round trip through SMA-X through `smax_client.smax_share()` and `smax_client.smax_pull()` will convert built-in Python  `int` and `float` types to `np.int32` and `np.float64` respectively.
+
+This causes some particular issues with comparisons between `SmaxInt32` and `int` - less than or greater than work correctly, but equality testing does not. This is because Python's built-in `int` type is an arbitrary precision integer, with no fixed width.  Users who need to compare values returned from SMA-X with built-ins (e.g. for bounds checking with `if smax_value in range(1,5)` or similar) should cast the return values appropriately.
+
+The best thing is to cast built-ins to the appropriate `numpy` type.
 
 ------------------------------------------------------------------------------
 Copyright (C) 2024 Center for Astrophysics \| Harvard \& Smithsonian
