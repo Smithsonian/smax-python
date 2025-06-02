@@ -394,7 +394,7 @@ class SmaxRedisClient(SmaxClient):
             type_name = value.type
             
             if type_name == "raw":
-                self._logger.debug(f"_to_smax_format returning {value}, {type_name}, 1")
+                self._logger.debug(f"_to_smax_format returning raw {value}, {type_name}, 1")
                 
                 return value, type_name, 1
             
