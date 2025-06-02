@@ -45,7 +45,7 @@ _TYPE_MAP = {
 _REVERSE_TYPE_MAP = {v: k for k, v in _TYPE_MAP.items()}
 
 # Add standard Python types to the inverse map
-_REVERSE_TYPE_MAP[int] = 'int32'
+_REVERSE_TYPE_MAP[int] = 'int64'
 _REVERSE_TYPE_MAP[float] = 'float64'
 
 inv_map = _REVERSE_TYPE_MAP
@@ -93,6 +93,7 @@ class SmaxVarBase(object):
     @property
     def metadata(self):
         return self.__dict__
+    
 
 @dataclass
 class SmaxFloat(float, SmaxVarBase):
@@ -118,6 +119,9 @@ class UserInt(int):
             args = (kwargs.pop('data'),)
         x = int.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, right):
+        return self == type(self)(right)
         
 @dataclass
 class SmaxInt(UserInt, SmaxVarBase):
