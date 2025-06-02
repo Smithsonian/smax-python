@@ -6,21 +6,19 @@ from collections import namedtuple
 import numpy as np
 
 # Lookup tables for converting python types to smax type names.
-# The official SMA-X types are not currently given in the spec, but
-# the following types have been seen in the wild.
 #
 # For the reverse conversion of Python types to SMA-X types
 # (represented in SMA-X in their string form), the last
 # occurence of the Python type as a value in _TYPE_MAP
 # will be used to pair Python values of that type to a
-# named SMA-X type (this is a consequency of the order of dictionaries
+# named SMA-X type (this is a consequence of the order of dictionaries
 # being maintained in Python since 3.7).
 #
 # Thus in the current form of the _TYPE_MAP below, Python
-# floats will be sent to SMA-X with the type 'float' rather 
-# than 'double' or 'float64', even though Python floats are 
+# floats will be sent to SMA-X with the type 'float64' rather 
+# than 'double' or 'float', even though Python floats are 
 # double precision by default, and Python ints will be sent with
-# the SMA-X type 'integer' rather than 'int'.
+# the SMA-X type 'int32' rather than 'int'.
 # 
 # See the bottom of this file for the SmaxVar version of these maps
 _TYPE_MAP = {
@@ -35,6 +33,7 @@ _TYPE_MAP = {
              'float': np.float64,
              'float32': np.float32,
              'float64': np.float64,
+             'bool': bool,
              'boolean': bool,
              'str': str,
              'string': str,
@@ -570,6 +569,7 @@ _SMAX_TYPE_MAP = {
              'float64': SmaxFloat64,
              'str': SmaxStr,
              'string': SmaxStr,
+             'bool': SmaxBool,
              'boolean': SmaxBool,
              'raw': SmaxBytes}
 
