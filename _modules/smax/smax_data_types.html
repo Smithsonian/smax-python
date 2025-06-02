@@ -95,23 +95,31 @@
 <span class="c1"># </span>
 <span class="c1"># See the bottom of this file for the SmaxVar version of these maps</span>
 <span class="n">_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span>
-             <span class="s1">&#39;int&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-             <span class="s1">&#39;integer&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+             <span class="s1">&#39;int&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+             <span class="s1">&#39;integer&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
              <span class="s1">&#39;int16&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
              <span class="s1">&#39;int32&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
              <span class="s1">&#39;int64&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
              <span class="s1">&#39;int8&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span>
-             <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-             <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+             <span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+             <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
              <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-             <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-             <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="nb">str</span>
+             <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+             <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="nb">bytes</span>
              <span class="p">}</span>
 
-<span class="n">_REVERSE_TYPE_MAP</span> <span class="o">=</span> <span class="n">inv_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<span class="c1"># The reverse mapping here relies on overwriting the non-standard</span>
+<span class="c1"># SMA-X types with the standard types. </span>
+<span class="n">_REVERSE_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<span class="c1"># Add standard Python types to the inverse map</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
+
+<span class="n">inv_map</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span>
 
 <span class="c1"># Legacy Named tuples for smax requests and responses.</span>
 <span class="c1">#</span>
@@ -207,6 +215,40 @@
         
 <div class="viewcode-block" id="SmaxInt.asdict">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt.asdict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span><span class="bp">self</span><span class="p">}</span>
+        <span class="n">dic</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">dic</span></div>
+</div>
+
+        
+<span class="c1"># For ints, we can&#39;t directly subclass the Python int type as they</span>
+<span class="c1"># are unmutable.  </span>
+<span class="c1"># So we have to go via an intermediate with an added .__new__ method</span>
+<div class="viewcode-block" id="UserBytes">
+<a class="viewcode-back" href="../../smax.html#smax.smax_data_types.UserBytes">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UserBytes</span><span class="p">(</span><span class="nb">bytes</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">),)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+
+        
+<div class="viewcode-block" id="SmaxBytes">
+<a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxBytes">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SmaxBytes</span><span class="p">(</span><span class="n">UserBytes</span><span class="p">,</span> <span class="n">SmaxVarBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for holding SMA-X raw objects, with their metadata&quot;&quot;&quot;</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        
+<div class="viewcode-block" id="SmaxBytes.asdict">
+<a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxBytes.asdict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">dic</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">:</span><span class="bp">self</span><span class="p">}</span>
         <span class="n">dic</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
@@ -711,21 +753,29 @@
 
 <span class="c1"># Look up table for SMA-X data type maps</span>
 <span class="n">_SMAX_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span>
-             <span class="s1">&#39;int&#39;</span><span class="p">:</span> <span class="n">SmaxInt</span><span class="p">,</span>
-             <span class="s1">&#39;integer&#39;</span><span class="p">:</span> <span class="n">SmaxInt</span><span class="p">,</span>
+             <span class="s1">&#39;int&#39;</span><span class="p">:</span> <span class="n">SmaxInt32</span><span class="p">,</span>
+             <span class="s1">&#39;integer&#39;</span><span class="p">:</span><span class="n">SmaxInt32</span><span class="p">,</span>
              <span class="s1">&#39;int16&#39;</span><span class="p">:</span> <span class="n">SmaxInt16</span><span class="p">,</span>
              <span class="s1">&#39;int32&#39;</span><span class="p">:</span> <span class="n">SmaxInt32</span><span class="p">,</span>
              <span class="s1">&#39;int64&#39;</span><span class="p">:</span> <span class="n">SmaxInt64</span><span class="p">,</span>
              <span class="s1">&#39;int8&#39;</span><span class="p">:</span> <span class="n">SmaxInt8</span><span class="p">,</span>
-             <span class="s1">&#39;double&#39;</span> <span class="p">:</span> <span class="n">SmaxFloat</span><span class="p">,</span>
-             <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="n">SmaxFloat</span><span class="p">,</span>
+             <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
              <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">SmaxFloat32</span><span class="p">,</span>
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="n">SmaxStr</span><span class="p">,</span>
              <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="n">SmaxStr</span><span class="p">,</span>
-             <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="n">SmaxBool</span><span class="p">,</span>
-             <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="n">SmaxBool</span><span class="p">}</span>
-<span class="n">_REVERSE_SMAX_TYPE_MAP</span> <span class="o">=</span> <span class="n">inv_smax_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_SMAX_TYPE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+             <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="n">SmaxBool</span><span class="p">,</span>
+             <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="n">SmaxBytes</span><span class="p">}</span>
+
+<span class="c1"># The reverse mapping here relies on overwriting the non-standard</span>
+<span class="c1"># SMA-X type reverse maps with the standard types </span>
+<span class="n">_REVERSE_SMAX_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_SMAX_TYPE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+<span class="c1"># Add the SMAX subclasses of standard python types</span>
+<span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">SmaxInt</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+<span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">SmaxFloat</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
+
+<span class="n">inv_smax_map</span> <span class="o">=</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span>
 </pre></div>
 
            </div>
