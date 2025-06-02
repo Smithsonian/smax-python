@@ -5,7 +5,7 @@ import numpy as np
 
 from .smax_data_types import SmaxData, \
     SmaxInt, SmaxFloat, SmaxBool, SmaxStr, SmaxStrArray, SmaxArray, SmaxStruct, \
-    SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, \
+    SmaxInt8, SmaxInt16, SmaxInt32, SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBytes, \
     _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
     optional_metadata
 
