@@ -375,6 +375,10 @@ class UserInt8(np.int8):
             args = (kwargs.pop('data'),)
         x = np.int8.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt8(UserInt8, SmaxVarBase):
@@ -397,6 +401,10 @@ class UserInt16(np.int16):
             args = (kwargs.pop('data'),)
         x = np.int16.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt16(UserInt16, SmaxVarBase):
@@ -419,6 +427,10 @@ class UserInt32(np.int32):
             args = (kwargs.pop('data'),)
         x = np.int32.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt32(UserInt32, SmaxVarBase):
@@ -441,6 +453,10 @@ class UserInt64(np.int64):
             args = (kwargs.pop('data'),)
         x = np.int64.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt64(UserInt64, SmaxVarBase):
