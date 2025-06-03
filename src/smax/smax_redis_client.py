@@ -1,4 +1,5 @@
 import os
+from math import ceil, log
 from collections.abc import Container
 import logging
 import socket
@@ -376,120 +377,146 @@ class SmaxRedisClient(SmaxClient):
         # Derive the type according to Python.
         python_type = type(value)
         
-        self._logger.debug(f"_to_smax_format received {value}, type {str(python_type)}")
+        self._logger.debug(f"_to_smax_format received {value}, type {str(python_type)}, smax_type {smax_type}")
         self._logger.debug(f"_to_smax_format 'type is list': {python_type is list}")
         
-        # Single value of a supported python or numpy type, cast to string and send to redis.
-                # First determine the SMA-X type of value.
+        # First see if we've been given the SMA-X type to use.
         if smax_type in _TYPE_MAP:
             type_name = smax_type
-        elif python_type in _REVERSE_TYPE_MAP:
-            type_name = _REVERSE_TYPE_MAP[python_type]
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
             
-            if type_name == "boolean":
-                value = int(value)
-                self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
-                
-            if type_name == "raw":
-                return value, type_name, 1
+            # Cast to given smax type
+            try:
+                value = _TYPE_MAP[type_name](value)
+            except ValueError or OverflowError:
+                self._logger.warning(f"Could not cast {type(value)} to {smax_type}, are the types compatible?")
+                # Don't change the value, and rely on str() to do the job
             
             return str(value), type_name, 1
+        # We haven't been given a valid smax_type, so use the reverse type map to pick the type_name
+        else:
+            if python_type in _REVERSE_TYPE_MAP:
+                type_name = _REVERSE_TYPE_MAP[python_type]
+                self._logger.debug(f"_to_smax_format detect Python type as {type_name}")
+                
+                # Detect the appropriate width of the SMA-X int<n> to use
+                if type_name is 'int':
+                    # This bit of mathmagics calculates the size of a signed int, then rounds it up
+                    # to the next power of two.
+                    width = 2**ceil(log((value.bit_length() + 1), 2))
+                    type_name = f'int{width}'
+                    self._logger.debug(f"Supplied Python int, which fits into {type_name}")
+            
+                if type_name == "boolean":
+                    value = int(value)
+                    self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
+                    
+                if type_name == "raw":
+                    return value, type_name, 1
+                
+                return str(value), type_name, 1
         
-        # Single value of a Smax<var> type
-        elif python_type in _REVERSE_SMAX_TYPE_MAP:
-            type_name = value.type
-            
-            if type_name == "raw":
-                self._logger.debug(f"_to_smax_format returning raw {value}, {type_name}, 1")
-                
-                return value, type_name, 1
-            
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
-            
-            return str(value), type_name, 1
-
-        # We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)
-        elif isinstance(value, Container):
-            a = value[0]
-            data_shape = [len(value)]
-            # recursively move down a level in the collection hierarchy
-            while True:
-                if isinstance(a, str):
-                    break
-                elif isinstance(a, Container):
-                    data_shape.append(len(a))
-                    a = a[0]
-                else:
-                    break  
-            
-            if python_type is SmaxArray:
-                # Preserve the SMA-X type
+            # Single value of a Smax<var> type
+            elif python_type in _REVERSE_SMAX_TYPE_MAP:
                 type_name = value.type
-            elif type(a) in _REVERSE_TYPE_MAP:
-                type_name = _REVERSE_TYPE_MAP[type(a)]
-            elif type(a) in _REVERSE_SMAX_TYPE_MAP:
-                type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
-            else:
-                self._logger.warning(f"Did not recognize type {str(type(a))}, storing raw values as bytes.")
-                type_name = "bytes"
+                
+                if type_name == "raw":
+                    self._logger.debug(f"_to_smax_format returning raw {value}, {type_name}, 1")
+                    
+                    return value, type_name, 1
+                
+                self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
+                
+                return str(value), type_name, 1
 
-            # Either convert to a string array, or to an numpy.ndarray
-            if python_type is list or python_type is tuple or python_type is SmaxStrArray:
-                self._logger.debug(f"_to_smax_format working on a {python_type} of type {type_name}")
-                if type_name == "string":
-                    # We have a string array of unknown (and possibly variable) depth.  This needs to be concatenated with '\r' and uploaded as a string
-                    values = []
-                    def flatten(v):
-                        for item in v:
-                            if isinstance(item, str):
-                                values.append(item)
-                            elif isinstance(item, Container):
-                                flatten(item)
-                            else:
-                                values.append(item)
-                    flatten(value)
-                    converted_data = "\r".join(values)
-                    if python_type is SmaxStrArray:
-                        size = value.dim
+            # We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)
+            elif isinstance(value, Container):
+                a = value[0]
+                data_shape = [len(value)]
+                # recursively move down a level in the collection hierarchy
+                while True:
+                    if isinstance(a, str):
+                        break
+                    elif isinstance(a, Container):
+                        data_shape.append(len(a))
+                        a = a[0]
                     else:
-                        size = len(values)
+                        break  
+                if type_name in _TYPE_MAP:
+                    pass
+                elif python_type is SmaxArray:
+                    # Preserve the SMA-X type
+                    type_name = value.type
+                elif type(a) in _REVERSE_TYPE_MAP:
+                    type_name = _REVERSE_TYPE_MAP[type(a)]
+                    if type_name.startswith('int'):
+                        # Find the smallest int<n> that the biggest value fits into
+                        a = np.max(np.abs(np.array(value, dtype='O')))
+                        width = 2**ceil(log((a.bit_length() + 1), 2))
+                        type_name = f'int{width}'
+                        self._logger.debug(f"Supplied array of Python ints, which fit into {type_name}")
+                elif type(a) in _REVERSE_SMAX_TYPE_MAP:
+                    type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
+                else:
+                    self._logger.warning(f"Did not recognize type {str(type(a))}, storing raw values as strings.")
                     type_name = "string"
+
+                # Either convert to a string array, or to an numpy.ndarray
+                if python_type is list or python_type is tuple or python_type is SmaxStrArray:
+                    self._logger.debug(f"_to_smax_format working on a {python_type} of type {type_name}")
+                    if type_name == "string" or type_name == "bytes":
+                        # We have a string or byte array of unknown (and possibly variable) depth.  This needs to be concatenated with '\r' and uploaded as a string
+                        values = []
+                        def flatten(v):
+                            for item in v:
+                                if isinstance(item, str):
+                                    values.append(item)
+                                elif isinstance(item, Container):
+                                    flatten(item)
+                                else:
+                                    values.append(item)
+                        flatten(value)
+                        converted_data = "\r".join(values)
+                        if python_type is SmaxStrArray:
+                            size = value.dim
+                        else:
+                            size = len(values)
+
+                        self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
+                        return converted_data, type_name, size
+                    else:
+                        python_type = np.ndarray
+                        
+                # Now if its a numpy array, flatten, convert to a string, and return.
+                if python_type == np.ndarray or python_type == SmaxArray:
+                    # Convert to numpy array of the given type_name.
+                    converted_data = np.array(value, dtype=_TYPE_MAP[type_name])
+                    # If the shape is a single dimension, set 'size' equal to that value.
+                    data_shape = converted_data.shape
+                    if len(data_shape) == 1:
+                        size = data_shape[0]
+                    else:
+                        # Convert shape tuple to a space delimited list for smax.
+                        size = " ".join(str(i) for i in data_shape)
+
+                        # Flatten and make a space delimited string of dimensions.
+                        converted_data = converted_data.flatten()
+                
+                    # Check this 1D representation of the data for type uniformity.
+                    if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
+                        raise TypeError("All values in list are not the same type.")
+
+                    self._logger.debug(f"_to_smax_format converted_data.dtype.type : {converted_data.dtype.type}")
+                        
+                    # Create a string representation of the data in the array.
+                    converted_data = ' '.join(str(x) for x in converted_data)
                     self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
                     return converted_data, type_name, size
-                else:
-                    python_type = np.ndarray
-                    
-            # Now if its a numpy array, flatten, convert to a string, and return.
-            if python_type == np.ndarray or python_type == SmaxArray:
-                # Convert to numpy array, dtype="O" preserves the original types.
-                converted_data = np.array(value, dtype="O")
-                # If the shape is a single dimension, set 'size' equal to that value.
-                data_shape = converted_data.shape
-                if len(data_shape) == 1:
-                    size = data_shape[0]
-                else:
-                    # Convert shape tuple to a space delimited list for smax.
-                    size = " ".join(str(i) for i in data_shape)
-
-                    # Flatten and make a space delimited string of dimensions.
-                    converted_data = converted_data.flatten()
             
-                # Check this 1D representation of the data for type uniformity.
-                if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
-                    raise TypeError("All values in list are not the same type.")
-
-                self._logger.debug(f"_to_smax_format converted_data.dtype.type : {converted_data.dtype.type}")
-                    
-                # Create a string representation of the data in the array.
-                converted_data = ' '.join(str(x) for x in converted_data)
-                self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-                return converted_data, type_name, size
-        # Single value of an unknown type
-        else:
-            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as bytes.")
-            type_name = "raw"
-            return str(value), type_name, 1
+            # Single value of an unknown type
+            else:
+                self._logger.warning(f"Did not recognize type {str(type(value))}, storing as bytes.")
+                type_name = "raw"
+                return str(value), type_name, 1
 
     def _recurse_nested_dict(self, dictionary):
         """
