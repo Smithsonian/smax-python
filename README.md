@@ -123,11 +123,19 @@ a few simple ones to help get you started.
   print(result.data, result.type)
 ```
 
-Note that `smax_client.smax_pull()` returns `Smax<type>` variables, derived from `numpy` dtype variables such as `numpy.int32` and `numpy.float64`, in order to comply with the SMA-X standard types.  A round trip through SMA-X through `smax_client.smax_share()` and `smax_client.smax_pull()` will convert built-in Python  `int` and `float` types to `np.int32` and `np.float64` respectively.
+Note that `smax_client.smax_pull()` returns `Smax<type>` variables, with the numerical types being derived from `numpy` dtype variables such as `numpy.int32` and `numpy.float64`.  `smax_client.smax_share()` with builtin types will default to converting builtin ints and float to SMA-X types `int32` and `float64`.  Thus a round trip through SMA-X through `smax_client.smax_share()` and `smax_client.smax_pull()` will convert built-in Python  `int` and `float` types to `SmaxInt32` and `SmaxFloat64`, derived from `numpy.int32` and `np.float64` respectively.  When 
 
-This causes some particular issues with comparisons between `SmaxInt32` and `int` - less than or greater than work correctly, but equality testing does not. This is because Python's built-in `int` type is an arbitrary precision integer, with no fixed width.  Users who need to compare values returned from SMA-X with built-ins (e.g. for bounds checking with `if smax_value in range(1,5)` or similar) should cast the return values appropriately.
+Performing arithmetic operations on `Smax<type>` variables will result in the `numpy.<type>` that they are derived from, dropping the metadata (which is now invalid). This includes binary operations with builtin types.
 
-The best thing is to cast built-ins to the appropriate `numpy` type.
+This may cause issues if you try to use type testing to confirm that an argument is of the right type, or use constructs such as `if <SmaxInt32> in range(0,5):`.  We recommend either ducktyping instead, or explicit casts to your preferred type. For example:
+
+```
+a = smax_client.smax_pull('example:table', 'int8key')
+
+# cast to int before checking range
+if int(a) in range(0,5):
+  <do something>
+```
 
 ------------------------------------------------------------------------------
 Copyright (C) 2024 Center for Astrophysics \| Harvard \& Smithsonian

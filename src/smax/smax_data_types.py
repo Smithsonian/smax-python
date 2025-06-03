@@ -24,10 +24,10 @@ import numpy as np
 _TYPE_MAP = {
              'int': np.int32,
              'integer': np.int32,
+             'int8': np.int8,
              'int16': np.int16,
              'int32': np.int32,
              'int64': np.int64,
-             'int8': np.int8,
              'single': np.float32,
              'double': np.float64,
              'float': np.float64,
@@ -121,7 +121,7 @@ class UserInt(int):
         return x
     
     def __eq__(self, right):
-        return self == type(self)(right)
+        return super().__eq__(right)
         
 @dataclass
 class SmaxInt(UserInt, SmaxVarBase):
@@ -388,6 +388,10 @@ class SmaxInt8(UserInt8, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
     def asdict(self):
         dic = {'data':self}
@@ -414,6 +418,10 @@ class SmaxInt16(UserInt16, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
 
     def asdict(self):
         dic = {'data':self}
@@ -440,6 +448,10 @@ class SmaxInt32(UserInt32, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
 
     def asdict(self):
         dic = {'data':self}
@@ -466,6 +478,10 @@ class SmaxInt64(UserInt64, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
     def asdict(self):
         dic = {'data':self}

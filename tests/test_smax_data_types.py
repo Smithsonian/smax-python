@@ -445,7 +445,12 @@ class TestSmaxFloat:
     
 class TestSmaxFloat32:
     """Tests of SmaxFloat32"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3.141259
+        b = SmaxFloat32(a)
+        assert a == pytest.approx(b)
+    
+    def test_equality_np(self):
         a = np.float32(3.141259)
         b = SmaxFloat32(a)
         assert a == pytest.approx(b)
@@ -472,14 +477,31 @@ class TestSmaxFloat32:
         assert description == b.description
         assert unit == b.unit
         
-    def test_addition(self):
+    def test_addition_np(self):
         a = np.float32(3.1)
         c = np.float32(1.2)
         timestamp = datetime.datetime.fromtimestamp(100000000)
         origin = "pytest"
         seq = 2
         smaxname = "test:smaxfloat32:pi"
-        description = "A test SmaxFloat32"
+        description = "A test SmaxFloat32 from Numpy"
+        unit = "V"
+        
+        b = SmaxFloat32(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == pytest.approx(a+c)
+        assert c+b == pytest.approx(c+a)
+        
+        assert type(c+b) is np.float32
+    
+    def test_addition_builtin(self):
+        a = 3.1
+        c = 1.2
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxfloat32:pi"
+        description = "A test SmaxFloat32 from Builtins"
         unit = "V"
         
         b = SmaxFloat32(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
@@ -492,7 +514,13 @@ class TestSmaxFloat32:
 
 class TestSmaxFloat64:
     """Tests of SmaxFloat64"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3.141259
+        b = SmaxFloat64(a)
+        
+        assert a == pytest.approx(b)
+    
+    def test_equality_np(self):
         a = np.float64(3.141259)
         b = SmaxFloat64(a)
         
@@ -519,8 +547,25 @@ class TestSmaxFloat64:
         assert 1 == b.dim
         assert description == b.description
         assert unit == b.unit
+
+    def test_addition_builtin(self):
+        a = 3.1
+        c = 1.2
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxfloat32:pi"
+        description = "A test SmaxFloat32"
+        unit = "V"
         
-    def test_addition(self):
+        b = SmaxFloat64(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == pytest.approx(a+c)
+        assert c+b == pytest.approx(c+a)
+        
+        assert type(c+b) is np.float64
+        
+    def test_addition_np(self):
         a = np.float64(3.1)
         c = np.float64(1.2)
         timestamp = datetime.datetime.fromtimestamp(100000000)
@@ -539,14 +584,26 @@ class TestSmaxFloat64:
             
 
 class TestSmaxInt:
-    def test_equality(self):
+    def test_equality_builtin(self):
         a = 3
         b = SmaxInt(a)
         
         assert a == b
         
+    def test_equality_numpy(self):
+        a = np.int32(3)
+        b = SmaxInt(a)
+        
+        assert a == b
+        
     def test_compatibility(self):
-        a = np.int32(2**16+2**10)
+        # SmaxInt derives from Python int, and so should be arbitrary precision
+        a = 2**16+2**10
+        b = SmaxInt(a)
+        
+        assert a == b
+        
+        a = 2**32+2**10
         b = SmaxInt(a)
         
         assert a == b
@@ -593,7 +650,13 @@ class TestSmaxInt:
             
 class TestSmaxInt8:
     """Tests of SmaxInt8"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3
+        b = SmaxInt8(a)
+        
+        assert a == b
+    
+    def test_equality_np(self):
         a = np.int8(3)
         b = SmaxInt8(a)
         
@@ -621,7 +684,22 @@ class TestSmaxInt8:
         assert description == b.description
         assert unit == b.unit
         
-    def test_addition(self):
+    def test_addition_builtin(self):
+        a = 3
+        c = 1
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxint8:pi"
+        description = "A test SmaxInt8"
+        unit = "Quahogs"
+        
+        b = SmaxInt8(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == a+c
+        assert c+b == c+a
+    
+    def test_addition_np(self):
         a = np.int8(3)
         c = np.int8(1)
         timestamp = datetime.datetime.fromtimestamp(100000000)
@@ -637,11 +715,17 @@ class TestSmaxInt8:
         assert c+b == c+a
         
         assert type(c+b) is np.int8
-            
+     
 
 class TestSmaxInt16:
     """Tests of SmaxInt16"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3
+        b = SmaxInt16(a)
+        
+        assert a == b
+
+    def test_equality_np(self):
         a = np.int16(3)
         b = SmaxInt16(a)
         
@@ -668,8 +752,23 @@ class TestSmaxInt16:
         assert 1 == b.dim
         assert description == b.description
         assert unit == b.unit
+
+    def test_addition_builtin(self):
+        a = 3
+        c = 1
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxint16:pi"
+        description = "A test SmaxInt16"
+        unit = "Quahogs"
         
-    def test_addition(self):
+        b = SmaxInt16(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == a+c
+        assert c+b == c+a
+        
+    def test_addition_np(self):
         a = np.int16(3)
         c = np.int16(1)
         timestamp = datetime.datetime.fromtimestamp(100000000)
@@ -689,7 +788,13 @@ class TestSmaxInt16:
             
 class TestSmaxInt32:
     """Tests of SmaxInt32"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3
+        b = SmaxInt32(a)
+        
+        assert a == b
+        
+    def test_equality_np(self):
         a = np.int32(3)
         b = SmaxInt32(a)
         
@@ -716,8 +821,23 @@ class TestSmaxInt32:
         assert 1 == b.dim
         assert description == b.description
         assert unit == b.unit
+
+    def test_addition_builtin(self):
+        a = 3
+        c = 1
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxint32:pi"
+        description = "A test SmaxInt32"
+        unit = "Quahogs"
         
-    def test_addition(self):
+        b = SmaxInt32(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == a+c
+        assert c+b == c+a
+        
+    def test_addition_np(self):
         a = np.int32(3)
         c = np.int32(1)
         timestamp = datetime.datetime.fromtimestamp(100000000)
@@ -737,7 +857,13 @@ class TestSmaxInt32:
 
 class TestSmaxInt64:
     """Tests of SmaxInt64"""
-    def test_equality(self):
+    def test_equality_builtin(self):
+        a = 3
+        b = SmaxInt64(a)
+        
+        assert a == b
+        
+    def test_equality_np(self):
         a = np.int64(3)
         b = SmaxInt64(a)
         
@@ -764,8 +890,25 @@ class TestSmaxInt64:
         assert 1 == b.dim
         assert description == b.description
         assert unit == b.unit
+    
+    def test_addition_builtin(self):
+        a = 3
+        c = 1
+        timestamp = datetime.datetime.fromtimestamp(100000000)
+        origin = "pytest"
+        seq = 2
+        smaxname = "test:smaxint64:pi"
+        description = "A test SmaxInt64"
+        unit = "Quahogs"
         
-    def test_addition(self):
+        b = SmaxInt64(a, timestamp=timestamp, origin=origin, seq=seq, smaxname=smaxname, description=description, unit=unit)
+        
+        assert b+c == a+c
+        assert c+b == c+a
+        
+        assert type(c+b) is np.int64
+        
+    def test_addition_np(self):
         a = np.int64(3)
         c = np.int64(1)
         timestamp = datetime.datetime.fromtimestamp(100000000)
