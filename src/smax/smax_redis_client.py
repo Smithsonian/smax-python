@@ -15,7 +15,7 @@ from redis.retry import Retry
 
 from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, SmaxStr, \
         SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
-        SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, \
+        SmaxInt64, SmaxFloat32, SmaxFloat64, SmaxBool, SmaxBytes, \
         _TYPE_MAP, _REVERSE_TYPE_MAP, _SMAX_TYPE_MAP, _REVERSE_SMAX_TYPE_MAP, \
         optional_metadata, SmaxConnectionError, SmaxKeyError, SmaxUnderflowWarning, \
         join, normalize_pair, print_smax, print_tree
@@ -229,10 +229,17 @@ class SmaxRedisClient(SmaxClient):
     def smax_pull(self, table, key, pull_meta=False):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
-        the associated metadata. The return value will an SmaxData object
-        containing the data, typeName, dataDimension(s), dataDate, source of the
+        the associated metadata. The return value will an Smax<type> object
+        containing the data, type name, data dimension(s), data date, source of the
         data, and a sequence number. If you pulled a struct, you will get a
-        nested dictionary back, with each leaf being an SmaxData object.
+        nested dictionary back, with each leaf being an Smax<type> object.
+        
+        Note that Smax<type> scalars for numerical values are subclasses of
+        `numpy` dtypes: i.e. `SmaxInt32` is a subclass of `numpy.int32`, and
+        not related to Python's arbitrary precision built-in `int`.  You must cast
+        either the built-in to an appropriate numpy type or the Smax<type> to 
+        a built-in to test for (in) equality or membership of collections.
+        
         Args:
             table (str): SMAX table name
             key (str): SMAX key name
@@ -383,12 +390,21 @@ class SmaxRedisClient(SmaxClient):
             if type_name == "boolean":
                 value = int(value)
                 self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
+                
+            if type_name == "raw":
+                return value, type_name, 1
             
             return str(value), type_name, 1
         
         # Single value of a Smax<var> type
         elif python_type in _REVERSE_SMAX_TYPE_MAP:
             type_name = value.type
+            
+            if type_name == "raw":
+                self._logger.debug(f"_to_smax_format returning raw {value}, {type_name}, 1")
+                
+                return value, type_name, 1
+            
             self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
             
             return str(value), type_name, 1
@@ -415,8 +431,8 @@ class SmaxRedisClient(SmaxClient):
             elif type(a) in _REVERSE_SMAX_TYPE_MAP:
                 type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
             else:
-                self._logger.warning(f"Did not recognize type {str(type(a))}, storing as string or string array.")
-                type_name = "string"
+                self._logger.warning(f"Did not recognize type {str(type(a))}, storing raw values as bytes.")
+                type_name = "bytes"
 
             # Either convert to a string array, or to an numpy.ndarray
             if python_type is list or python_type is tuple or python_type is SmaxStrArray:
@@ -471,8 +487,8 @@ class SmaxRedisClient(SmaxClient):
                 return converted_data, type_name, size
         # Single value of an unknown type
         else:
-            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as string.")
-            type_name = "string"
+            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as bytes.")
+            type_name = "raw"
             return str(value), type_name, 1
 
     def _recurse_nested_dict(self, dictionary):

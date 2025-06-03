@@ -13,7 +13,7 @@
 
 Client side python library for the [SMA Exchange (SMA-X)](https://docs.google.com/document/d/1eYbWDClKkV7JnJxv4MxuNBNV47dFXuUWu7C4Ve_YTf0/edit?usp=sharing) realtime structured database.
 
-Version 1.0.6
+Version 1.1.0
 
 - [API Documentation](https://smithsonian.github.io/smax-python/)
  
@@ -38,7 +38,7 @@ of its forks / clones such as [Valkey](https://valkey.io) or [Dragonfly](https:/
 interface client applications; and a set of command-line tools built with them. Currently we provide client libraries 
 for Python 3 and C/C++ (C99). This repository contains the Python 3 client libraries for SMA-X.
 
-There are no official releases of __smax-python__ yet. An initial 1.0.0 release is expected early/mid 2025. 
+There are no official releases of __smax-python__ yet. An initial stable release is expected early/mid 2025. 
 Before then the API may undergo slight changes and tweaks. Use the repository as is at your own risk for now.
 
 ### Related links
@@ -121,6 +121,20 @@ a few simple ones to help get you started.
   # Wait for publish notifications.
   result = smax_client.smax_wait_on_any_subscribed()
   print(result.data, result.type)
+```
+
+Note that `smax_client.smax_pull()` returns `Smax<type>` variables, with the numerical types being derived from `numpy` dtype variables such as `numpy.int32` and `numpy.float64`.  `smax_client.smax_share()` with builtin types will default to converting builtin ints and float to SMA-X types `int32` and `float64`.  Thus a round trip through SMA-X through `smax_client.smax_share()` and `smax_client.smax_pull()` will convert built-in Python  `int` and `float` types to `SmaxInt32` and `SmaxFloat64`, derived from `numpy.int32` and `np.float64` respectively.  When 
+
+Performing arithmetic operations on `Smax<type>` variables will result in the `numpy.<type>` that they are derived from, dropping the metadata (which is now invalid). This includes binary operations with builtin types.
+
+This may cause issues if you try to use type testing to confirm that an argument is of the right type, or use constructs such as `if <SmaxInt32> in range(0,5):`.  We recommend either ducktyping instead, or explicit casts to your preferred type. For example:
+
+```
+a = smax_client.smax_pull('example:table', 'int8key')
+
+# cast to int before checking range
+if int(a) in range(0,5):
+  <do something>
 ```
 
 ------------------------------------------------------------------------------

@@ -6,41 +6,49 @@ from collections import namedtuple
 import numpy as np
 
 # Lookup tables for converting python types to smax type names.
-# The official SMA-X types are not currently given in the spec, but
-# the following types have been seen in the wild.
 #
 # For the reverse conversion of Python types to SMA-X types
 # (represented in SMA-X in their string form), the last
 # occurence of the Python type as a value in _TYPE_MAP
 # will be used to pair Python values of that type to a
-# named SMA-X type (this is a consequency of the order of dictionaries
+# named SMA-X type (this is a consequence of the order of dictionaries
 # being maintained in Python since 3.7).
 #
 # Thus in the current form of the _TYPE_MAP below, Python
-# floats will be sent to SMA-X with the type 'float' rather 
-# than 'double' or 'float64', even though Python floats are 
+# floats will be sent to SMA-X with the type 'float64' rather 
+# than 'double' or 'float', even though Python floats are 
 # double precision by default, and Python ints will be sent with
-# the SMA-X type 'integer' rather than 'int'.
+# the SMA-X type 'int32' rather than 'int'.
 # 
 # See the bottom of this file for the SmaxVar version of these maps
 _TYPE_MAP = {
-             'int': int,
-             'integer': int,
+             'int': np.int32,
+             'integer': np.int32,
+             'int8': np.int8,
              'int16': np.int16,
              'int32': np.int32,
              'int64': np.int64,
-             'int8': np.int8,
-             'double': float,
-             'float': float,
+             'single': np.float32,
+             'double': np.float64,
+             'float': np.float64,
              'float32': np.float32,
              'float64': np.float64,
              'bool': bool,
              'boolean': bool,
              'str': str,
-             'string': str
+             'string': str,
+             'raw': bytes
              }
 
-_REVERSE_TYPE_MAP = inv_map = {v: k for k, v in _TYPE_MAP.items()}
+# The reverse mapping here relies on overwriting the non-standard
+# SMA-X types with the standard types. 
+_REVERSE_TYPE_MAP = {v: k for k, v in _TYPE_MAP.items()}
+
+# Add standard Python types to the inverse map
+_REVERSE_TYPE_MAP[int] = 'int32'
+_REVERSE_TYPE_MAP[float] = 'float64'
+
+inv_map = _REVERSE_TYPE_MAP
 
 # Legacy Named tuples for smax requests and responses.
 #
@@ -85,6 +93,7 @@ class SmaxVarBase(object):
     @property
     def metadata(self):
         return self.__dict__
+    
 
 @dataclass
 class SmaxFloat(float, SmaxVarBase):
@@ -110,6 +119,9 @@ class UserInt(int):
             args = (kwargs.pop('data'),)
         x = int.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, right):
+        return super().__eq__(right)
         
 @dataclass
 class SmaxInt(UserInt, SmaxVarBase):
@@ -119,6 +131,38 @@ class SmaxInt(UserInt, SmaxVarBase):
 
     def __repr__(self):
         return str(int(self))
+        
+    def asdict(self):
+        dic = {'data':self}
+        dic.update(asdict(self))
+        
+        return dic
+        
+# For bytes, we can't directly subclass the Python bytes type as base
+# types are immutable.  
+# So we have to go via an intermediate with an added .__new__ method
+class UserBytes(bytes):
+    def __new__(cls, *args, **kwargs):
+        if len(args) == 0:
+            args = (kwargs.pop('data'))
+            
+        # Convert to string and add the default Redis encoding definition.
+        if type(args[0]) is bytes:
+            arg = args[0]
+        else:
+            arg = bytes(str(args[0]), 'UTF-8')
+
+        x = bytes.__new__(cls, arg)
+        return x
+        
+@dataclass
+class SmaxBytes(UserBytes, SmaxVarBase):
+    """Class for holding SMA-X raw objects, with their metadata"""
+    data: InitVar[bytes]
+    type: str = field(kw_only=True, default='raw')
+
+    def __repr__(self):
+        return str(self)
         
     def asdict(self):
         dic = {'data':self}
@@ -331,6 +375,10 @@ class UserInt8(np.int8):
             args = (kwargs.pop('data'),)
         x = np.int8.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt8(UserInt8, SmaxVarBase):
@@ -340,6 +388,10 @@ class SmaxInt8(UserInt8, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
     def asdict(self):
         dic = {'data':self}
@@ -353,6 +405,10 @@ class UserInt16(np.int16):
             args = (kwargs.pop('data'),)
         x = np.int16.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt16(UserInt16, SmaxVarBase):
@@ -362,6 +418,10 @@ class SmaxInt16(UserInt16, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
 
     def asdict(self):
         dic = {'data':self}
@@ -375,6 +435,10 @@ class UserInt32(np.int32):
             args = (kwargs.pop('data'),)
         x = np.int32.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt32(UserInt32, SmaxVarBase):
@@ -384,6 +448,10 @@ class SmaxInt32(UserInt32, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
 
     def asdict(self):
         dic = {'data':self}
@@ -397,6 +465,10 @@ class UserInt64(np.int64):
             args = (kwargs.pop('data'),)
         x = np.int64.__new__(cls, args[0])
         return x
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
 @dataclass
 class SmaxInt64(UserInt64, SmaxVarBase):
@@ -406,6 +478,10 @@ class SmaxInt64(UserInt64, SmaxVarBase):
     
     def __repr__(self):
         return str(int(self))
+    
+    def __eq__(self, other):
+        """Pass the equality test through to the base class"""
+        return super().__eq__(other)
         
     def asdict(self):
         dic = {'data':self}
@@ -523,18 +599,29 @@ class SmaxBool(UserBool, SmaxVarBase):
 
 # Look up table for SMA-X data type maps
 _SMAX_TYPE_MAP = {
-             'int': SmaxInt,
-             'integer': SmaxInt,
+             'int': SmaxInt32,
+             'integer':SmaxInt32,
              'int16': SmaxInt16,
              'int32': SmaxInt32,
              'int64': SmaxInt64,
              'int8': SmaxInt8,
-             'double' : SmaxFloat,
-             'float': SmaxFloat,
+             'float': SmaxFloat64,
+             'single': SmaxFloat32,
+             'double': SmaxFloat64,
              'float32': SmaxFloat32,
              'float64': SmaxFloat64,
              'str': SmaxStr,
              'string': SmaxStr,
              'bool': SmaxBool,
-             'boolean': SmaxBool}
-_REVERSE_SMAX_TYPE_MAP = inv_smax_map = {v: k for k, v in _SMAX_TYPE_MAP.items()}
+             'boolean': SmaxBool,
+             'raw': SmaxBytes}
+
+# The reverse mapping here relies on overwriting the non-standard
+# SMA-X type reverse maps with the standard types 
+_REVERSE_SMAX_TYPE_MAP = {v: k for k, v in _SMAX_TYPE_MAP.items()}
+
+# Add the SMAX subclasses of standard python types
+_REVERSE_SMAX_TYPE_MAP[SmaxInt] = 'int32'
+_REVERSE_SMAX_TYPE_MAP[SmaxFloat] = 'float64'
+
+inv_smax_map = _REVERSE_SMAX_TYPE_MAP
