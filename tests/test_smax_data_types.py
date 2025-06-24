@@ -116,13 +116,6 @@ class TestTypeLookup:
         
         assert var_type == bool
         
-    def test_smax_to_bytes(self):
-        smax_type = 'raw'
-        
-        var_type = _TYPE_MAP[smax_type]
-        
-        assert var_type == bytes
-        
 class TestReverseTypeLookup:
     """Tests of _TYPE_MAP and _REVERSE_TYPE_MAP."""
     def test_int_to_smax(self):
@@ -200,7 +193,7 @@ class TestReverseTypeLookup:
         
         smax_type = _REVERSE_TYPE_MAP[type(a)]
         
-        assert smax_type == 'raw'
+        assert smax_type == 'string'
 
 class TestSMAXTypeLookup:
     """Tests of _TYPE_MAP"""
@@ -393,7 +386,7 @@ class TestReverseSMAXTypeLookup:
         
         smax_type = _REVERSE_SMAX_TYPE_MAP[type(a)]
         
-        assert smax_type == 'raw'
+        assert smax_type == 'string'
 
 class TestSmaxFloat:
     """Tests of SmaxFloat"""
@@ -1143,7 +1136,7 @@ class TestSmaxBytes:
         assert a == b
 
     def test_metadata(self):
-        a = b"A SMA-X string"
+        a = b"A SMA-X bytes object"
         timestamp = datetime.datetime.fromtimestamp(100000000)
         origin = "pytest"
         seq = 2
@@ -1158,7 +1151,6 @@ class TestSmaxBytes:
         assert origin == b.origin
         assert seq == b.seq
         assert smaxname == b.smaxname
-        assert "raw" == b.type
         assert 1 == b.dim
         assert description == b.description
         
