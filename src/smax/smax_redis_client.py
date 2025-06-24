@@ -375,7 +375,7 @@ class SmaxRedisClient(SmaxClient):
 
         return self._parse_lua_pull_response(lua_data, f"{table}:{key}", raw=raw)
 
-    def smax_share(self, table, key, value, push_meta=False, smax_type=None):
+    def smax_share(self, table, key, value, push_meta=False, maintain_type=False, smax_type=None):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -389,13 +389,18 @@ class SmaxRedisClient(SmaxClient):
             value: data to store, takes supported types, including (nested) dicts.
             push_meta (bool): Push optional metadata if present in object 
                             (does not work for SmaxStructs and is not atomic).
-            type_name (str): Force casting to type_name before sharing.
+            maintain_type (bool): Check the metadata on Redis for each node, and 
+                                  cast to that type if possible when sharing.
+            smax_type (str): Force casting to smax_type before sharing. Overrides
+                             maintain type.
 
         Returns:
             return value from redis-py's evalsha() function.
         """
         # If this is not a dict, then convert data to smax format and send.
         if not isinstance(value, dict):
+            if maintain_type and not smax_type:
+                smax_type = self.smax_pull_meta('types', join(table, key))
             if push_meta:
                 if type(value) in _REVERSE_SMAX_TYPE_MAP:
                     for meta in optional_metadata:
@@ -412,6 +417,11 @@ class SmaxRedisClient(SmaxClient):
             # dict.
             leaves = _recurse_nested_dict(value)
             fields = _get_struct_fields(leaves)
+            if maintain_type:
+                for f in fields:
+                    if f[3] == "value":
+                        smax_type = self.smax_pull_meta('types', join(table, key, f[0], f[1]))
+                        f[3] = smax_type
             tables = _get_struct_tables(table, key, fields)
 
             self._logger.debug(f"Calling HMSetWithMeta script with {table}, {key} {tables}")
@@ -879,6 +889,9 @@ class SmaxRedisClient(SmaxClient):
                 return result.decode("utf-8")
             else:
                 return result
+        except AttributeError:
+            self._logger.warning(f"Could not find metadata for {table}")
+            return None
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hget.")
             raise SmaxConnectionError(e.args)

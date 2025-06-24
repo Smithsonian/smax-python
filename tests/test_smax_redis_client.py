@@ -86,15 +86,14 @@ def test_roundtrip_string(smax_client):
 
 
 def test_roundtrip_int32(smax_client):
-    expected_data = np.int32(123456789)
+    expected_data = 123456789
     expected_type = "int32"
     expected_dim = 1
     table = join(test_table, "test_roundtrip_int")
     key = "pytest"
-    smax_client.smax_share(table, key, expected_data)
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
     result = smax_client.smax_pull(table, key)
     assert result == expected_data
-    assert result.data == expected_data
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
