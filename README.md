@@ -13,7 +13,7 @@
 
 Client side python library for the [SMA Exchange (SMA-X)](https://docs.google.com/document/d/1eYbWDClKkV7JnJxv4MxuNBNV47dFXuUWu7C4Ve_YTf0/edit?usp=sharing) realtime structured database.
 
-Version 1.1.0
+Version 1.2.0
 
 - [API Documentation](https://smithsonian.github.io/smax-python/)
  
