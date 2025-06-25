@@ -86,45 +86,221 @@ def test_roundtrip_string(smax_client):
 
 
 def test_roundtrip_int32(smax_client):
-    expected_data = np.int32(123456789)
+    expected_data = np.int32(123)
     expected_type = "int32"
     expected_dim = 1
-    table = join(test_table, "test_roundtrip_int")
+    table = join(test_table, "test_roundtrip_int32")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_int8(smax_client):
+    expected_data = np.int8(123)
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_int8")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_int16(smax_client):
+    expected_data = np.int16(123)
+    expected_type = "int16"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_int16")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_int64(smax_client):
+    expected_data = np.int64(123)
+    expected_type = "int64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_int64")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_intwidthdetection(smax_client):
+    expected_data = 123
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_intdetect")
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
     assert result == expected_data
-    assert result.data == expected_data
+    assert result.type.startswith('int')
     assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_intpromotion(smax_client):
+    expected_data = 128
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_intpromo")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type.startswith('int')
+    assert result.type != expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
     
     
-def test_roundtrip_float64(smax_client):
-    expected_data = np.float64(123456789)
+def test_roundtrip_floattoint_withpromo(smax_client):
+    expected_data = 1234.5
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_floatintpromo")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == int(expected_data)
+    assert result.type.startswith('int')
+    assert result.type != expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_floatpromotion(smax_client):
+    expected_data = 1.23456789e123
     expected_type = "float64"
     expected_dim = 1
-    table = join(test_table, "test_roundtrip_int")
+    table = join(test_table, "test_roundtrip_floatpromo")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type='float32')
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float64(smax_client):
+    expected_data = np.float64(1.23456789)
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float64")
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
-    assert result == expected_data
-    assert result.data == expected_data
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float32(smax_client):
+    expected_data = np.float32(1.23456789)
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float32")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float16(smax_client):
+    expected_data = np.float16(1.23456789)
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float16")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_pyfloat(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
     
 
+def test_roundtrip_pyfloat_to_float32(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat32")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_pyfloat_to_float64(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat64")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
 def test_roundtrip_bytes(smax_client):
     expected_data = b"1 2 3 4 5 6 7 8 9"
-    expected_type = "raw"
+    expected_type = "string"
     expected_dim = 1
-    table = join(test_table, "test_roundtrip_raw")
+    table = join(test_table, "test_roundtrip_bytes")
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
-    assert result == expected_data
-    assert result.data == expected_data
+    assert result == str(expected_data)
+    assert result.data == str(expected_data)
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
@@ -266,6 +442,54 @@ def test_roundtrip_2d_float_ndarray(smax_client):
     assert np.array_equal(result, expected_data)
     assert np.array_equal(result.data, expected_data)
     assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_maintain_type_field(smax_client):
+    initial_data = 123
+    initial_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_maintaintype_field")
+    key = "pytest"
+    smax_client.smax_share(table, key, initial_data, smax_type=initial_type)
+    
+    initial_result = smax_client.smax_pull(table, key)
+    
+    second_data = np.float64(1.234)
+    second_type = "float64"
+    smax_client.smax_share(table, key, second_data, maintain_type=True)
+    
+    result = smax_client.smax_pull(table, key)
+    
+    assert result.data == _TYPE_MAP[initial_type](second_data)
+    assert result.type == initial_result.type
+    assert result.type.startswith('int')
+    assert result.type != second_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_maintain_type_string(smax_client):
+    initial_data = 123
+    initial_type = "string"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_maintaintype_string")
+    key = "pytest"
+    smax_client.smax_share(table, key, initial_data, smax_type=initial_type)
+    
+    initial_result = smax_client.smax_pull(table, key)
+    
+    second_data = np.float64(1.234)
+    second_type = "float64"
+    smax_client.smax_share(table, key, second_data, maintain_type=True)
+    
+    result = smax_client.smax_pull(table, key)
+    
+    assert result.data == _TYPE_MAP[initial_type](second_data)
+    assert result.type == initial_result.type
+    assert result.type == initial_type
+    assert result.type != second_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
 
@@ -488,7 +712,7 @@ def test_pull_struct(smax_client):
     table = join(test_table, "test_pull_struct")
 
     smax_client.smax_share(f"{table}:swarm:dbe:roach2-01", "temp", expected_temp_value1)
-    smax_client.smax_share(f"{table}:swarm:dbe:roach2-02", "temp", expected_temp_value2)
+    smax_client.smax_share(f"{table}:swarm:dbe:roach2-02", "temp", expected_temp_value2, smax_type="int32")
     smax_client.smax_share(f"{table}:swarm:dbe:roach2-01", "firmware", expected_firmware_value1)
     smax_client.smax_share(f"{table}:swarm:dbe:roach2-02", "firmware", expected_firmware_value2)
     result = smax_client.smax_pull(f"{table}:swarm", "dbe")
@@ -503,7 +727,7 @@ def test_pull_struct(smax_client):
     assert (roach02_temp.data == expected_temp_value2).all()
     assert roach01_firmware.data == expected_firmware_value1
     assert roach02_firmware.data == expected_firmware_value2
-    assert roach01_temp.type == _REVERSE_TYPE_MAP[expected_temp_value1.dtype.type]
+    assert roach01_temp.dtype.kind == expected_temp_value1.dtype.kind
     assert roach02_temp.type == _REVERSE_TYPE_MAP[expected_temp_value2.dtype.type]
     assert roach01_firmware.type == expected_type_firmware
     assert roach02_firmware.type == expected_type_firmware
@@ -519,7 +743,7 @@ def test_share_struct(smax_client):
     expected_temp_value2 = 0
     expected_firmware_value1 = 2.0
     expected_firmware_value2 = 2.1
-    expected_type_temp = 'int32'
+    expected_type_temp = 'int'
     expected_dim_temp = 1
     expected_type_firmware = 'float64'
     expected_dim_firmware = 1
@@ -542,8 +766,8 @@ def test_share_struct(smax_client):
     assert roach04_temp.data == np.int32(expected_temp_value2)
     assert roach03_firmware.data == expected_firmware_value1
     assert roach04_firmware.data == expected_firmware_value2
-    assert roach03_temp.type == expected_type_temp
-    assert roach04_temp.type == expected_type_temp
+    assert roach03_temp.type.startswith(expected_type_temp)
+    assert roach04_temp.type.startswith(expected_type_temp)
     assert roach03_firmware.type == expected_type_firmware
     assert roach04_firmware.type == expected_type_firmware
     assert roach03_temp.dim == expected_dim_temp
@@ -554,6 +778,90 @@ def test_share_struct(smax_client):
     assert roach04_temp.smaxname == f"{table}:swarm:dbe:roach2-04:temp"
     assert roach03_firmware.smaxname == f"{table}:swarm:dbe:roach2-03:firmware"
     assert roach04_firmware.smaxname == f"{table}:swarm:dbe:roach2-04:firmware"
+
+
+def test_share_struct_maintaintype(smax_client):
+    table = join(test_table, "test_share_struct_maintain_type")
+    initial_temp_value1 = 100
+    initial_temp_value2 = 0
+    initial_firmware_value1 = 2.0
+    initial_firmware_value2 = 2.1
+    initial_type_temp = 'int'
+    initial_dim_temp = 1
+    initial_type_firmware = 'float64'
+    initial_dim_firmware = 1
+
+    struct = {"roach2-03": {"temp": initial_temp_value1, "firmware": initial_firmware_value1},
+              "roach2-04": {"temp": initial_temp_value2, "firmware": initial_firmware_value2}}
+
+    smax_client.smax_share(f"{table}:swarm", "dbe", struct)
+    initial_result = smax_client.smax_pull(f"{table}:swarm", "dbe")
+    
+    logger.debug(f"pulled dbe struct keys: {list(initial_result['dbe'].keys())}")
+
+    roach03_temp = initial_result["dbe"]["roach2-03"]["temp"]
+    roach04_temp = initial_result["dbe"]["roach2-04"]["temp"]
+    roach03_firmware = initial_result["dbe"]["roach2-03"]["firmware"]
+    roach04_firmware = initial_result["dbe"]["roach2-04"]["firmware"]
+
+    # Data and type checks.
+    assert roach03_temp == np.int32(initial_temp_value1)
+    assert roach04_temp == initial_temp_value2
+    assert roach03_firmware == initial_firmware_value1
+    assert roach04_firmware == initial_firmware_value2
+    assert roach03_temp.type.startswith(initial_type_temp)
+    assert roach04_temp.type.startswith(initial_type_temp)
+    assert roach03_firmware.type == initial_type_firmware
+    assert roach04_firmware.type == initial_type_firmware
+    assert roach03_temp.dim == initial_dim_temp
+    assert roach04_temp.dim == initial_dim_temp
+    assert roach03_firmware.dim == initial_dim_firmware
+    assert roach04_firmware.dim == initial_dim_firmware
+    assert roach03_temp.smaxname == f"{table}:swarm:dbe:roach2-03:temp"
+    assert roach04_temp.smaxname == f"{table}:swarm:dbe:roach2-04:temp"
+    assert roach03_firmware.smaxname == f"{table}:swarm:dbe:roach2-03:firmware"
+    assert roach04_firmware.smaxname == f"{table}:swarm:dbe:roach2-04:firmware"
+    
+    second_temp_value1 = 100.0
+    second_temp_value2 = 128.0
+    second_firmware_value1 = 2
+    second_firmware_value2 = "2.1"
+    second_type_temp = 'float'
+    second_dim_temp = 1
+    second_type_firmware = 'string'
+    second_dim_firmware = 1
+
+    struct = {"roach2-03": {"temp": second_temp_value1, "firmware": second_firmware_value1},
+              "roach2-04": {"temp": second_temp_value2, "firmware": second_firmware_value2}}
+
+    smax_client.smax_share(f"{table}:swarm", "dbe", struct, maintain_type=True)
+    result = smax_client.smax_pull(f"{table}:swarm", "dbe")
+    
+    logger.debug(f"pulled dbe struct keys: {list(result['dbe'].keys())}")
+
+    roach03_temp = result["dbe"]["roach2-03"]["temp"]
+    roach04_temp = result["dbe"]["roach2-04"]["temp"]
+    roach03_firmware = result["dbe"]["roach2-03"]["firmware"]
+    roach04_firmware = result["dbe"]["roach2-04"]["firmware"]
+
+    # Data and type checks.
+    assert roach03_temp == int(second_temp_value1)
+    assert roach04_temp == int(second_temp_value2)
+    assert roach03_firmware == initial_firmware_value1
+    assert roach04_firmware == initial_firmware_value2
+    assert roach03_temp.type.startswith(initial_type_temp)
+    assert roach04_temp.type.startswith(initial_type_temp)
+    assert roach03_firmware.type == initial_type_firmware
+    assert roach04_firmware.type == initial_type_firmware
+    assert roach03_temp.dim == initial_dim_temp
+    assert roach04_temp.dim == initial_dim_temp
+    assert roach03_firmware.dim == initial_dim_firmware
+    assert roach04_firmware.dim == initial_dim_firmware
+    assert roach03_temp.smaxname == f"{table}:swarm:dbe:roach2-03:temp"
+    assert roach04_temp.smaxname == f"{table}:swarm:dbe:roach2-04:temp"
+    assert roach03_firmware.smaxname == f"{table}:swarm:dbe:roach2-03:firmware"
+    assert roach04_firmware.smaxname == f"{table}:swarm:dbe:roach2-04:firmware"
+
 
 def test_roundtrip_meta(smax_client):
     # Do a normal share to generate the automatic metadata.

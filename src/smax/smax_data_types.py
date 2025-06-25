@@ -31,24 +31,38 @@ _TYPE_MAP = {
              'single': np.float32,
              'double': np.float64,
              'float': np.float64,
+             'float16' : np.float32,
              'float32': np.float32,
              'float64': np.float64,
              'bool': bool,
              'boolean': bool,
              'str': str,
-             'string': str,
-             'raw': bytes
+             'string': str
              }
 
 # The reverse mapping here relies on overwriting the non-standard
 # SMA-X types with the standard types. 
 _REVERSE_TYPE_MAP = {v: k for k, v in _TYPE_MAP.items()}
 
-# Add standard Python types to the inverse map
+# Add standard Python types to the reverse map
 _REVERSE_TYPE_MAP[int] = 'int32'
 _REVERSE_TYPE_MAP[float] = 'float64'
 
-inv_map = _REVERSE_TYPE_MAP
+# Add numpy types to the reverse map
+_REVERSE_TYPE_MAP[np.uintc] = 'int32'
+_REVERSE_TYPE_MAP[np.uintp] = 'int64'
+_REVERSE_TYPE_MAP[np.uint8] = 'int8'
+_REVERSE_TYPE_MAP[np.uint16] = 'int16'
+_REVERSE_TYPE_MAP[np.uint32] = 'int32'
+_REVERSE_TYPE_MAP[np.uint64] = 'int64'
+_REVERSE_TYPE_MAP[np.float16] = 'float32'
+_REVERSE_TYPE_MAP[np.intc] = 'int32'
+_REVERSE_TYPE_MAP[np.intp] = 'int64'
+_REVERSE_TYPE_MAP[np.bool] = 'boolean'
+_REVERSE_TYPE_MAP[np.str_] = 'string'
+_REVERSE_TYPE_MAP[bytes] = 'string'
+_REVERSE_TYPE_MAP[np.bytes_] = 'string'
+_REVERSE_TYPE_MAP[np.object_] = 'string'
 
 # Legacy Named tuples for smax requests and responses.
 #
@@ -608,6 +622,7 @@ _SMAX_TYPE_MAP = {
              'float': SmaxFloat64,
              'single': SmaxFloat32,
              'double': SmaxFloat64,
+             'float16' : SmaxFloat32,
              'float32': SmaxFloat32,
              'float64': SmaxFloat64,
              'str': SmaxStr,
@@ -623,5 +638,4 @@ _REVERSE_SMAX_TYPE_MAP = {v: k for k, v in _SMAX_TYPE_MAP.items()}
 # Add the SMAX subclasses of standard python types
 _REVERSE_SMAX_TYPE_MAP[SmaxInt] = 'int32'
 _REVERSE_SMAX_TYPE_MAP[SmaxFloat] = 'float64'
-
-inv_smax_map = _REVERSE_SMAX_TYPE_MAP
+_REVERSE_SMAX_TYPE_MAP[SmaxBytes] = 'string'

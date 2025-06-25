@@ -1,5 +1,6 @@
 import os
-from collections.abc import Container
+from math import ceil, log
+from collections.abc import Container, Sequence
 import logging
 import socket
 from datetime import datetime, timezone
@@ -7,6 +8,7 @@ from fnmatch import fnmatch
 
 import psutil
 import numpy as np
+from numpy._core._exceptions import UFuncTypeError
 
 from redis import Redis
 from redis.exceptions import NoScriptError, BusyLoadingError, ConnectionError, TimeoutError
@@ -25,9 +27,13 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
 pubsub_prefix = "smax"
 pubsub_sleep = 0.010
 
+loglevel = logging.DEBUG
+logging.basicConfig(level=loglevel)
+logger = logging.getLogger(__name__)
+
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
-                 program_name=None, hostname=None, debug=False, logger=None):
+                 program_name=None, hostname=None, debug=False, logger=logger):
         """
         Constructor for SmaxRedisClient, automatically establishes connection
         and sets the redis-py connection object to 'self._client'. This magic
@@ -153,13 +159,15 @@ class SmaxRedisClient(SmaxClient):
             self._client.connection.disconnect()
         self._logger.info(f"Disconnected redis server {self._redis_ip}:{self._redis_port} db={self._redis_db}")
 
-    def _parse_lua_pull_response(self, lua_data, smaxname, pull_meta=False):
+    def _parse_lua_pull_response(self, lua_data, smaxname, pull_meta=False, raw=False):
         """
         Private method to parse the response from calling the HGetWithMeta LUA
         script.
         Args:
             lua_data (list): value, vtype, dim, timestamp, origin, serial
             smaxname (str): Full name of the SMAX table and key
+            pull_meta (bool): Whether to pull additional metadata
+            raw (bool): Return the byte string from Redis as an SmaxBytes object.
 
         Returns:
             Smax<var>: Populated Smax<var> dataclass object.
@@ -169,7 +177,9 @@ class SmaxRedisClient(SmaxClient):
         type_name = lua_data[1].decode("utf-8")
         self._logger.debug(f"_parse_lua_pull_response() got type {type_name}")
 
-        if type_name in _SMAX_TYPE_MAP:
+        if raw:
+            data_type = SmaxBytes
+        elif type_name in _SMAX_TYPE_MAP:
             data_type = _SMAX_TYPE_MAP[type_name]
         else:
             self._logger.warning(f"I can't deal with data of type {type_name}, defaulting to 'string'")
@@ -188,7 +198,10 @@ class SmaxRedisClient(SmaxClient):
             data_dim = data_dim[0]
 
         # If there is only a single value, cast to the appropriate type and return.
-        if data_dim == 1:
+        if raw:
+            data = data_type(lua_data[0], type=type_name, dim=data_dim, timestamp=data_date, \
+                            origin=origin, seq=sequence, smaxname=smaxname)
+        elif data_dim == 1:
             if type_name == 'string':
                 strdata = lua_data[0].decode("utf-8")
                 data = data_type(strdata, type=type_name, dim=data_dim, timestamp=data_date, \
@@ -226,7 +239,7 @@ class SmaxRedisClient(SmaxClient):
         self._logger.debug(f"_parse_lua_pull: returning {data}, {data.metadata}")
         return data
 
-    def smax_pull(self, table, key, pull_meta=False):
+    def smax_pull(self, table, key, pull_meta=False, raw=False):
         """
         Get data which was stored with the smax macro HSetWithMeta along with
         the associated metadata. The return value will an Smax<type> object
@@ -244,6 +257,7 @@ class SmaxRedisClient(SmaxClient):
             table (str): SMAX table name
             key (str): SMAX key name
             pull_meta (bool): Flag whether to pull optional metadata
+            raw (bool): Return the unparsed data in a SmaxBytes object
 
         Returns:
             Smax<type>: Populated Smax<type> dataclass object.
@@ -359,211 +373,9 @@ class SmaxRedisClient(SmaxClient):
             
             return tree
 
-        return self._parse_lua_pull_response(lua_data, f"{table}:{key}")
+        return self._parse_lua_pull_response(lua_data, f"{table}:{key}", raw=raw)
 
-    def _to_smax_format(self, value, smax_type=None):
-        """
-        Private function that converts a given data value to the string format
-        that SMAX supports.
-        Args:
-            value: Any supported data type, including (nested) dicts.
-            smax_type (str): SMA-X type to cast value(s) to.
-
-        Returns:
-            tuple: tuple of (data_string, type_name, dim_string)
-        """
-
-        # Derive the type according to Python.
-        python_type = type(value)
-        
-        self._logger.debug(f"_to_smax_format received {value}, type {str(python_type)}")
-        self._logger.debug(f"_to_smax_format 'type is list': {python_type is list}")
-        
-        # Single value of a supported python or numpy type, cast to string and send to redis.
-                # First determine the SMA-X type of value.
-        if smax_type in _TYPE_MAP:
-            type_name = smax_type
-        elif python_type in _REVERSE_TYPE_MAP:
-            type_name = _REVERSE_TYPE_MAP[python_type]
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
-            
-            if type_name == "boolean":
-                value = int(value)
-                self._logger.debug(f"_to_smax_format converting Python bool to int {value}")
-                
-            if type_name == "raw":
-                return value, type_name, 1
-            
-            return str(value), type_name, 1
-        
-        # Single value of a Smax<var> type
-        elif python_type in _REVERSE_SMAX_TYPE_MAP:
-            type_name = value.type
-            
-            if type_name == "raw":
-                self._logger.debug(f"_to_smax_format returning raw {value}, {type_name}, 1")
-                
-                return value, type_name, 1
-            
-            self._logger.debug(f"_to_smax_format returning {str(value)}, {type_name}, 1")
-            
-            return str(value), type_name, 1
-
-        # We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)
-        elif isinstance(value, Container):
-            a = value[0]
-            data_shape = [len(value)]
-            # recursively move down a level in the collection hierarchy
-            while True:
-                if isinstance(a, str):
-                    break
-                elif isinstance(a, Container):
-                    data_shape.append(len(a))
-                    a = a[0]
-                else:
-                    break  
-            
-            if python_type is SmaxArray:
-                # Preserve the SMA-X type
-                type_name = value.type
-            elif type(a) in _REVERSE_TYPE_MAP:
-                type_name = _REVERSE_TYPE_MAP[type(a)]
-            elif type(a) in _REVERSE_SMAX_TYPE_MAP:
-                type_name = _REVERSE_SMAX_TYPE_MAP[type(a)]
-            else:
-                self._logger.warning(f"Did not recognize type {str(type(a))}, storing raw values as bytes.")
-                type_name = "bytes"
-
-            # Either convert to a string array, or to an numpy.ndarray
-            if python_type is list or python_type is tuple or python_type is SmaxStrArray:
-                self._logger.debug(f"_to_smax_format working on a {python_type} of type {type_name}")
-                if type_name == "string":
-                    # We have a string array of unknown (and possibly variable) depth.  This needs to be concatenated with '\r' and uploaded as a string
-                    values = []
-                    def flatten(v):
-                        for item in v:
-                            if isinstance(item, str):
-                                values.append(item)
-                            elif isinstance(item, Container):
-                                flatten(item)
-                            else:
-                                values.append(item)
-                    flatten(value)
-                    converted_data = "\r".join(values)
-                    if python_type is SmaxStrArray:
-                        size = value.dim
-                    else:
-                        size = len(values)
-                    type_name = "string"
-                    self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-                    return converted_data, type_name, size
-                else:
-                    python_type = np.ndarray
-                    
-            # Now if its a numpy array, flatten, convert to a string, and return.
-            if python_type == np.ndarray or python_type == SmaxArray:
-                # Convert to numpy array, dtype="O" preserves the original types.
-                converted_data = np.array(value, dtype="O")
-                # If the shape is a single dimension, set 'size' equal to that value.
-                data_shape = converted_data.shape
-                if len(data_shape) == 1:
-                    size = data_shape[0]
-                else:
-                    # Convert shape tuple to a space delimited list for smax.
-                    size = " ".join(str(i) for i in data_shape)
-
-                    # Flatten and make a space delimited string of dimensions.
-                    converted_data = converted_data.flatten()
-            
-                # Check this 1D representation of the data for type uniformity.
-                if not all(isinstance(x, type(converted_data[0])) for x in converted_data):
-                    raise TypeError("All values in list are not the same type.")
-
-                self._logger.debug(f"_to_smax_format converted_data.dtype.type : {converted_data.dtype.type}")
-                    
-                # Create a string representation of the data in the array.
-                converted_data = ' '.join(str(x) for x in converted_data)
-                self._logger.debug(f"_to_smax_format returning {converted_data}, {type_name}, {size}")
-                return converted_data, type_name, size
-        # Single value of an unknown type
-        else:
-            self._logger.warning(f"Did not recognize type {str(type(value))}, storing as bytes.")
-            type_name = "raw"
-            return str(value), type_name, 1
-
-    def _recurse_nested_dict(self, dictionary):
-        """
-        Private function to recursively traverse a nested dictionary, finding
-        the leaf nodes that have actual data values.  Each real data value
-        is yielded back as it recurses.
-        Args:
-            dictionary (dict): Dict containing keys that exist in SMAX.
-
-        Yields:
-            (key, value) for every leaf node in the nested dictionary.
-        """
-        for key, value in dictionary.items():
-            if isinstance(value, dict):
-                # If value is dict then iterate over all its values
-                for pair in self._recurse_nested_dict(value):
-                    yield (f"{key}:{pair[0]}", *pair[1:])
-                
-            else:
-                yield key, value
-                
-    def _get_struct_fields(self, leaves):
-        """
-        Private function to generate the set of all SMA-X fields required to describe the
-        tree structure of a nested dictionary.
-        Args:
-            leaves (list): List of leaf nodes from _recurse_nested_dict()
-
-        Returns:
-            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
-                        type is either "value" for a leaf node, or "struct" for an intermediate node.
-        """
-        outpairs = []
-        for l in leaves:
-            if ":" in l[0]:
-                tiers = l[0].split(":")
-                for t, tier in enumerate(tiers[:-1]):
-                    superstruct = join(*tiers[0:t])
-                    pair = (superstruct, tiers[t], join(*tiers[0:t+1]), "struct")
-                    if pair not in outpairs:
-                        outpairs.append(pair)
-            table, key = normalize_pair(l[0])
-            outpairs.append((table, key, l[1], "value"))
-        return outpairs
-            
-    def _get_struct_tables(self, table, key, fields):
-        """
-        Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from
-        fields generated by _get_struct_fields() for a nested SMA-X struct.
-        Args:
-            table (str)   : The top level hash table name for the nested struct.
-            key (str)     : The top level key for the nested struct.
-            fields (list) : List of nested fields from _get_struct_fields()
-
-        Returns:
-            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
-                        type is either "value" for a leaf node, or "struct" for an intermediate node.
-        """
-        tables = {}
-        for field in fields:
-            if field[3] == "struct":
-                converted_data, type_name, dim = (join(table, key, field[2]), field[3], 1)
-            else:
-                converted_data, type_name, dim = self._to_smax_format(field[2])
-            if field[0] != "":
-                tab = join(key, field[0])
-            else:
-                tab = key
-            if tab not in tables:
-                tables[tab] = []
-            tables[tab].extend([field[1], converted_data, type_name, dim])
-        return tables
-
-    def smax_share(self, table, key, value, push_meta=False, smax_type=None):
+    def smax_share(self, table, key, value, push_meta=False, maintain_type=False, smax_type=None):
         """
         Send data to redis using the smax macro HSetWithMeta to include
         metadata.  The metadata is typeName, dataDimension(s), dataDate,
@@ -577,20 +389,25 @@ class SmaxRedisClient(SmaxClient):
             value: data to store, takes supported types, including (nested) dicts.
             push_meta (bool): Push optional metadata if present in object 
                             (does not work for SmaxStructs and is not atomic).
-            type_name (str): Force casting to type_name before sharing.
+            maintain_type (bool): Check the metadata on Redis for each node, and 
+                                  cast to that type if possible when sharing.
+            smax_type (str): Force casting to smax_type before sharing. Overrides
+                             maintain type.
 
         Returns:
             return value from redis-py's evalsha() function.
         """
         # If this is not a dict, then convert data to smax format and send.
         if not isinstance(value, dict):
+            if maintain_type and not smax_type:
+                smax_type = self.smax_pull_meta('types', join(table, key))
             if push_meta:
                 if type(value) in _REVERSE_SMAX_TYPE_MAP:
                     for meta in optional_metadata:
                         if hasattr(value, meta):
                             self.smax_push_meta(meta, table, getattr(value, meta))
 
-            converted_data, type_name, size = self._to_smax_format(value, smax_type=smax_type)
+            converted_data, type_name, size = _to_smax_format(value, smax_type=smax_type)
             self._logger.debug(f"Calling HSetWithMeta script with {table}, {key}, {converted_data}, {type_name}, {size}")
             return self._evalsha_set(table, key, converted_data, type_name, size)
         else:
@@ -598,9 +415,15 @@ class SmaxRedisClient(SmaxClient):
             # of values to update atomically. The recurse_nested_dict function
             # yields key/value pairs as it finds the leaf nodes of the nested
             # dict.
-            leaves = self._recurse_nested_dict(value)
-            fields = self._get_struct_fields(leaves)
-            tables = self._get_struct_tables(table, key, fields)
+            leaves = _recurse_nested_dict(value)
+            fields = _get_struct_fields(leaves)
+            if maintain_type:
+                for f in fields:
+                    if f[3] == "value":
+                        smax_type = self.smax_pull_meta('types', join(table, key, f[0], f[1]))
+                        self._logger.info(f'smax_share: Got type {smax_type} from SMA-X metadata, casting {f[1]} to type')
+                        f[3] = smax_type
+            tables = _get_struct_tables(table, key, fields)
 
             self._logger.debug(f"Calling HMSetWithMeta script with {table}, {key} {tables}")
 
@@ -671,7 +494,7 @@ class SmaxRedisClient(SmaxClient):
                 t, ke = normalize_pair(table, k)
                 self._logger.debug(f"munged table name {t}\n munged key name {ke}")
                 try:
-                    self._logger.debug(f"evalsha arguments{t}, {ke}, {commands[k]}")
+                    self._logger.debug(f"evalsha arguments: {t}, {ke}, {commands[k]}")
                     self._pipeline.evalsha(self._multi_setSHA, '1',
                                        f"{t}:{ke}",
                                        self._hostname,
@@ -1067,7 +890,325 @@ class SmaxRedisClient(SmaxClient):
                 return result.decode("utf-8")
             else:
                 return result
+        except AttributeError:
+            self._logger.warning(f"Could not find metadata for {table}")
+            return None
         except (ConnectionError, TimeoutError) as e:
             self._logger.error("Redis seems down, unable to call hget.")
             raise SmaxConnectionError(e.args)
 
+def _to_smax_format(value, smax_type=None):
+    """
+    Private function that converts a given data value to the string format
+    that SMAX supports.
+    Args:
+        value: Any supported data type, including (nested) dicts.
+        smax_type (str): SMA-X type to cast value(s) to.
+
+    Returns:
+        tuple: tuple of (data_string, type_name, dim_string)
+    """
+    # Get a value for type testing, and determine the shape
+    type_name=None
+    
+    # If this is a container, detect the minimum scalar SMA-X type, and the shape of
+    # the container
+    if _container_but_not_str(value):
+        logger.debug("_to_smax_format: detected a Container type")
+        # Cast the (possibly nested) container to an array
+        try:
+            # This will cast the array to the most restrictive numpy type that can contain all
+            # of the values.
+            # It will fail for inhomogenous nested containers, and possibly in other circumstances
+            value_array = np.array(value)
+            python_type = value_array.dtype.type
+            logger.debug(f"_to_smax_format: Successfully cast Container to array of dtype {python_type}")
+        except ValueError as e:
+            # This likely means that the array is inhomogenous in shape, and must be 
+            # flattened to single dimension array of string representations of subarrays
+            # as SMA-X does not allow for inhomogenous arrays of any type
+            logger.warning(f"_to_smax_format: Array conversion failed with '{e.args[0]}'. Will revert to 'string' format and a single dimension array.")
+            smax_type = 'string'
+            retval, shape = _container_to_stringarray(value, flatten=False)
+            return retval, smax_type, shape
+        
+        # Only do type promotion if we have numerical types
+        if issubclass(python_type, str):
+            smax_type = 'string'
+            test_value = value_array.flatten()[0]
+        elif python_type is np.object_:
+            smax_type = 'string'
+            retval, shape = _container_to_stringarray(value)
+            return retval, smax_type, shape
+        else:
+            # Get the largest value to use for determining the SmaxType
+            # Where the largest value is not defined, use the first value
+            try:
+                # This will fail for non-numeric types
+                test_value = np.nanmax(np.abs(value_array))
+                logger.debug(f"_to_smax_format: Detected largest value of {test_value}, which will be used to determine type")
+            except (UFuncTypeError, TypeError):
+                test_value = value_array.flatten()[0]
+                logger.debug(f"_to_smax_format: Could not find largest value in array, using {test_value} to determine type")
+        shape = _get_dims(value_array)
+    else: # If this is a single value, get the type of the value
+        test_value = value
+        python_type = type(test_value)
+        shape = 1
+    
+    logger.debug(f"_to_smax_format received {value}, test value {test_value}, type {str(python_type)}, smax_type {smax_type}, shape {shape}")
+    
+    # If we've been given a SMA-X type to use, try to use it
+    if smax_type in _TYPE_MAP:
+        logger.debug(f"_to_smax_format: Received valid SMA-X Type {smax_type}")
+        type_name = smax_type
+        
+        # If we have int type, check that the values fit within the given width, and promote if not
+        if smax_type.startswith('int'):
+            logger.debug("_to_smax_format: Requested integer type, determining length required")
+            # We assume here that only numpy.int<x> types are in _TYPE_MAP
+            # We have to add 1 to the Python int().bit_length() as it excludes the
+            # sign bit.
+            if _TYPE_MAP[smax_type](0).nbytes*8 < (int(test_value)).bit_length() + 1:
+                min_type = np.min_scalar_type(int(test_value))
+                # Test for uints
+                # Add one to test_value before negating, as e.g. 128 does not fit in int8, but -128 does.
+                if min_type.name.startswith('u'):
+                    min_type = np.min_scalar_type(-int(test_value+1))
+                new_smax_type = _REVERSE_TYPE_MAP[min_type.type]
+                logger.warning(f"Value {int(test_value)} would overflow {smax_type}, promoting to {new_smax_type}")
+                type_name = new_smax_type
+        
+        if smax_type.startswith('float'):
+            logger.debug("_to_smax_format: Requested float type, determining length required")
+            with np.errstate(over='raise'):
+                try:
+                    _TYPE_MAP[smax_type](test_value)
+                except FloatingPointError:
+                    logger.warning(f"Value {test_value} would overflow {smax_type}, promoting to float64")
+                    type_name = 'float64'
+        
+        # Check that unsafe casting is possible
+        if not np.can_cast(np.min_scalar_type(test_value), _TYPE_MAP[smax_type], casting='unsafe'):
+            logger.warning(f"Cannot cast {type(test_value)} to {smax_type}, trying automatic determination of type.")
+        else:
+            # Only warn about casting float to int, int to bool, etc.
+            if not np.can_cast(np.min_scalar_type(test_value), _TYPE_MAP[smax_type], casting='same_kind'):
+                logger.warning(f"Casting {type(test_value)} to {smax_type} may result in loss of information.")
+
+            try:
+                if _container_but_not_str(value):
+                    # cast value_array created above to the given type
+                    value_array = value_array.astype(_TYPE_MAP[smax_type], casting='unsafe')
+                    
+                    if smax_type == 'string' or smax_type == 'str':
+                        retval, shape =  _container_to_stringarray(value_array)
+                        return retval, smax_type, shape
+                    
+                    # This will only return if type conversion is successful
+                    return _array_to_string(value_array), smax_type, _shape_to_dims(value_array.shape)
+                
+                else:
+                    # Cast single value to given smax type
+                    value = _TYPE_MAP[type_name](value)
+                    
+                    # This will only return if type conversion is successful
+                    return _value_to_string(value), type_name, 1
+                
+            except ValueError or OverflowError as e:
+                logger.warning(f"Could not cast {type(value_array.dtype)} to {smax_type}: {e.args[0]}. Trying automatic determination of type.")
+                # Pass the SmaxType determination off to the automatic determinator
+    else:
+        if smax_type is not None:
+            logger.warning(f"Do not recognize requested SMA-X type {smax_type}")
+                
+    # Automatic determination of SMA-X type:
+    #
+    # We haven't been given a valid smax_type that works, so use the reverse type map to pick the type_name
+    if python_type in _REVERSE_TYPE_MAP:
+        type_name = _REVERSE_TYPE_MAP[python_type]
+        logger.debug(f"_to_smax_format: autodetected Python type as SMA-X type {type_name}")
+        
+        # For Python ints, detect the appropriate width of the SMA-X int<n> to use
+        if python_type is int or type_name.startswith('int'):
+            # This bit of mathmagics calculates the size of a signed int, then rounds it up
+            # to the next power of two.
+            width = 2**ceil(log((int(test_value).bit_length() + 1), 2))
+            if width < 8:
+                width = 8
+            type_name = f'int{width}'
+            logger.debug(f"_to_smax_format: Supplied Python int, which fits into {type_name}")
+
+    # Value of a Smax<var> type
+    elif python_type in _REVERSE_SMAX_TYPE_MAP:
+        type_name = value.type
+    
+    # Single value of an unknown type
+    else:
+        logger.warning(f"Did not recognize type {str(type(value))}, storing str(value) as SMA-X string type.")
+        type_name = "string"
+
+    # Convert and return the value
+    if _container_but_not_str(value):
+        if type_name == "string" or type_name == "str":
+            retval, shape = _container_to_stringarray(value)
+        else:
+            retval = _array_to_string(value_array.astype(_TYPE_MAP[type_name], casting='unsafe'))
+    else:
+        retval = _value_to_string(_TYPE_MAP[type_name](value))
+        
+    return retval, type_name, shape
+            
+
+def _recurse_nested_dict(dictionary):
+    """
+    Private function to recursively traverse a nested dictionary, finding
+    the leaf nodes that have actual data values.  Each real data value
+    is yielded back as it recurses.
+    Args:
+        dictionary (dict): Dict containing keys that exist in SMAX.
+
+    Yields:
+        (key, value) for every leaf node in the nested dictionary.
+    """
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            # If value is dict then iterate over all its values
+            for pair in _recurse_nested_dict(value):
+                yield (f"{key}:{pair[0]}", *pair[1:])
+            
+        else:
+            yield key, value
+
+
+def _get_struct_fields(leaves):
+    """
+    Private function to generate the set of all SMA-X fields required to describe the
+    tree structure of a nested dictionary.
+    Args:
+        leaves (list): List of leaf nodes from _recurse_nested_dict()
+
+    Returns:
+        list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
+                    type is either "value" for a leaf node, or "struct" for an intermediate node.
+    """
+    outpairs = []
+    for l in leaves:
+        if ":" in l[0]:
+            tiers = l[0].split(":")
+            for t, tier in enumerate(tiers[:-1]):
+                superstruct = join(*tiers[0:t])
+                pair = [superstruct, tiers[t], join(*tiers[0:t+1]), "struct"]
+                if pair not in outpairs:
+                    outpairs.append(pair)
+        table, key = normalize_pair(l[0])
+        outpairs.append([table, key, l[1], "value"])
+    return outpairs
+
+
+def _get_struct_tables(table, key, fields):
+    """
+    Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from
+    fields generated by _get_struct_fields() for a nested SMA-X struct.
+    Args:
+        table (str)   : The top level hash table name for the nested struct.
+        key (str)     : The top level key for the nested struct.
+        fields (list) : List of nested fields from _get_struct_fields()
+
+    Returns:
+        list of (key, field, value, type) for each field at each level of the SMA-X nested structure.
+                    type is either "value" for a leaf node, or "struct" for an intermediate node.
+    """
+    tables = {}
+    for field in fields:
+        if field[3] == "struct":
+            converted_data, type_name, dim = (join(table, key, field[2]), field[3], 1)
+        else:
+            if field[3] != 'value':
+                converted_data, type_name, dim = _to_smax_format(field[2], smax_type=field[3])
+            else:
+                converted_data, type_name, dim = _to_smax_format(field[2])
+        if field[0] != "":
+            tab = join(key, field[0])
+        else:
+            tab = key
+        if tab not in tables:
+            tables[tab] = []
+        tables[tab].extend([field[1], converted_data, type_name, dim])
+    return tables
+
+
+def _flatten_container(value):
+    """Flatten a container of (potentially inhomogenous) containers to a single array
+    
+    Args:
+        value (Container): container that may contain other containers
+        
+    Returns:
+        list : flattened version of the container."""
+    ret = []
+    for v in value:
+        if isinstance(v, str):
+            ret.append(v)
+        elif _container_but_not_str(value):
+            ret.extend(_flatten_container(v))
+        else:
+            ret.append(v)
+    return ret
+
+
+def _container_to_stringarray(value, flatten=True):
+    """Convert a container of object to a SMA-X string array
+    
+    Args:
+        value (Container): container that may contain other containers or objects
+    
+    Returns:
+        list of str : flat list of string representations of contents of value
+    """    
+    shape = _get_dims(value)
+    
+    if flatten:
+        value = _flatten_container(value)
+    
+    ret = []
+    for v in value:
+        ret.append(_value_to_string(v))
+    
+    return "\r".join(ret), shape
+
+
+def _value_to_string(value):
+    """Converts a value to a string, applying JSON format escape sequences for special characters"""
+    return str(value).encode('unicode_escape').decode('UTF-8')
+
+
+def _array_to_string(value_array):
+    """Convert a Numpy array to a SMA-X string"""
+    return " ".join(np.array(value_array.flatten(), dtype=str))
+
+
+def _shape_to_dims(shape):
+    """Convert a Numpy shape tuple to a SMA-X dims string"""
+    out = []
+    for s in shape:
+        out.append(str(s))
+    return " ".join(out)
+
+
+def _get_dims(value):
+    """Get the dimensions of a value"""
+    try:
+        shape = _shape_to_dims(value.shape)
+    except AttributeError:
+        try:
+            if _container_but_not_str(value):
+                shape = len(value)
+            else:
+                shape = 1
+        except TypeError:
+            shape = 1
+    return shape
+
+def _container_but_not_str(obj):
+    return isinstance(obj, Container) and not issubclass(type(obj), (str, bytes))
