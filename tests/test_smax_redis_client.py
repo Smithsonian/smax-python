@@ -470,6 +470,30 @@ def test_maintain_type_field(smax_client):
     assert result.smaxname == f"{table}:{key}"
 
 
+def test_maintain_type_string(smax_client):
+    initial_data = 123
+    initial_type = "string"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_maintaintype_string")
+    key = "pytest"
+    smax_client.smax_share(table, key, initial_data, smax_type=initial_type)
+    
+    initial_result = smax_client.smax_pull(table, key)
+    
+    second_data = np.float64(1.234)
+    second_type = "float64"
+    smax_client.smax_share(table, key, second_data, maintain_type=True)
+    
+    result = smax_client.smax_pull(table, key)
+    
+    assert result.data == _TYPE_MAP[initial_type](second_data)
+    assert result.type == initial_result.type
+    assert result.type == initial_type
+    assert result.type != second_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
 def test_pubsub_simple(smax_client):
     expected_data = "just a string"
     expected_type = 'string'
