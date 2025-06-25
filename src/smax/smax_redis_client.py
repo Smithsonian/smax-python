@@ -421,6 +421,7 @@ class SmaxRedisClient(SmaxClient):
                 for f in fields:
                     if f[3] == "value":
                         smax_type = self.smax_pull_meta('types', join(table, key, f[0], f[1]))
+                        self._logger.info(f'smax_share: Got type {smax_type} from SMA-X metadata, casting {f[1]} to type')
                         f[3] = smax_type
             tables = _get_struct_tables(table, key, fields)
 
@@ -493,7 +494,7 @@ class SmaxRedisClient(SmaxClient):
                 t, ke = normalize_pair(table, k)
                 self._logger.debug(f"munged table name {t}\n munged key name {ke}")
                 try:
-                    self._logger.debug(f"evalsha arguments{t}, {ke}, {commands[k]}")
+                    self._logger.debug(f"evalsha arguments: {t}, {ke}, {commands[k]}")
                     self._pipeline.evalsha(self._multi_setSHA, '1',
                                        f"{t}:{ke}",
                                        self._hostname,
@@ -968,10 +969,13 @@ def _to_smax_format(value, smax_type=None):
             # We assume here that only numpy.int<x> types are in _TYPE_MAP
             # We have to add 1 to the Python int().bit_length() as it excludes the
             # sign bit.
-            if _TYPE_MAP[smax_type](0).nbytes*8 < (-abs(int(test_value))).bit_length() + 1:
-                # We make sure to look up the minimum scalar type of a negative value to
-                # avoid getting uints
-                new_smax_type = _REVERSE_TYPE_MAP[np.min_scalar_type(-int(abs(test_value))).type]
+            if _TYPE_MAP[smax_type](0).nbytes*8 < (int(test_value)).bit_length() + 1:
+                min_type = np.min_scalar_type(int(test_value))
+                # Test for uints
+                # Add one to test_value before negating, as e.g. 128 does not fit in int8, but -128 does.
+                if min_type.name.startswith('u'):
+                    min_type = np.min_scalar_type(-int(test_value+1))
+                new_smax_type = _REVERSE_TYPE_MAP[min_type.type]
                 logger.warning(f"Value {int(test_value)} would overflow {smax_type}, promoting to {new_smax_type}")
                 type_name = new_smax_type
         
@@ -1094,11 +1098,11 @@ def _get_struct_fields(leaves):
             tiers = l[0].split(":")
             for t, tier in enumerate(tiers[:-1]):
                 superstruct = join(*tiers[0:t])
-                pair = (superstruct, tiers[t], join(*tiers[0:t+1]), "struct")
+                pair = [superstruct, tiers[t], join(*tiers[0:t+1]), "struct"]
                 if pair not in outpairs:
                     outpairs.append(pair)
         table, key = normalize_pair(l[0])
-        outpairs.append((table, key, l[1], "value"))
+        outpairs.append([table, key, l[1], "value"])
     return outpairs
 
 
@@ -1120,7 +1124,10 @@ def _get_struct_tables(table, key, fields):
         if field[3] == "struct":
             converted_data, type_name, dim = (join(table, key, field[2]), field[3], 1)
         else:
-            converted_data, type_name, dim = _to_smax_format(field[2])
+            if field[3] != 'value':
+                converted_data, type_name, dim = _to_smax_format(field[2], smax_type=field[3])
+            else:
+                converted_data, type_name, dim = _to_smax_format(field[2])
         if field[0] != "":
             tab = join(key, field[0])
         else:
