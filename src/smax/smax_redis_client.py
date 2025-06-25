@@ -27,7 +27,7 @@ from .smax_client import SmaxClient, SmaxData, SmaxInt, SmaxFloat, SmaxBool, Sma
 pubsub_prefix = "smax"
 pubsub_sleep = 0.010
 
-loglevel = logging.DEBUG
+loglevel = logging.INFO
 logging.basicConfig(level=loglevel)
 logger = logging.getLogger(__name__)
 
