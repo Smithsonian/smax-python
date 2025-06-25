@@ -86,10 +86,10 @@ def test_roundtrip_string(smax_client):
 
 
 def test_roundtrip_int32(smax_client):
-    expected_data = 123456789
+    expected_data = np.int32(123)
     expected_type = "int32"
     expected_dim = 1
-    table = join(test_table, "test_roundtrip_int")
+    table = join(test_table, "test_roundtrip_int32")
     key = "pytest"
     smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
     result = smax_client.smax_pull(table, key)
@@ -97,22 +97,184 @@ def test_roundtrip_int32(smax_client):
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
-    
-    
-def test_roundtrip_float64(smax_client):
-    expected_data = np.float64(123456789)
-    expected_type = "float64"
+
+
+def test_roundtrip_int8(smax_client):
+    expected_data = np.int8(123)
+    expected_type = "int8"
     expected_dim = 1
-    table = join(test_table, "test_roundtrip_int")
+    table = join(test_table, "test_roundtrip_int8")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_int16(smax_client):
+    expected_data = np.int16(123)
+    expected_type = "int16"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_int16")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_int64(smax_client):
+    expected_data = np.int64(123)
+    expected_type = "int64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_int64")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_intwidthdetection(smax_client):
+    expected_data = 123
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_intdetect")
     key = "pytest"
     smax_client.smax_share(table, key, expected_data)
     result = smax_client.smax_pull(table, key)
     assert result == expected_data
-    assert result.data == expected_data
+    assert result.type.startswith('int')
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_intpromotion(smax_client):
+    expected_data = 1234
+    expected_type = "int8"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_intpromo")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert result == expected_data
+    assert result.type.startswith('int')
+    assert result.type != expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_floatpromotion(smax_client):
+    expected_data = 1.23456789e123
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_floatpromo")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type='float32')
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float64(smax_client):
+    expected_data = np.float64(1.23456789)
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float64")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float32(smax_client):
+    expected_data = np.float32(1.23456789)
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float32")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_float16(smax_client):
+    expected_data = np.float16(1.23456789)
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_float16")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_pyfloat(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
     assert result.type == expected_type
     assert result.dim == expected_dim
     assert result.smaxname == f"{table}:{key}"
     
+
+def test_roundtrip_pyfloat_to_float32(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float32"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat32")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
+
+def test_roundtrip_pyfloat_to_float64(smax_client):
+    expected_data = 1.23456789
+    expected_type = "float64"
+    expected_dim = 1
+    table = join(test_table, "test_roundtrip_pyfloat64")
+    key = "pytest"
+    smax_client.smax_share(table, key, expected_data, smax_type=expected_type)
+    result = smax_client.smax_pull(table, key)
+    assert np.isclose(result, expected_data)
+    assert np.isclose(result.data, expected_data)
+    assert result.type == expected_type
+    assert result.dim == expected_dim
+    assert result.smaxname == f"{table}:{key}"
+
 
 def test_roundtrip_bytes(smax_client):
     expected_data = b"1 2 3 4 5 6 7 8 9"

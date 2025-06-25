@@ -968,12 +968,21 @@ def _to_smax_format(value, smax_type=None):
             # We assume here that only numpy.int<x> types are in _TYPE_MAP
             # We have to add 1 to the Python int().bit_length() as it excludes the
             # sign bit.
-            if _TYPE_MAP[smax_type](test_value).nbytes*8 < (-abs(int(test_value))).bit_length() + 1:
+            if _TYPE_MAP[smax_type](0).nbytes*8 < (-abs(int(test_value))).bit_length() + 1:
                 # We make sure to look up the minimum scalar type of a negative value to
                 # avoid getting uints
                 new_smax_type = _REVERSE_TYPE_MAP[np.min_scalar_type(-int(abs(test_value))).type]
                 logger.warning(f"Value {int(test_value)} would overflow {smax_type}, promoting to {new_smax_type}")
-                smax_type = new_smax_type
+                type_name = new_smax_type
+        
+        if smax_type.startswith('float'):
+            logger.debug("_to_smax_format: Requested float type, determining length required")
+            with np.errstate(over='raise'):
+                try:
+                    _TYPE_MAP[smax_type](test_value)
+                except FloatingPointError:
+                    logger.warning(f"Value {test_value} would overflow {smax_type}, promoting to float64")
+                    type_name = 'float64'
         
         # Check that unsafe casting is possible
         if not np.can_cast(np.min_scalar_type(test_value), _TYPE_MAP[smax_type], casting='unsafe'):
