@@ -70,7 +70,8 @@
              
   <h1>Source code for smax.smax_redis_client</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">ceil</span><span class="p">,</span> <span class="n">log</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
@@ -78,6 +79,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy._core._exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">UFuncTypeError</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">redis</span><span class="w"> </span><span class="kn">import</span> <span class="n">Redis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">redis.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoScriptError</span><span class="p">,</span> <span class="n">BusyLoadingError</span><span class="p">,</span> <span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span>
@@ -96,11 +98,15 @@
 <span class="n">pubsub_prefix</span> <span class="o">=</span> <span class="s2">&quot;smax&quot;</span>
 <span class="n">pubsub_sleep</span> <span class="o">=</span> <span class="mf">0.010</span>
 
+<span class="n">loglevel</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">loglevel</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 <div class="viewcode-block" id="SmaxRedisClient">
 <a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SmaxRedisClient</span><span class="p">(</span><span class="n">SmaxClient</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redis_ip</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">redis_port</span><span class="o">=</span><span class="mi">6379</span><span class="p">,</span> <span class="n">redis_db</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">program_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">program_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hostname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Constructor for SmaxRedisClient, automatically establishes connection</span>
 <span class="sd">        and sets the redis-py connection object to &#39;self._client&#39;. This magic</span>
@@ -232,13 +238,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Disconnected redis server </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_port</span><span class="si">}</span><span class="s2"> db=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_redis_db</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_lua_pull_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lua_data</span><span class="p">,</span> <span class="n">smaxname</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_lua_pull_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lua_data</span><span class="p">,</span> <span class="n">smaxname</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Private method to parse the response from calling the HGetWithMeta LUA</span>
 <span class="sd">        script.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            lua_data (list): value, vtype, dim, timestamp, origin, serial</span>
 <span class="sd">            smaxname (str): Full name of the SMAX table and key</span>
+<span class="sd">            pull_meta (bool): Whether to pull additional metadata</span>
+<span class="sd">            raw (bool): Return the byte string from Redis as an SmaxBytes object.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Smax&lt;var&gt;: Populated Smax&lt;var&gt; dataclass object.</span>
@@ -248,7 +256,9 @@
         <span class="n">type_name</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_parse_lua_pull_response() got type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">type_name</span> <span class="ow">in</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">data_type</span> <span class="o">=</span> <span class="n">SmaxBytes</span>
+        <span class="k">elif</span> <span class="n">type_name</span> <span class="ow">in</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">:</span>
             <span class="n">data_type</span> <span class="o">=</span> <span class="n">_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">type_name</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I can&#39;t deal with data of type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, defaulting to &#39;string&#39;&quot;</span><span class="p">)</span>
@@ -267,7 +277,10 @@
             <span class="n">data_dim</span> <span class="o">=</span> <span class="n">data_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c1"># If there is only a single value, cast to the appropriate type and return.</span>
-        <span class="k">if</span> <span class="n">data_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data_type</span><span class="p">(</span><span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> \
+                            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span> <span class="n">smaxname</span><span class="o">=</span><span class="n">smaxname</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">data_dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s1">&#39;string&#39;</span><span class="p">:</span>
                 <span class="n">strdata</span> <span class="o">=</span> <span class="n">lua_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="n">data_type</span><span class="p">(</span><span class="n">strdata</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">data_dim</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">data_date</span><span class="p">,</span> \
@@ -307,7 +320,7 @@
 
 <div class="viewcode-block" id="SmaxRedisClient.smax_pull">
 <a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_pull">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smax_pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smax_pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">pull_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get data which was stored with the smax macro HSetWithMeta along with</span>
 <span class="sd">        the associated metadata. The return value will an Smax&lt;type&gt; object</span>
@@ -325,6 +338,7 @@
 <span class="sd">            table (str): SMAX table name</span>
 <span class="sd">            key (str): SMAX key name</span>
 <span class="sd">            pull_meta (bool): Flag whether to pull optional metadata</span>
+<span class="sd">            raw (bool): Return the unparsed data in a SmaxBytes object</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Smax&lt;type&gt;: Populated Smax&lt;type&gt; dataclass object.</span>
@@ -440,214 +454,12 @@
             
             <span class="k">return</span> <span class="n">tree</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_lua_pull_response</span><span class="p">(</span><span class="n">lua_data</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_lua_pull_response</span><span class="p">(</span><span class="n">lua_data</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">raw</span><span class="p">)</span></div>
 
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_to_smax_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Private function that converts a given data value to the string format</span>
-<span class="sd">        that SMAX supports.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            value: Any supported data type, including (nested) dicts.</span>
-<span class="sd">            smax_type (str): SMA-X type to cast value(s) to.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            tuple: tuple of (data_string, type_name, dim_string)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Derive the type according to Python.</span>
-        <span class="n">python_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format received </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">, type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">python_type</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format &#39;type is list&#39;: </span><span class="si">{</span><span class="n">python_type</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="nb">list</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
-        <span class="c1"># Single value of a supported python or numpy type, cast to string and send to redis.</span>
-                <span class="c1"># First determine the SMA-X type of value.</span>
-        <span class="k">if</span> <span class="n">smax_type</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="p">:</span>
-            <span class="n">type_name</span> <span class="o">=</span> <span class="n">smax_type</span>
-        <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">:</span>
-            <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">python_type</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, 1&quot;</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;boolean&quot;</span><span class="p">:</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format converting Python bool to int </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                
-            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;raw&quot;</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
-            
-            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
-        
-        <span class="c1"># Single value of a Smax&lt;var&gt; type</span>
-        <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
-            <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">type</span>
-            
-            <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;raw&quot;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning raw </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, 1&quot;</span><span class="p">)</span>
-                
-                <span class="k">return</span> <span class="n">value</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
-            
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, 1&quot;</span><span class="p">)</span>
-            
-            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
-
-        <span class="c1"># We either have some kind of unknown type, or we have a collection (list, tuple, set, ndarray, SmaxArray)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">data_shape</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)]</span>
-            <span class="c1"># recursively move down a level in the collection hierarchy</span>
-            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="k">break</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
-                    <span class="n">data_shape</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
-                    <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">break</span>  
-            
-            <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxArray</span><span class="p">:</span>
-                <span class="c1"># Preserve the SMA-X type</span>
-                <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">type</span>
-            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">:</span>
-                <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
-            <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
-                <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Did not recognize type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">))</span><span class="si">}</span><span class="s2">, storing raw values as bytes.&quot;</span><span class="p">)</span>
-                <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;bytes&quot;</span>
-
-            <span class="c1"># Either convert to a string array, or to an numpy.ndarray</span>
-            <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="nb">tuple</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxStrArray</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format working on a </span><span class="si">{</span><span class="n">python_type</span><span class="si">}</span><span class="s2"> of type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;string&quot;</span><span class="p">:</span>
-                    <span class="c1"># We have a string array of unknown (and possibly variable) depth.  This needs to be concatenated with &#39;\r&#39; and uploaded as a string</span>
-                    <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="k">def</span><span class="w"> </span><span class="nf">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
-                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
-                                <span class="n">flatten</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                    <span class="n">flatten</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                    <span class="n">converted_data</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">SmaxStrArray</span><span class="p">:</span>
-                        <span class="n">size</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">dim</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                    <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">return</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">python_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-                    
-            <span class="c1"># Now if its a numpy array, flatten, convert to a string, and return.</span>
-            <span class="k">if</span> <span class="n">python_type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="ow">or</span> <span class="n">python_type</span> <span class="o">==</span> <span class="n">SmaxArray</span><span class="p">:</span>
-                <span class="c1"># Convert to numpy array, dtype=&quot;O&quot; preserves the original types.</span>
-                <span class="n">converted_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;O&quot;</span><span class="p">)</span>
-                <span class="c1"># If the shape is a single dimension, set &#39;size&#39; equal to that value.</span>
-                <span class="n">data_shape</span> <span class="o">=</span> <span class="n">converted_data</span><span class="o">.</span><span class="n">shape</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">size</span> <span class="o">=</span> <span class="n">data_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Convert shape tuple to a space delimited list for smax.</span>
-                    <span class="n">size</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data_shape</span><span class="p">)</span>
-
-                    <span class="c1"># Flatten and make a space delimited string of dimensions.</span>
-                    <span class="n">converted_data</span> <span class="o">=</span> <span class="n">converted_data</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-            
-                <span class="c1"># Check this 1D representation of the data for type uniformity.</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">converted_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">converted_data</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All values in list are not the same type.&quot;</span><span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format converted_data.dtype.type : </span><span class="si">{</span><span class="n">converted_data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    
-                <span class="c1"># Create a string representation of the data in the array.</span>
-                <span class="n">converted_data</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">converted_data</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format returning </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span>
-        <span class="c1"># Single value of an unknown type</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Did not recognize type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="si">}</span><span class="s2">, storing as bytes.&quot;</span><span class="p">)</span>
-            <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;raw&quot;</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_recurse_nested_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Private function to recursively traverse a nested dictionary, finding</span>
-<span class="sd">        the leaf nodes that have actual data values.  Each real data value</span>
-<span class="sd">        is yielded back as it recurses.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            dictionary (dict): Dict containing keys that exist in SMAX.</span>
-
-<span class="sd">        Yields:</span>
-<span class="sd">            (key, value) for every leaf node in the nested dictionary.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="c1"># If value is dict then iterate over all its values</span>
-                <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-                    <span class="k">yield</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
-                
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
-                
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_struct_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">leaves</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Private function to generate the set of all SMA-X fields required to describe the</span>
-<span class="sd">        tree structure of a nested dictionary.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            leaves (list): List of leaf nodes from _recurse_nested_dict()</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
-<span class="sd">                        type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">outpairs</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">leaves</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
-                <span class="n">tiers</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">tier</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tiers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-                    <span class="n">superstruct</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="p">])</span>
-                    <span class="n">pair</span> <span class="o">=</span> <span class="p">(</span><span class="n">superstruct</span><span class="p">,</span> <span class="n">tiers</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;struct&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">pair</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">outpairs</span><span class="p">:</span>
-                        <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span>
-            <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">outpairs</span>
-            
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_struct_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from</span>
-<span class="sd">        fields generated by _get_struct_fields() for a nested SMA-X struct.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            table (str)   : The top level hash table name for the nested struct.</span>
-<span class="sd">            key (str)     : The top level key for the nested struct.</span>
-<span class="sd">            fields (list) : List of nested fields from _get_struct_fields()</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
-<span class="sd">                        type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tables</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;struct&quot;</span><span class="p">:</span>
-                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_smax_format</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
-                <span class="n">tab</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">tab</span> <span class="o">=</span> <span class="n">key</span>
-            <span class="k">if</span> <span class="n">tab</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
-                <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">field</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">tables</span>
 
 <div class="viewcode-block" id="SmaxRedisClient.smax_share">
 <a class="viewcode-back" href="../../smax.html#smax.smax_redis_client.SmaxRedisClient.smax_share">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smax_share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">push_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smax_share</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">push_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">maintain_type</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Send data to redis using the smax macro HSetWithMeta to include</span>
 <span class="sd">        metadata.  The metadata is typeName, dataDimension(s), dataDate,</span>
@@ -661,20 +473,25 @@
 <span class="sd">            value: data to store, takes supported types, including (nested) dicts.</span>
 <span class="sd">            push_meta (bool): Push optional metadata if present in object </span>
 <span class="sd">                            (does not work for SmaxStructs and is not atomic).</span>
-<span class="sd">            type_name (str): Force casting to type_name before sharing.</span>
+<span class="sd">            maintain_type (bool): Check the metadata on Redis for each node, and </span>
+<span class="sd">                                  cast to that type if possible when sharing.</span>
+<span class="sd">            smax_type (str): Force casting to smax_type before sharing. Overrides</span>
+<span class="sd">                             maintain type.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            return value from redis-py&#39;s evalsha() function.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># If this is not a dict, then convert data to smax format and send.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">maintain_type</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">smax_type</span><span class="p">:</span>
+                <span class="n">smax_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="s1">&#39;types&#39;</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">push_meta</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">optional_metadata</span><span class="p">:</span>
                         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">meta</span><span class="p">):</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">smax_push_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">meta</span><span class="p">))</span>
 
-            <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_smax_format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="n">smax_type</span><span class="p">)</span>
+            <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">_to_smax_format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="n">smax_type</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calling HSetWithMeta script with </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">converted_data</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evalsha_set</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -682,9 +499,15 @@
             <span class="c1"># of values to update atomically. The recurse_nested_dict function</span>
             <span class="c1"># yields key/value pairs as it finds the leaf nodes of the nested</span>
             <span class="c1"># dict.</span>
-            <span class="n">leaves</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            <span class="n">fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_struct_fields</span><span class="p">(</span><span class="n">leaves</span><span class="p">)</span>
-            <span class="n">tables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_struct_tables</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+            <span class="n">leaves</span> <span class="o">=</span> <span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="n">_get_struct_fields</span><span class="p">(</span><span class="n">leaves</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">maintain_type</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">f</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;value&quot;</span><span class="p">:</span>
+                        <span class="n">smax_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">smax_pull_meta</span><span class="p">(</span><span class="s1">&#39;types&#39;</span><span class="p">,</span> <span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;smax_share: Got type </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s1"> from SMA-X metadata, casting </span><span class="si">{</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> to type&#39;</span><span class="p">)</span>
+                        <span class="n">f</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">smax_type</span>
+            <span class="n">tables</span> <span class="o">=</span> <span class="n">_get_struct_tables</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calling HMSetWithMeta script with </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">tables</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -756,7 +579,7 @@
                 <span class="n">t</span><span class="p">,</span> <span class="n">ke</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;munged table name </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="se">\n</span><span class="s2"> munged key name </span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;evalsha arguments</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">commands</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;evalsha arguments: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">commands</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline</span><span class="o">.</span><span class="n">evalsha</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_multi_setSHA</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
                                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">ke</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                                        <span class="bp">self</span><span class="o">.</span><span class="n">_hostname</span><span class="p">,</span>
@@ -1220,12 +1043,330 @@
                 <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find metadata for </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Redis seems down, unable to call hget.&quot;</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">SmaxConnectionError</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span></div>
 </div>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_to_smax_format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">smax_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function that converts a given data value to the string format</span>
+<span class="sd">    that SMAX supports.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        value: Any supported data type, including (nested) dicts.</span>
+<span class="sd">        smax_type (str): SMA-X type to cast value(s) to.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: tuple of (data_string, type_name, dim_string)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get a value for type testing, and determine the shape</span>
+    <span class="n">type_name</span><span class="o">=</span><span class="kc">None</span>
+    
+    <span class="c1"># If this is a container, detect the minimum scalar SMA-X type, and the shape of</span>
+    <span class="c1"># the container</span>
+    <span class="k">if</span> <span class="n">_container_but_not_str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_to_smax_format: detected a Container type&quot;</span><span class="p">)</span>
+        <span class="c1"># Cast the (possibly nested) container to an array</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># This will cast the array to the most restrictive numpy type that can contain all</span>
+            <span class="c1"># of the values.</span>
+            <span class="c1"># It will fail for inhomogenous nested containers, and possibly in other circumstances</span>
+            <span class="n">value_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">python_type</span> <span class="o">=</span> <span class="n">value_array</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">type</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Successfully cast Container to array of dtype </span><span class="si">{</span><span class="n">python_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># This likely means that the array is inhomogenous in shape, and must be </span>
+            <span class="c1"># flattened to single dimension array of string representations of subarrays</span>
+            <span class="c1"># as SMA-X does not allow for inhomogenous arrays of any type</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Array conversion failed with &#39;</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;. Will revert to &#39;string&#39; format and a single dimension array.&quot;</span><span class="p">)</span>
+            <span class="n">smax_type</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+            <span class="n">retval</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="n">_container_to_stringarray</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">retval</span><span class="p">,</span> <span class="n">smax_type</span><span class="p">,</span> <span class="n">shape</span>
+        
+        <span class="c1"># Only do type promotion if we have numerical types</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">python_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">smax_type</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+            <span class="n">test_value</span> <span class="o">=</span> <span class="n">value_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">:</span>
+            <span class="n">smax_type</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+            <span class="n">retval</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="n">_container_to_stringarray</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">retval</span><span class="p">,</span> <span class="n">smax_type</span><span class="p">,</span> <span class="n">shape</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get the largest value to use for determining the SmaxType</span>
+            <span class="c1"># Where the largest value is not defined, use the first value</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># This will fail for non-numeric types</span>
+                <span class="n">test_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">value_array</span><span class="p">))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Detected largest value of </span><span class="si">{</span><span class="n">test_value</span><span class="si">}</span><span class="s2">, which will be used to determine type&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">UFuncTypeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="n">test_value</span> <span class="o">=</span> <span class="n">value_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Could not find largest value in array, using </span><span class="si">{</span><span class="n">test_value</span><span class="si">}</span><span class="s2"> to determine type&quot;</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">_get_dims</span><span class="p">(</span><span class="n">value_array</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># If this is a single value, get the type of the value</span>
+        <span class="n">test_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">python_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">test_value</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="mi">1</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format received </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">, test value </span><span class="si">{</span><span class="n">test_value</span><span class="si">}</span><span class="s2">, type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">python_type</span><span class="p">)</span><span class="si">}</span><span class="s2">, smax_type </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">, shape </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># If we&#39;ve been given a SMA-X type to use, try to use it</span>
+    <span class="k">if</span> <span class="n">smax_type</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Received valid SMA-X Type </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="n">smax_type</span>
+        
+        <span class="c1"># If we have int type, check that the values fit within the given width, and promote if not</span>
+        <span class="k">if</span> <span class="n">smax_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_to_smax_format: Requested integer type, determining length required&quot;</span><span class="p">)</span>
+            <span class="c1"># We assume here that only numpy.int&lt;x&gt; types are in _TYPE_MAP</span>
+            <span class="c1"># We have to add 1 to the Python int().bit_length() as it excludes the</span>
+            <span class="c1"># sign bit.</span>
+            <span class="k">if</span> <span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">smax_type</span><span class="p">](</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">nbytes</span><span class="o">*</span><span class="mi">8</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">test_value</span><span class="p">))</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">min_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min_scalar_type</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">test_value</span><span class="p">))</span>
+                <span class="c1"># Test for uints</span>
+                <span class="c1"># Add one to test_value before negating, as e.g. 128 does not fit in int8, but -128 does.</span>
+                <span class="k">if</span> <span class="n">min_type</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">):</span>
+                    <span class="n">min_type</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min_scalar_type</span><span class="p">(</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">test_value</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">new_smax_type</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">min_type</span><span class="o">.</span><span class="n">type</span><span class="p">]</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">test_value</span><span class="p">)</span><span class="si">}</span><span class="s2"> would overflow </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">, promoting to </span><span class="si">{</span><span class="n">new_smax_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">type_name</span> <span class="o">=</span> <span class="n">new_smax_type</span>
+        
+        <span class="k">if</span> <span class="n">smax_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_to_smax_format: Requested float type, determining length required&quot;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">over</span><span class="o">=</span><span class="s1">&#39;raise&#39;</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">smax_type</span><span class="p">](</span><span class="n">test_value</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">FloatingPointError</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value </span><span class="si">{</span><span class="n">test_value</span><span class="si">}</span><span class="s2"> would overflow </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">, promoting to float64&quot;</span><span class="p">)</span>
+                    <span class="n">type_name</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
+        
+        <span class="c1"># Check that unsafe casting is possible</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">can_cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min_scalar_type</span><span class="p">(</span><span class="n">test_value</span><span class="p">),</span> <span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">smax_type</span><span class="p">],</span> <span class="n">casting</span><span class="o">=</span><span class="s1">&#39;unsafe&#39;</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot cast </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">test_value</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">, trying automatic determination of type.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Only warn about casting float to int, int to bool, etc.</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">can_cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min_scalar_type</span><span class="p">(</span><span class="n">test_value</span><span class="p">),</span> <span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">smax_type</span><span class="p">],</span> <span class="n">casting</span><span class="o">=</span><span class="s1">&#39;same_kind&#39;</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Casting </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">test_value</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2"> may result in loss of information.&quot;</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">_container_but_not_str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                    <span class="c1"># cast value_array created above to the given type</span>
+                    <span class="n">value_array</span> <span class="o">=</span> <span class="n">value_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">smax_type</span><span class="p">],</span> <span class="n">casting</span><span class="o">=</span><span class="s1">&#39;unsafe&#39;</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">smax_type</span> <span class="o">==</span> <span class="s1">&#39;string&#39;</span> <span class="ow">or</span> <span class="n">smax_type</span> <span class="o">==</span> <span class="s1">&#39;str&#39;</span><span class="p">:</span>
+                        <span class="n">retval</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span>  <span class="n">_container_to_stringarray</span><span class="p">(</span><span class="n">value_array</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="n">retval</span><span class="p">,</span> <span class="n">smax_type</span><span class="p">,</span> <span class="n">shape</span>
+                    
+                    <span class="c1"># This will only return if type conversion is successful</span>
+                    <span class="k">return</span> <span class="n">_array_to_string</span><span class="p">(</span><span class="n">value_array</span><span class="p">),</span> <span class="n">smax_type</span><span class="p">,</span> <span class="n">_shape_to_dims</span><span class="p">(</span><span class="n">value_array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+                
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Cast single value to given smax type</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">type_name</span><span class="p">](</span><span class="n">value</span><span class="p">)</span>
+                    
+                    <span class="c1"># This will only return if type conversion is successful</span>
+                    <span class="k">return</span> <span class="n">_value_to_string</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="n">type_name</span><span class="p">,</span> <span class="mi">1</span>
+                
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="ow">or</span> <span class="ne">OverflowError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not cast </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value_array</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">. Trying automatic determination of type.&quot;</span><span class="p">)</span>
+                <span class="c1"># Pass the SmaxType determination off to the automatic determinator</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">smax_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Do not recognize requested SMA-X type </span><span class="si">{</span><span class="n">smax_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+    <span class="c1"># Automatic determination of SMA-X type:</span>
+    <span class="c1">#</span>
+    <span class="c1"># We haven&#39;t been given a valid smax_type that works, so use the reverse type map to pick the type_name</span>
+    <span class="k">if</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">:</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">python_type</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: autodetected Python type as SMA-X type </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># For Python ints, detect the appropriate width of the SMA-X int&lt;n&gt; to use</span>
+        <span class="k">if</span> <span class="n">python_type</span> <span class="ow">is</span> <span class="nb">int</span> <span class="ow">or</span> <span class="n">type_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">):</span>
+            <span class="c1"># This bit of mathmagics calculates the size of a signed int, then rounds it up</span>
+            <span class="c1"># to the next power of two.</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">ceil</span><span class="p">(</span><span class="n">log</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">test_value</span><span class="p">)</span><span class="o">.</span><span class="n">bit_length</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">type_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;int</span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;_to_smax_format: Supplied Python int, which fits into </span><span class="si">{</span><span class="n">type_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Value of a Smax&lt;var&gt; type</span>
+    <span class="k">elif</span> <span class="n">python_type</span> <span class="ow">in</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">:</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">type</span>
+    
+    <span class="c1"># Single value of an unknown type</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Did not recognize type </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="si">}</span><span class="s2">, storing str(value) as SMA-X string type.&quot;</span><span class="p">)</span>
+        <span class="n">type_name</span> <span class="o">=</span> <span class="s2">&quot;string&quot;</span>
+
+    <span class="c1"># Convert and return the value</span>
+    <span class="k">if</span> <span class="n">_container_but_not_str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;string&quot;</span> <span class="ow">or</span> <span class="n">type_name</span> <span class="o">==</span> <span class="s2">&quot;str&quot;</span><span class="p">:</span>
+            <span class="n">retval</span><span class="p">,</span> <span class="n">shape</span> <span class="o">=</span> <span class="n">_container_to_stringarray</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">_array_to_string</span><span class="p">(</span><span class="n">value_array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">type_name</span><span class="p">],</span> <span class="n">casting</span><span class="o">=</span><span class="s1">&#39;unsafe&#39;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="n">_value_to_string</span><span class="p">(</span><span class="n">_TYPE_MAP</span><span class="p">[</span><span class="n">type_name</span><span class="p">](</span><span class="n">value</span><span class="p">))</span>
+        
+    <span class="k">return</span> <span class="n">retval</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">shape</span>
+            
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_recurse_nested_dict</span><span class="p">(</span><span class="n">dictionary</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function to recursively traverse a nested dictionary, finding</span>
+<span class="sd">    the leaf nodes that have actual data values.  Each real data value</span>
+<span class="sd">    is yielded back as it recurses.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        dictionary (dict): Dict containing keys that exist in SMAX.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        (key, value) for every leaf node in the nested dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># If value is dict then iterate over all its values</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">_recurse_nested_dict</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_struct_fields</span><span class="p">(</span><span class="n">leaves</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function to generate the set of all SMA-X fields required to describe the</span>
+<span class="sd">    tree structure of a nested dictionary.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        leaves (list): List of leaf nodes from _recurse_nested_dict()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
+<span class="sd">                    type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">outpairs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">leaves</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">tiers</span> <span class="o">=</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">tier</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tiers</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">superstruct</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="p">])</span>
+                <span class="n">pair</span> <span class="o">=</span> <span class="p">[</span><span class="n">superstruct</span><span class="p">,</span> <span class="n">tiers</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">tiers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">]),</span> <span class="s2">&quot;struct&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">pair</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">outpairs</span><span class="p">:</span>
+                    <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair</span><span class="p">)</span>
+        <span class="n">table</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">normalize_pair</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">outpairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;value&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">outpairs</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_struct_tables</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Private function to generate a dictionary of tables and arguments to HMSET_WITH_META calls from</span>
+<span class="sd">    fields generated by _get_struct_fields() for a nested SMA-X struct.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        table (str)   : The top level hash table name for the nested struct.</span>
+<span class="sd">        key (str)     : The top level key for the nested struct.</span>
+<span class="sd">        fields (list) : List of nested fields from _get_struct_fields()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of (key, field, value, type) for each field at each level of the SMA-X nested structure.</span>
+<span class="sd">                    type is either &quot;value&quot; for a leaf node, or &quot;struct&quot; for an intermediate node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;struct&quot;</span><span class="p">:</span>
+            <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span>
+                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">_to_smax_format</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">smax_type</span><span class="o">=</span><span class="n">field</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">_to_smax_format</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">tab</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tab</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="n">tab</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
+            <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tables</span><span class="p">[</span><span class="n">tab</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">field</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">converted_data</span><span class="p">,</span> <span class="n">type_name</span><span class="p">,</span> <span class="n">dim</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">tables</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_flatten_container</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Flatten a container of (potentially inhomogenous) containers to a single array</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        value (Container): container that may contain other containers</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        list : flattened version of the container.&quot;&quot;&quot;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">_container_but_not_str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_flatten_container</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_container_to_stringarray</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a container of object to a SMA-X string array</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        value (Container): container that may contain other containers or objects</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        list of str : flat list of string representations of contents of value</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">_get_dims</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">flatten</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">_flatten_container</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    
+    <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+        <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_value_to_string</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ret</span><span class="p">),</span> <span class="n">shape</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_value_to_string</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts a value to a string, applying JSON format escape sequences for special characters&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;unicode_escape&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;UTF-8&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_array_to_string</span><span class="p">(</span><span class="n">value_array</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Numpy array to a SMA-X string&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">value_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shape_to_dims</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Numpy shape tuple to a SMA-X dims string&quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_dims</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the dimensions of a value&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">_shape_to_dims</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_container_but_not_str</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">shape</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_container_but_not_str</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Container</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">))</span>
 </pre></div>
 
            </div>

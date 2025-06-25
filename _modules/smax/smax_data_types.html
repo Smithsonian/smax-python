@@ -102,24 +102,38 @@
              <span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
              <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
              <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+             <span class="s1">&#39;float16&#39;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
              <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
              <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;boolean&#39;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-             <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-             <span class="s1">&#39;raw&#39;</span><span class="p">:</span> <span class="nb">bytes</span>
+             <span class="s1">&#39;string&#39;</span><span class="p">:</span> <span class="nb">str</span>
              <span class="p">}</span>
 
 <span class="c1"># The reverse mapping here relies on overwriting the non-standard</span>
 <span class="c1"># SMA-X types with the standard types. </span>
 <span class="n">_REVERSE_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_TYPE_MAP</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-<span class="c1"># Add standard Python types to the inverse map</span>
+<span class="c1"># Add standard Python types to the reverse map</span>
 <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
 <span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
 
-<span class="n">inv_map</span> <span class="o">=</span> <span class="n">_REVERSE_TYPE_MAP</span>
+<span class="c1"># Add numpy types to the reverse map</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uintc</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uintp</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int64&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int8&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int16&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int64&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float16</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int64&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;boolean&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">str_</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">bytes_</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
+<span class="n">_REVERSE_TYPE_MAP</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">object_</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
 
 <span class="c1"># Legacy Named tuples for smax requests and responses.</span>
 <span class="c1">#</span>
@@ -805,6 +819,7 @@
              <span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
              <span class="s1">&#39;single&#39;</span><span class="p">:</span> <span class="n">SmaxFloat32</span><span class="p">,</span>
              <span class="s1">&#39;double&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
+             <span class="s1">&#39;float16&#39;</span> <span class="p">:</span> <span class="n">SmaxFloat32</span><span class="p">,</span>
              <span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="n">SmaxFloat32</span><span class="p">,</span>
              <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="n">SmaxFloat64</span><span class="p">,</span>
              <span class="s1">&#39;str&#39;</span><span class="p">:</span> <span class="n">SmaxStr</span><span class="p">,</span>
@@ -820,8 +835,7 @@
 <span class="c1"># Add the SMAX subclasses of standard python types</span>
 <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">SmaxInt</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;int32&#39;</span>
 <span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">SmaxFloat</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float64&#39;</span>
-
-<span class="n">inv_smax_map</span> <span class="o">=</span> <span class="n">_REVERSE_SMAX_TYPE_MAP</span>
+<span class="n">_REVERSE_SMAX_TYPE_MAP</span><span class="p">[</span><span class="n">SmaxBytes</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;string&#39;</span>
 </pre></div>
 
            </div>
