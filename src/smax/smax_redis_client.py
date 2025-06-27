@@ -553,6 +553,8 @@ class SmaxRedisClient(SmaxClient):
             table, key = normalize_pair(path[len(pubsub_prefix)+1:])
             self._logger.debug(f"Callback notification received:{message}")
             data = self.smax_pull(table, key)
+            self._logger.debug(f"Callback notification received:{data}")
+            self._logger.debug(f"{data.asdict()}")
             callback(data)
             
         def exception_handler(ex, pubsub, thread):
