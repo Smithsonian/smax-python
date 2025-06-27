@@ -294,6 +294,10 @@ class UserArray(np.ndarray):
         x = np.array(initvar, dtype=dtype).view(cls).copy()
         
         return x
+    
+    @property
+    def memoryview(self):
+        return super().data
 
 @dataclass
 class SmaxArray(UserArray, SmaxVarBase):
@@ -319,7 +323,7 @@ class SmaxArray(UserArray, SmaxVarBase):
         
     def __repr__(self):
         return super().__repr__()
-    
+        
     @property    
     def data(self):
         return self
@@ -337,6 +341,10 @@ class UserFloat32(np.float32):
             args = (kwargs.pop('data'),)
         x = np.float32.__new__(cls, args[0])
         return x
+    
+    @property
+    def memoryview(self):
+        return super().data
     
 @dataclass
 class SmaxFloat32(UserFloat32, SmaxVarBase):
@@ -363,6 +371,10 @@ class UserFloat64(np.float64):
             args = (kwargs.pop('data'),)
         x = np.float64.__new__(cls, args[0])
         return x
+    
+    @property
+    def memoryview(self):
+        return super().data
     
 @dataclass
 class SmaxFloat64(UserFloat64, SmaxVarBase):
@@ -393,7 +405,12 @@ class UserInt8(np.int8):
     def __eq__(self, other):
         """Pass the equality test through to the base class"""
         return super().__eq__(other)
-        
+    
+    @property
+    def memoryview(self):
+        return super().data
+    
+    
 @dataclass
 class SmaxInt8(UserInt8, SmaxVarBase):
     """Class for holding SMA-X integer objects, with their metadata"""
@@ -427,7 +444,11 @@ class UserInt16(np.int16):
     def __eq__(self, other):
         """Pass the equality test through to the base class"""
         return super().__eq__(other)
-        
+    
+    @property
+    def memoryview(self):
+        return super().data
+    
 @dataclass
 class SmaxInt16(UserInt16, SmaxVarBase):
     """Class for holding SMA-X integer objects, with their metadata"""
@@ -461,7 +482,11 @@ class UserInt32(np.int32):
     def __eq__(self, other):
         """Pass the equality test through to the base class"""
         return super().__eq__(other)
-        
+    
+    @property
+    def memoryview(self):
+        return super().data
+    
 @dataclass
 class SmaxInt32(UserInt32, SmaxVarBase):
     """Class for holding SMA-X integer objects, with their metadata"""
@@ -493,8 +518,8 @@ class UserInt64(np.int64):
         return x
     
     @property
-    def data(self):
-        return self
+    def memoryview(self):
+        return super().data
     
     def __eq__(self, other):
         """Pass the equality test through to the base class"""
