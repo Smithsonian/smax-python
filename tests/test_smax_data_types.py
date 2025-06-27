@@ -409,6 +409,7 @@ class TestSmaxFloat:
         
         assert a == pytest.approx(b)
         assert a == pytest.approx(b.data)
+        assert type(b.data) is SmaxFloat
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -461,6 +462,7 @@ class TestSmaxFloat32:
         
         assert a == pytest.approx(b)
         assert a == pytest.approx(b.data)
+        assert type(b.data) is SmaxFloat32
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -532,6 +534,7 @@ class TestSmaxFloat64:
         
         assert a == pytest.approx(b)
         assert a == pytest.approx(b.data)
+        assert type(b.data) is SmaxFloat64
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -614,6 +617,7 @@ class TestSmaxInt:
         
         assert a == b
         assert a == b.data
+        assert type(b.data) is SmaxInt
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -668,6 +672,8 @@ class TestSmaxInt8:
         
         assert a == b
         assert a == b.data
+        # check that we don't get a memoryview object from .data
+        assert type(b.data) is SmaxInt8
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -737,6 +743,7 @@ class TestSmaxInt16:
         
         assert a == b
         assert a == b.data
+        assert type(b.data) is SmaxInt16
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -806,6 +813,7 @@ class TestSmaxInt32:
         
         assert a == b
         assert a == b.data
+        assert type(b.data) is SmaxInt32
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
@@ -875,6 +883,7 @@ class TestSmaxInt64:
         
         assert a == b
         assert a == b.data
+        assert type(b.data) is SmaxInt64
         assert timestamp == b.timestamp
         assert origin == b.origin
         assert seq == b.seq
