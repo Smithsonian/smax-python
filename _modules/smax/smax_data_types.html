@@ -420,7 +420,11 @@
         
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">initvar</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         
-        <span class="k">return</span> <span class="n">x</span></div>
+        <span class="k">return</span> <span class="n">x</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
 
 <div class="viewcode-block" id="SmaxArray">
@@ -449,7 +453,7 @@
         
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
-    
+        
     <span class="nd">@property</span>    
     <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
@@ -472,7 +476,11 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">),)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">x</span></div>
+        <span class="k">return</span> <span class="n">x</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
     
 <div class="viewcode-block" id="SmaxFloat32">
@@ -507,7 +515,11 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">),)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">x</span></div>
+        <span class="k">return</span> <span class="n">x</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
     
 <div class="viewcode-block" id="SmaxFloat64">
@@ -546,15 +558,20 @@
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
-        
+    
+    
 <div class="viewcode-block" id="SmaxInt8">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt8">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SmaxInt8</span><span class="p">(</span><span class="n">UserInt8</span><span class="p">,</span> <span class="n">SmaxVarBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for holding SMA-X integer objects, with their metadata&quot;&quot;&quot;</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;int8&#39;</span><span class="p">)</span>
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -563,7 +580,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-        
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    
 <div class="viewcode-block" id="SmaxInt8.asdict">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt8.asdict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -585,15 +606,19 @@
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
-        
+    
 <div class="viewcode-block" id="SmaxInt16">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt16">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SmaxInt16</span><span class="p">(</span><span class="n">UserInt16</span><span class="p">,</span> <span class="n">SmaxVarBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for holding SMA-X integer objects, with their metadata&quot;&quot;&quot;</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -602,6 +627,10 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
 <div class="viewcode-block" id="SmaxInt16.asdict">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt16.asdict">[docs]</a>
@@ -624,15 +653,19 @@
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span></div>
 
-        
+    
 <div class="viewcode-block" id="SmaxInt32">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt32">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SmaxInt32</span><span class="p">(</span><span class="n">UserInt32</span><span class="p">,</span> <span class="n">SmaxVarBase</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for holding SMA-X integer objects, with their metadata&quot;&quot;&quot;</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int8</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;int32&#39;</span><span class="p">)</span>
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -641,7 +674,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    
 <div class="viewcode-block" id="SmaxInt32.asdict">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt32.asdict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -660,6 +697,10 @@
             <span class="n">args</span> <span class="o">=</span> <span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">),)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">x</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">memoryview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data</span>
     
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
@@ -680,7 +721,11 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pass the equality test through to the base class&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-        
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    
 <div class="viewcode-block" id="SmaxInt64.asdict">
 <a class="viewcode-back" href="../../smax.html#smax.smax_data_types.SmaxInt64.asdict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
