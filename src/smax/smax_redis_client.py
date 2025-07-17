@@ -568,11 +568,11 @@ class SmaxRedisClient(SmaxClient):
             self._logger.info("Pubsub reconnected")
 
         if callback is not None and self._callback_pubsub is None:
-            self._callback_pubsub = self._client.pubsub(ignore_subscribe_messages=True)
+            self._callback_pubsub = self._client.pubsub(ignore_subscribe_messages=False)
             self._logger.debug("Created redis pubsub object for callbacks")
 
         elif callback is None and self._pubsub is None:
-            self._pubsub = self._client.pubsub(ignore_subscribe_messages=True)
+            self._pubsub = self._client.pubsub(ignore_subscribe_messages=False)
             self._logger.debug("Created redis pubsub object")
 
         if pattern.endswith("*"):
