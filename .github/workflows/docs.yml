@@ -1,4 +1,8 @@
 name: API Documentation
+permissions:
+  contents: read
+  pull-requests: write
+
 on: 
   push:
     branches:
@@ -7,19 +11,19 @@ on:
       - 'src/**'
       - 'docs/**'
       - '.github/workflows/docs.yml'
-      
+
   pull_request:
     paths:
       - 'src/**'
       - 'docs/**'
       - '.github/workflows/docs.yml'
-  
+
 jobs:
-  
+
   apidocs:
     runs-on: ubuntu-latest
     steps:
-    
+
     - name: Check out smax-python
       uses: actions/checkout@v4
 
@@ -39,13 +43,13 @@ jobs:
 
     - name: Install Sphinx and RTM theme
       run: pip install sphinx sphinx-rtd-theme
-          
+
     - name: Build docs
       run: |
         cd docs
         sphinx-apidoc -o . ../src/smax
         sphinx-build -M html . .
-          
+
     - name: Checkout gh-pages
       uses: actions/checkout@v4
       with:
@@ -54,7 +58,7 @@ jobs:
 
     - name: copy docs to gh-pages
       run: cp -a docs/html/* site/
-      
+
     - name: Push to pages
       run: |
         cd site

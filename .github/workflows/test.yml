@@ -1,4 +1,6 @@
 name: Unit Tests
+permissions:
+  contents: read
 
 on: 
   push:
@@ -8,7 +10,7 @@ on:
       - 'src/**'
       - '.github/workflows/test.yml'
       - '.coveragerc'
-      
+
   pull_request:
     paths:
       - 'src/**'
@@ -77,4 +79,3 @@ jobs:
           name: codecov
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          
