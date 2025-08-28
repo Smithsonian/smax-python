@@ -28,7 +28,7 @@ pubsub_prefix = "smax"
 # Default to looping the pubsub threads on 10 ms cadence.
 pubsub_sleep = 0.010
 
-loglevel = logging.INFO
+loglevel = logging.WARNING
 logging.basicConfig(level=loglevel)
 logger = logging.getLogger(__name__)
 
