@@ -32,10 +32,10 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Git checkout smax-server
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: Smithsonian/smax-server
           path: smax-server
