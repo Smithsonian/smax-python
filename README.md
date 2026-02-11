@@ -44,8 +44,8 @@ Before then the API may undergo slight changes and tweaks. Use the repository as
 ### Related links
 
  - [SMA-X specification](https://docs.google.com/document/d/1eYbWDClKkV7JnJxv4MxuNBNV47dFXuUWu7C4Ve_YTf0/edit?usp=sharing)
- - [Smithsonian/smax-clib](https://github.com/Smithsonian/smax-clib) an alternative library for C/C++ (C99).
- - [Smithsonian/smax-postgres](https://github.com/Smithsonian/smax-postgres) for creating a time-series history of 
+ - [Sigmyne/smax-clib](https://github.com/Sigmyne/smax-clib) an alternative library for C/C++ (C99).
+ - [Sigmyne/smax-postgres](https://github.com/Sigmyne/smax-postgres) for creating a time-series history of 
    SMA-X in a __PostgreSQL__ database.
 
 
