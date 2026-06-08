@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload coverage to Codecov.io
         if: ${{ matrix.python-version == '3.x' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         continue-on-error: true
         with:
           fail_ci_if_error: false
