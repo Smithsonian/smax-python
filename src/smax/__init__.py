@@ -1,4 +1,4 @@
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 from .smax_client import SmaxData, SmaxInt, SmaxFloat, SmaxBool, SmaxStr, \
     SmaxStrArray, SmaxArray, SmaxStruct, SmaxInt8, SmaxInt16, SmaxInt32, \
