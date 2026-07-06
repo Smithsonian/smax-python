@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class SmaxRedisClient(SmaxClient):
     def __init__(self, redis_ip="localhost", redis_port=6379, redis_db=0,
-                 program_name=None, hostname=None, debug=False, logger=logger):
+                 program_name=None, hostname=None, debug=False, logger=logger, redis_protocol=2):
         """
         Constructor for SmaxRedisClient, automatically establishes connection
         and sets the redis-py connection object to 'self._client'. This magic
@@ -62,6 +62,7 @@ class SmaxRedisClient(SmaxClient):
         self._redis_ip = redis_ip
         self._redis_port = redis_port
         self._redis_db = redis_db
+        self._redis_protocol = redis_protocol
 
         self._getSHA = None
         self._setSHA = None
@@ -93,13 +94,13 @@ class SmaxRedisClient(SmaxClient):
 
         # Call parent constructor, which calls smax_connect_to() and sets the
         # returned client as self._client.
-        super().__init__(redis_ip, redis_port, redis_db)
+        super().__init__(redis_ip, redis_port, redis_db, redis_protocol)
 
         # load the script SHAs from the server
         self._get_scripts()
 
 
-    def smax_connect_to(self, redis_ip, redis_port, redis_db):
+    def smax_connect_to(self, redis_ip, redis_port, redis_db, redis_protocol):
         """
         Uses the redis-py library to establish a connection to redis, then
         obtains and stores the LUA scripts in the object (ex self._getSHA). This
@@ -123,7 +124,7 @@ class SmaxRedisClient(SmaxClient):
                                        db=redis_db,
                                        retry=retry,
                                        retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError, OSError],
-                                       health_check_interval=30)
+                                       health_check_interval=30, protocol=redis_protocol)
             self._logger.info(f"Connected to redis server {redis_ip}:{redis_port} db={redis_db}")
             return redis_client
         except (ConnectionError, TimeoutError) as e:
